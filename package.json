@@ -1,0 +1,21 @@
+{
+  "name": "bitswap-v1",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "client": "cd application && npm start",
+    "server": "cd server && npm start",
+    "dev": "concurrently \"npm run client\" \"npm run server\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bitswap-network/bitswap-v1.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/bitswap-network/bitswap-v1/issues"
+  },
+  "homepage": "https://github.com/bitswap-network/bitswap-v1#readme"
+}
