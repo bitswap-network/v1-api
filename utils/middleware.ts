@@ -1,6 +1,5 @@
 const logger = require("./logger");
 const jwt = require("jsonwebtoken");
-import env from "../data/env.json";
 
 export const requestLogger = (request, response, next) => {
   logger.info("Method:", request.method);
@@ -32,7 +31,7 @@ export const tokenAuthenticator = (request, response, next) => {
 
   if (token == null) return response.sendStatus(401);
 
-  jwt.verify(token, env.secret, (err, user) => {
+  jwt.verify(token, process.env.secret, (err, user) => {
     console.log(err);
 
     if (err) return response.sendStatus(403);

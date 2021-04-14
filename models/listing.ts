@@ -1,11 +1,11 @@
-let mongoose,
-  { Schema } = require("mongoose");
+import { Schema } from "mongoose";
 
 const listingSchema = new Schema({
   name: { type: String, unique: true, required: true },
   seller: { type: Schema.Types.ObjectId, ref: "User", required: true },
   buyer: { type: Schema.Types.ObjectId, ref: "User", default: null },
-  saletype: { type: String, required: true },
+  listingtype: {type: String, required: true},
+  currencysaletype: { type: String, required: true },
   bitcloutamount: { type: Number, required: true },
   usdamount: { type: Number },
   etheramount: { type: Number },
@@ -25,3 +25,5 @@ const listingSchema = new Schema({
     type: Date,
   },
 });
+
+export default listingSchema;

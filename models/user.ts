@@ -1,7 +1,7 @@
 import { model, Schema, Document } from "mongoose";
 const bcrypt = require("bcrypt-nodejs");
 
-interface User extends Document {
+export interface UserDoc extends Document {
   name: string;
   username: string;
   email: string;
@@ -11,10 +11,16 @@ interface User extends Document {
   ethereumaddress: string;
   password: string;
   created: Date;
-  listings: [];
+  listings: [Schema.Types.ObjectId];
+  admin: boolean;
+  verified: string;
+  ratings: [{rating: number, rater: Schema.Types.ObjectId}];
+  completedtransactions: number;
+  generateHash: (password: string) => boolean;
+  validPassword: (password: string) => boolean;
 }
 
-const userSchema = new Schema({
+const userSchema = new Schema<UserDoc>({
   name: { type: String, required: true },
   username: { type: String, unique: true, required: true },
   email: { type: String, unique: true, required: true },
@@ -57,5 +63,5 @@ userSchema.methods.validPassword = function (password: String) {
   return bcrypt.compareSync(password, this.password);
 };
 
-const User = model("User", userSchema);
+const User = model<UserDoc>("User", userSchema);
 export default User;
