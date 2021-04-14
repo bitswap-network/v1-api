@@ -29,12 +29,12 @@ export const tokenAuthenticator = (request, response, next) => {
   const authHeader = request.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
 
-  if (token == null) return response.sendStatus(401);
+  if (token == null) return response.status(401).send("Missing token");
 
   jwt.verify(token, process.env.secret, (err, user) => {
     console.log(err);
 
-    if (err) return response.sendStatus(403);
+    if (err) return response.status(403).send("Invalid token");
 
     request.user = user;
 

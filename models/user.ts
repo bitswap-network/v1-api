@@ -14,21 +14,22 @@ export interface UserDoc extends Document {
   listings: [Schema.Types.ObjectId];
   admin: boolean;
   verified: string;
-  ratings: [{rating: number, rater: Schema.Types.ObjectId}];
+  ratings: [{ rating: number; rater: Schema.Types.ObjectId }];
   completedtransactions: number;
   generateHash: (password: string) => boolean;
   validPassword: (password: string) => boolean;
 }
 
 const userSchema = new Schema<UserDoc>({
-  name: { type: String, required: true },
+  name: { type: String },
   username: { type: String, unique: true, required: true },
   email: { type: String, unique: true, required: true },
   emailverified: { type: Boolean, default: false },
   emailverification: { type: String },
-  bitcloutpubkey: { type: String, unique: true, required: true },
-  ethereumaddress: { type: String, unique: true, required: true },
+  bitcloutpubkey: { type: String, unique: true },
+  ethereumaddress: { type: String, unique: true },
   password: { type: String, required: true },
+  incomplete: { type: Boolean, required: true, default: true },
   created: {
     type: Date,
     default: Date.now,
