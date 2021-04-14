@@ -18,28 +18,7 @@ routes.push(new Routes(app));
 app.get("/", (req: express.Request, res: express.Response) => {
   res.status(200).send(`Server up and running!`);
 });
-const io = socketIo(server, {
-  cors: {
-    origin: "*",
-  },
-});
-io.use((socket, next) => {
-  const usertoken = socket.handshake.auth.usertoken;
 
-  const tokenresp = middleware.tokenAuthenticatorIO(usertoken);
-  if (tokenresp) {
-    socket.usertoken = usertoken;
-    socket.username = tokenresp.username;
-    next();
-  } else {
-    console.log("error connecting socket");
-    return next(new Error("invalid token"));
-  }
-});
-io.on("connection", (socket) => {
-  socket.emit("usertoken", socket.usertoken);
-});
-app.set("socketio", io);
 server.listen(PORT, () => {
   logger.info(`Server1 listening on port ${PORT}`);
   routes.forEach((route: RoutesConfig) => {
