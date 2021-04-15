@@ -47,8 +47,9 @@ const userSchema = new Schema<UserDoc>({
       },
     },
   ],
-  completedtransactions: { type: Number, default: 0 },
-  bitcloutbalance: {type:Number, default:0}
+  completedorders: { type: Number, default: 0 },
+  bitswapbalance: { type: Number, default: 0 },
+  transactions: [{ type: Schema.Types.ObjectId, ref: "Transaction" }],
 });
 
 // userSchema.set("toJSON", {

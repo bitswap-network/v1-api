@@ -1,22 +1,22 @@
 import { model, Schema, Document } from "mongoose";
 
-export interface listingDoc extends Document{
-  name: String,
-  seller: Schema.Types.ObjectId,
-  buyer:Schema.Types.ObjectId,
-  listingtype:String,
-  currencysaletype:{},
-  bitcloutamount:Number,
-  usdamount:Number,
-  etheramount:Number,
-  ongoing:Boolean,
-  escrow:{balance:Number,full:Boolean},
-  bitcloutrecieved:Boolean,
-  bitcloutsent:Boolean,
-  bitcloutrTransactionId:String,
-  finalTransactionId:String,
-  created:Date,
-  completed:Date
+export interface listingDoc extends Document {
+  name: String;
+  seller: Schema.Types.ObjectId;
+  buyer: Schema.Types.ObjectId;
+  listingtype: String;
+  currencysaletype: {};
+  bitcloutamount: Number;
+  usdamount: Number;
+  etheramount: Number;
+  ongoing: Boolean;
+  escrow: { balance: Number; full: Boolean };
+  bitcloutrecieved: Boolean;
+  bitcloutsent: Boolean;
+  bitcloutrTransactionId: String;
+  finalTransactionId: String;
+  created: Date;
+  completed: Date;
 }
 
 const listingSchema = new Schema<listingDoc>({
@@ -39,7 +39,7 @@ const listingSchema = new Schema<listingDoc>({
   finalTransactionId: { type: String, default: "" },
   created: {
     type: Date,
-    default: Date.now,
+    default: Date.now(),
   },
   completed: {
     type: Date,
