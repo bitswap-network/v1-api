@@ -1,8 +1,11 @@
+import { generateAccessToken, generateCode } from "../utils/functions";
+
 const authRouter = require("express").Router();
 const User = require("../models/user");
 const { tokenAuthenticator } = require("../utils/middleware");
 const logger = require("./utils/logger");
 const config = require("./utils/config");
+const sendMail = require("../utils/mailer");
 
 authRouter.post("/register", (req, res) => {
   const { username, email, password } = req.body;
@@ -14,16 +17,42 @@ authRouter.post("/register", (req, res) => {
       email: email,
     });
     newUser.password = newUser.generateHash(password);
-    newUser.save((err) => {
-      if (err) {
-        res.status(500).send(err);
-      } else {
-        res.sendStatus(201);
-      }
+    const code = generateCode();
+    newUser.emailverification = code;
+    newUser.save().then(() => {
+      sendMail(
+        email,
+        "Verify your BitSwap email",
+        `Click <a href="https://api.bitswap.network/user/verifyemail/${code}">here</a> to verify your email. If this wasn't you, simply ignore this email.`
+      )
+    }).then(() => {
+      res.status(201).send("Registration successful");
+    }).catch(err => {
+      res.status(500).send(err);
     });
   }
 });
 
-authRouter.post("/login", (req, res) => {});
+authRouter.post("/login", (req, res) => {
+  const { username, password } = req.body;
+  const token = generateAccessToken({ username: username });
+  User.findOne({
+    username: username
+  }, function (err, user) {
+    if (err) {
+      res.status(500).send(err);
+    } else if (!user.validPassword(password)) {
+      res.status(400).send("Invalid username or password");
+    } else if (!user.emailverified) {
+      res.status(403).send("Email not verified");
+    } else {
+      user.token = token;
+      res.status(200).json({
+        ...user,
+        token: token
+      });
+    }
+  });
+});
 
 export default authRouter;

@@ -4,15 +4,16 @@ const { tokenAuthenticator } = require("../utils/middleware");
 const logger = require("../utils/logger");
 const config = require("../utils/config");
 const sendMail = require("../utils/send");
+import { generateCode } from "../utils/functions";
 import proxy from "../utils/proxy";
 
 userRouter.get("/profile/:username", tokenAuthenticator, async (req, res) => {
-  const profile = await User.findOne({
+  const user = await User.findOne({
     username: req.params.username,
   }).exec();
-  if (profile) {
+  if (user) {
     // Get bio and profile picture from Bitclout API
-    res.json(profile);
+    res.status(200).json(user);
   } else {
     res.status(404).send("User not found");
   }
@@ -34,7 +35,7 @@ userRouter.put("/updateprofile", tokenAuthenticator, async (req, res) => {
       if (err) {
         res.status(500).send(err);
       } else {
-        res.sendStatus(201);
+        res.status(201).send("Profile successfully updated");
       }
     }
   );
@@ -49,7 +50,7 @@ userRouter.post("/updatepassword", tokenAuthenticator, async (req, res) => {
       if (err) {
         res.status(500).send(err);
       } else {
-        res.sendStatus(201);
+        res.status(201).send("Password successfully updated");
       }
     });
   } else {
@@ -61,18 +62,55 @@ userRouter.post("/forgotpassword", tokenAuthenticator, async (req, res) => {
   const { email } = req.body;
   const user = await User.findOne({ email: email }).exec();
   if (user) {
-    try {
+    const code = generateCode();
+    user.passwordverification = code;
+    user.save().then(() => {
       sendMail(
         email,
         "Reset your BitSwap password",
-        `Click <a>here</a> to reset your password. If you didn't request a password change, simply ignore this email.`
+        `Click <a href="https://api.bitswap.network/user/verifypassword/${code}">here</a> to reset your password. If you didn't request a password change, simply ignore this email.`
       );
+    }).then(() => {
       res.status(200).send("Email successfully sent");
-    } catch (error) {
-      res.status(500).send("The email could not be sent");
-    }
+    }).catch(error => {
+      res.status(500).send("An error occurred:", error);
+    })
   } else {
     res.status(404).send("A user with that email could not be found");
   }
 });
+
+userRouter.post("/verifyemail/:code", tokenAuthenticator, async (req, res) => {
+  const code = req.params.code;
+  const user = await User.findOne({ emailverification: code }).exec();
+  if (user) {
+    user.emailverified = true;
+    user.emailverification = null;
+    user.save().then(() => {
+      res.status(200).sendFile(__dirname, '../pages/emailverified.html');
+    }).catch(error => {
+      res.status(500).sendFile(__dirname, '../pages/servererror.html');
+    });
+  } else {
+    res.status(404).sendFile(__dirname, '../pages/invalidlink.html');
+  }
+});
+
+userRouter.post("/verifypassword/:code", tokenAuthenticator, async (req, res) => {
+  const code = req.params.code;
+  const user = await User.findOne({ passwordverification: code }).exec();
+  if (user) {
+    const password = generateCode();
+    user.password = password;
+    user.passwordverification = null;
+    user.save().then(() => {
+      res.status(200).send(`<html><body><p>Your temporary password is "${password}" (no quotation marks).</p><br /><a href="https://app.bitswap.network">Go to BitSwap homepage.</a></body></html>`);
+    }).catch(error => {
+      res.status(500).sendFile(__dirname, '../pages/servererror.html');
+    });
+  } else {
+    res.status(404).sendFile(__dirname, '../pages/invalidlink.html');
+  }
+})
+
 export default userRouter;

@@ -10,6 +10,7 @@ export interface UserDoc extends Document {
   bitcloutpubkey: string;
   ethereumaddress: string;
   password: string;
+  passwordverification: string;
   created: Date;
   listings: [Schema.Types.ObjectId];
   admin: boolean;
@@ -29,6 +30,7 @@ const userSchema = new Schema<UserDoc>({
   bitcloutpubkey: { type: String, unique: true },
   ethereumaddress: { type: String, unique: true },
   password: { type: String, required: true },
+  passwordverification: { type: String },
   incomplete: { type: Boolean, required: true, default: true },
   created: {
     type: Date,

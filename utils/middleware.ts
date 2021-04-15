@@ -1,4 +1,5 @@
 const logger = require("./logger");
+const config = require("./config");
 const jwt = require("jsonwebtoken");
 
 export const requestLogger = (request, response, next) => {
@@ -31,9 +32,7 @@ export const tokenAuthenticator = (request, response, next) => {
 
   if (token == null) return response.status(401).send("Missing token");
 
-  jwt.verify(token, process.env.secret, (err, user) => {
-    console.log(err);
-
+  jwt.verify(token, config.SECRET, (err, user) => {
     if (err) return response.status(403).send("Invalid token");
 
     request.user = user;

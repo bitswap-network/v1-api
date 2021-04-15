@@ -10,7 +10,7 @@ import listingRouter from "./controllers/listings";
 import authRouter from "./controllers/auth";
 
 mongoose
-  .connect(config.MONGODB_URL, {
+  .connect(config.MONGODB_URI, {
     useUnifiedTopology: true,
     useNewUrlParser: true,
     useCreateIndex: true,
