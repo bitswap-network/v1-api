@@ -1,8 +1,6 @@
 const userRouter = require("express").Router();
 const User = require("../models/user");
 const { tokenAuthenticator } = require("../utils/middleware");
-const logger = require("../utils/logger");
-const config = require("../utils/config");
 const sendMail = require("../utils/send");
 import { generateCode } from "../utils/functions";
 import proxy from "../utils/proxy";

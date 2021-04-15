@@ -48,15 +48,16 @@ const userSchema = new Schema<UserDoc>({
     },
   ],
   completedtransactions: { type: Number, default: 0 },
+  bitcloutbalance: {type:Number, default:0}
 });
 
-userSchema.set("toJSON", {
-  transform: (document, returnedObject) => {
-    returnedObject.id = returnedObject._id.toString();
-    delete returnedObject._id;
-    delete returnedObject.__v;
-  },
-});
+// userSchema.set("toJSON", {
+//   transform: (document, returnedObject) => {
+//     returnedObject.id = returnedObject._id.toString();
+//     delete returnedObject._id;
+//     delete returnedObject.__v;
+//   },
+// });
 
 userSchema.methods.generateHash = function (password: String) {
   return bcrypt.hashSync(password, bcrypt.genSaltSync(8), null);

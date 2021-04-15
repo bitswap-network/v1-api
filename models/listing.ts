@@ -1,6 +1,25 @@
-import { Schema } from "mongoose";
+import { model, Schema, Document } from "mongoose";
 
-const listingSchema = new Schema({
+export interface listingDoc extends Document{
+  name: String,
+  seller: Schema.Types.ObjectId,
+  buyer:Schema.Types.ObjectId,
+  listingtype:String,
+  currencysaletype:{},
+  bitcloutamount:Number,
+  usdamount:Number,
+  etheramount:Number,
+  ongoing:Boolean,
+  escrow:{balance:Number,full:Boolean},
+  bitcloutrecieved:Boolean,
+  bitcloutsent:Boolean,
+  bitcloutrTransactionId:String,
+  finalTransactionId:String,
+  created:Date,
+  completed:Date
+}
+
+const listingSchema = new Schema<listingDoc>({
   name: { type: String, unique: true, required: true },
   seller: { type: Schema.Types.ObjectId, ref: "User", required: true },
   buyer: { type: Schema.Types.ObjectId, ref: "User", default: null },
@@ -26,5 +45,6 @@ const listingSchema = new Schema({
     type: Date,
   },
 });
+const Listing = model<listingDoc>("Listing", listingSchema);
 
-export default listingSchema;
+export default Listing;
