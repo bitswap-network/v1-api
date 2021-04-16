@@ -18,10 +18,11 @@ export interface UserDoc extends Document {
   verified: string;
   ratings: [{ rating: number; rater: Schema.Types.ObjectId }];
   completedtransactions: number;
-  generateHash: (password: string) => boolean;
+  generateHash: (password: string) => string;
   validPassword: (password: string) => boolean;
   bitswapbalance: number;
   transactions: [Schema.Types.ObjectId];
+  buystate: boolean;
 }
 
 const userSchema = new Schema<UserDoc>({
@@ -58,6 +59,7 @@ const userSchema = new Schema<UserDoc>({
   completedorders: { type: Number, default: 0 },
   bitswapbalance: { type: Number, default: 0 },
   transactions: [{ type: Schema.Types.ObjectId, ref: "Transaction" }],
+  buystate: { type: Boolean, default: false },
 });
 
 userSchema.methods.generateHash = function (password: String) {

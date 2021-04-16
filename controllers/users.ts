@@ -47,7 +47,7 @@ userRouter.post("/updatepassword", tokenAuthenticator, async (req, res) => {
   const { username, oldpassword, newpassword } = req.body;
   const user = await User.findOne({ username: username }).exec();
   if (user && user.validPassword(oldpassword)) {
-    user.password = bcrypt.hashSync(newpassword, 8);
+    user.password = user.generateHash(newpassword);
     user.save((err: any) => {
       if (err) {
         res.status(500).send(err);

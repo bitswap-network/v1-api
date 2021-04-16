@@ -3,17 +3,17 @@ import { model, Schema, Document } from "mongoose";
 export interface listingDoc extends Document {
   seller: Schema.Types.ObjectId;
   buyer: Schema.Types.ObjectId;
-  currencysaletype: String;
-  bitcloutamount: Number;
-  usdamount: Number;
-  etheramount: Number;
-  ongoing: Boolean;
-  escrow: { balance: Number; full: Boolean };
-  bitcloutsent: Boolean;
-  bitcloutrTransactionId: String;
-  finalTransactionId: String;
+  currencysaletype: string;
+  bitcloutamount: number;
+  usdamount: number;
+  etheramount: number;
+  ongoing: boolean;
+  escrow: { balance: number; full: Boolean };
+  bitcloutsent: boolean;
+  bitcloutrTransactionId: string;
+  finalTransactionId: string;
   created: Date;
-  completed: Date;
+  completed: { status: boolean; date: Date };
 }
 
 const listingSchema = new Schema<listingDoc>({
@@ -36,7 +36,8 @@ const listingSchema = new Schema<listingDoc>({
     default: Date.now,
   },
   completed: {
-    type: Date,
+    status: { type: Boolean, default: false },
+    date: { type: Date },
   },
 });
 const Listing = model<listingDoc>("Listing", listingSchema);
