@@ -62,6 +62,8 @@ authRouter.post("/login", bruteforce.prevent, (req, res) => {
     function (err, user) {
       if (err) {
         res.status(500).send(err);
+      } else if (!user) {
+        res.status(404).send("A user with that email or password doesn't exist!")
       } else if (!user.validPassword(password)) {
         res.status(400).send("Invalid username or password");
       } else if (!user.emailverified) {

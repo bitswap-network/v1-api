@@ -10,6 +10,7 @@ const logger = require("./utils/logger");
 const mongoose = require("mongoose");
 const config = require("./utils/config");
 const app: express.Application = express();
+
 mongoose
   .connect(config.MONGODB_URI, {
     useUnifiedTopology: true,
