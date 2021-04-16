@@ -2,9 +2,6 @@ import { generateAccessToken, generateCode } from "../utils/functions";
 
 const authRouter = require("express").Router();
 const User = require("../models/user");
-const { tokenAuthenticator } = require("../utils/middleware");
-const logger = require("./utils/logger");
-const config = require("./utils/config");
 const sendMail = require("../utils/mailer");
 
 authRouter.post("/register", (req, res) => {
