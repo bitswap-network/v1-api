@@ -1,5 +1,5 @@
 const listingRouter = require("express").Router();
-import Listing from "../models/Listing";
+import Listing from "../models/listing";
 import User from "../models/user";
 const { tokenAuthenticator } = require("../utils/middleware");
 import { Types } from "mongoose";
