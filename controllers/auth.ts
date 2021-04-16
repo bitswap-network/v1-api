@@ -5,7 +5,7 @@ var BruteForceSchema = require("express-brute-mongoose/dist/schema");
 const mongoose = require("mongoose");
 const authRouter = require("express").Router();
 import User from "../models/user";
-const sendMail = require("../utils/mailer");
+import sendMail from "../utils/mailer";
 const bcrypt = require("bcrypt");
 
 var bruteforce_model = mongoose.model(
@@ -16,8 +16,14 @@ var store = new MongooseStore(bruteforce_model);
 var bruteforce = new ExpressBrute(store);
 
 authRouter.post("/register", (req, res) => {
-  const { username, email, password } = req.body;
-  if (!username || !email || !password) {
+  const {
+    username,
+    email,
+    password,
+    bitcloutpubkey,
+    ethereumaddress,
+  } = req.body;
+  if (!username || !email || !password || !bitcloutpubkey || !ethereumaddress) {
     res.status(400).send("Missing fields in request body");
   } else {
     const newUser = new User({
@@ -27,21 +33,20 @@ authRouter.post("/register", (req, res) => {
     newUser.password = bcrypt.hashSync(password, 8);
     const code = generateCode();
     newUser.emailverification = code;
-    newUser
-      .save()
-      .then(() => {
+    newUser.save((err: any) => {
+      if (err) {
+        res.status(500).send(err);
+      } else {
         sendMail(
           email,
           "Verify your BitSwap email",
-          `Click <a href="https://api.bitswap.network/user/verifyemail/${code}">here</a> to verify your email. If this wasn't you, simply ignore this email.`
+          `<!DOCTYPE html><html><head><title>BitSwap Email Verification</title><body>` +
+            `<p>Click <a href="https://api.bitswap.network/user/verifyemail/${code}">here</a> to verify your email. If this wasn't you, simply ignore this email.` +
+            `</body></html>`
         );
-      })
-      .then(() => {
         res.status(201).send("Registration successful");
-      })
-      .catch((err) => {
-        res.status(500).send(err);
-      });
+      }
+    });
   }
 });
 
@@ -60,9 +65,9 @@ authRouter.post("/login", bruteforce.prevent, (req, res) => {
       } else if (!user.emailverified) {
         res.status(403).send("Email not verified");
       } else {
-        user.token = token;
-        res.status(200).json({
-          ...user,
+        // user.token = token;
+        res.json({
+          user,
           token: token,
         });
       }

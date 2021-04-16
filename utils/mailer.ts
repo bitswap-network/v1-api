@@ -9,12 +9,12 @@ var mail = nodemailer.createTransport({
   },
 });
 
-const sendMail = (toEmail, subject, text) => {
+function sendMail(toEmail, subject, html) {
   const mailOptions = {
     from: "hello@bitswap.network",
     to: toEmail,
     subject: subject,
-    text: text,
+    html: html,
   };
   mail.sendMail(mailOptions, function (error, info) {
     if (error) {
@@ -23,6 +23,6 @@ const sendMail = (toEmail, subject, text) => {
       return info.response;
     }
   });
-};
+}
 
 export default sendMail;

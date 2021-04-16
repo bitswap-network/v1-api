@@ -1,7 +1,7 @@
 const userRouter = require("express").Router();
 import User from "../models/user";
 const { tokenAuthenticator } = require("../utils/middleware");
-const sendMail = require("../utils/mailer");
+import sendMail from "../utils/mailer";
 import Transaction from "../models/transaction";
 import { generateCode } from "../utils/functions";
 import proxy from "../utils/proxy";
@@ -86,7 +86,7 @@ userRouter.post("/forgotpassword", tokenAuthenticator, async (req, res) => {
   }
 });
 
-userRouter.post("/verifyemail/:code", tokenAuthenticator, async (req, res) => {
+userRouter.get("/verifyemail/:code", async (req, res) => {
   const code = req.params.code;
   const user = await User.findOne({ emailverification: code }).exec();
   if (user) {
@@ -103,35 +103,32 @@ userRouter.post("/verifyemail/:code", tokenAuthenticator, async (req, res) => {
   } else {
     res.status(404).sendFile(__dirname, "../pages/invalidlink.html");
   }
+  //responses dont work, verification checks through
 });
 
-userRouter.post(
-  "/verifypassword/:code",
-  tokenAuthenticator,
-  async (req, res) => {
-    const code = req.params.code;
-    const user = await User.findOne({ passwordverification: code }).exec();
-    if (user) {
-      const password = generateCode();
-      user.password = password;
-      user.passwordverification = "";
-      user
-        .save()
-        .then(() => {
-          res
-            .status(200)
-            .send(
-              `<html><body><p>Your temporary password is "${password}" (no quotation marks).</p><br /><a href="https://app.bitswap.network">Go to BitSwap homepage.</a></body></html>`
-            );
-        })
-        .catch((error) => {
-          res.status(500).sendFile(__dirname, "../pages/servererror.html");
-        });
-    } else {
-      res.status(404).sendFile(__dirname, "../pages/invalidlink.html");
-    }
+userRouter.get("/verifypassword/:code", async (req, res) => {
+  const code = req.params.code;
+  const user = await User.findOne({ passwordverification: code }).exec();
+  if (user) {
+    const password = generateCode();
+    user.password = password;
+    user.passwordverification = "";
+    user
+      .save()
+      .then(() => {
+        res
+          .status(200)
+          .send(
+            `<html><body><p>Your temporary password is "${password}" (no quotation marks).</p><br /><a href="https://app.bitswap.network">Go to BitSwap homepage.</a></body></html>`
+          );
+      })
+      .catch((error) => {
+        res.status(500).sendFile(__dirname, "../pages/servererror.html");
+      });
+  } else {
+    res.status(404).sendFile(__dirname, "../pages/invalidlink.html");
   }
-);
+});
 
 userRouter.post("/deposit", tokenAuthenticator, async (req, res) => {
   const { username, bitcloutpubkey, bitcloutvalue } = req.body;

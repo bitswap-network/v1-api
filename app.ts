@@ -39,7 +39,7 @@ app.use("/listing", listingRouter);
 app.use("/auth", authRouter);
 
 //unknown endpoint handler
-app.use((req, res, next) => {
-  res.status(404).send({ message: "unknown endpoint" });
-});
+// app.use((req, res, next) => {
+//   res.status(404).send({ message: "unknown endpoint" });
+// });
 export default app;
