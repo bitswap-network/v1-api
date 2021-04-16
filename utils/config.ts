@@ -7,3 +7,5 @@ export let WHITELIST = JSON.parse(
   process.env.WHITELIST ? process.env.WHITELIST : "[]"
 );
 export let MAIL = process.env.MAIL;
+export let ENCRYPTEDSEEDHEX = process.env.ENCRYPTEDSEEDHEX;
+export let PWSALTHEX = process.env.PWSALTHEX;

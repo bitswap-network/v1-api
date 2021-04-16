@@ -2,9 +2,10 @@ const userRouter = require("express").Router();
 const User = require("../models/user");
 const { tokenAuthenticator } = require("../utils/middleware");
 const sendMail = require("../utils/send");
+import Transaction from "../models/transaction";
 import { generateCode } from "../utils/functions";
 import proxy from "../utils/proxy";
-
+import { Types } from "mongoose";
 userRouter.get("/profile/:username", tokenAuthenticator, async (req, res) => {
   const user = await User.findOne({
     username: req.params.username,
@@ -62,17 +63,21 @@ userRouter.post("/forgotpassword", tokenAuthenticator, async (req, res) => {
   if (user) {
     const code = generateCode();
     user.passwordverification = code;
-    user.save().then(() => {
-      sendMail(
-        email,
-        "Reset your BitSwap password",
-        `Click <a href="https://api.bitswap.network/user/verifypassword/${code}">here</a> to reset your password. If you didn't request a password change, simply ignore this email.`
-      );
-    }).then(() => {
-      res.status(200).send("Email successfully sent");
-    }).catch(error => {
-      res.status(500).send("An error occurred:", error);
-    })
+    user
+      .save()
+      .then(() => {
+        sendMail(
+          email,
+          "Reset your BitSwap password",
+          `Click <a href="https://api.bitswap.network/user/verifypassword/${code}">here</a> to reset your password. If you didn't request a password change, simply ignore this email.`
+        );
+      })
+      .then(() => {
+        res.status(200).send("Email successfully sent");
+      })
+      .catch((error) => {
+        res.status(500).send("An error occurred:", error);
+      });
   } else {
     res.status(404).send("A user with that email could not be found");
   }
@@ -84,31 +89,121 @@ userRouter.post("/verifyemail/:code", tokenAuthenticator, async (req, res) => {
   if (user) {
     user.emailverified = true;
     user.emailverification = null;
-    user.save().then(() => {
-      res.status(200).sendFile(__dirname, '../pages/emailverified.html');
-    }).catch(error => {
-      res.status(500).sendFile(__dirname, '../pages/servererror.html');
-    });
+    user
+      .save()
+      .then(() => {
+        res.status(200).sendFile(__dirname, "../pages/emailverified.html");
+      })
+      .catch((error) => {
+        res.status(500).sendFile(__dirname, "../pages/servererror.html");
+      });
   } else {
-    res.status(404).sendFile(__dirname, '../pages/invalidlink.html');
+    res.status(404).sendFile(__dirname, "../pages/invalidlink.html");
   }
 });
 
-userRouter.post("/verifypassword/:code", tokenAuthenticator, async (req, res) => {
-  const code = req.params.code;
-  const user = await User.findOne({ passwordverification: code }).exec();
+userRouter.post(
+  "/verifypassword/:code",
+  tokenAuthenticator,
+  async (req, res) => {
+    const code = req.params.code;
+    const user = await User.findOne({ passwordverification: code }).exec();
+    if (user) {
+      const password = generateCode();
+      user.password = password;
+      user.passwordverification = null;
+      user
+        .save()
+        .then(() => {
+          res
+            .status(200)
+            .send(
+              `<html><body><p>Your temporary password is "${password}" (no quotation marks).</p><br /><a href="https://app.bitswap.network">Go to BitSwap homepage.</a></body></html>`
+            );
+        })
+        .catch((error) => {
+          res.status(500).sendFile(__dirname, "../pages/servererror.html");
+        });
+    } else {
+      res.status(404).sendFile(__dirname, "../pages/invalidlink.html");
+    }
+  }
+);
+
+userRouter.post("/deposit", tokenAuthenticator, async (req, res) => {
+  const { username, bitcloutpubkey, bitcloutvalue } = req.body;
+  const user = await User.findOne({ username: username }).exec();
   if (user) {
-    const password = generateCode();
-    user.password = password;
-    user.passwordverification = null;
-    user.save().then(() => {
-      res.status(200).send(`<html><body><p>Your temporary password is "${password}" (no quotation marks).</p><br /><a href="https://app.bitswap.network">Go to BitSwap homepage.</a></body></html>`);
-    }).catch(error => {
-      res.status(500).sendFile(__dirname, '../pages/servererror.html');
+    const tx_genid = new Types.ObjectId();
+    const transaction = new Transaction({
+      _id: tx_genid,
+      username: username,
+      bitcloutpubkey: bitcloutpubkey,
+      transactiontype: "deposit",
+      status: "pending",
+      bitcloutnanos: bitcloutvalue * 1e9,
+    });
+    user.transactions.push(tx_genid);
+    user.save((err: any) => {
+      if (err) {
+        res.status(500).send(err);
+      }
+    });
+    transaction.save((err: any) => {
+      if (err) {
+        res.status(500).send(err);
+      } else {
+        res.status(200).send(transaction);
+      }
     });
   } else {
-    res.status(404).sendFile(__dirname, '../pages/invalidlink.html');
+    res.status(400).send("user not found");
   }
-})
+});
+
+userRouter.post("/withdraw", tokenAuthenticator, async (req, res) => {
+  const { username, bitcloutpubkey, bitcloutnanos } = req.body;
+  const user = await User.findOne({ username: username }).exec();
+  if (user) {
+    if (bitcloutnanos <= user.bitswapbalance) {
+      await proxy.initiateSendBitclout(20, bitcloutpubkey, bitcloutnanos);
+      await proxy.sendBitclout().then((response) => {
+        if (JSON.parse(response).TransactionIDBase58Check) {
+          const res_json = JSON.parse(response);
+          const tx_genid = new Types.ObjectId();
+          const transaction = new Transaction({
+            _id: tx_genid,
+            username: username,
+            bitcloutpubkey: bitcloutpubkey,
+            transactiontype: "withdraw",
+            status: "completed",
+            bitcloutvalue: res_json.SpendAmountNanos,
+            tx_id: res_json.TransactionIDBase58Check,
+          });
+          user.bitswapbalance -= res_json.SpendAmountNanos;
+          user.transactions.push(tx_genid);
+          user.save((err: any) => {
+            if (err) {
+              res.status(500).send("error saving user");
+            }
+          });
+          transaction.save((err: any) => {
+            if (err) {
+              res.status(500).send("error saving transaction");
+            } else {
+              res.status(200);
+            }
+          });
+        } else {
+          res.status(500).send("error sending txn");
+        }
+      });
+    } else {
+      res.status(400).send("insufficient balance");
+    }
+  } else {
+    res.status(400).send("user not found");
+  }
+});
 
 export default userRouter;

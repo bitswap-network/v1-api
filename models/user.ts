@@ -13,12 +13,14 @@ export interface UserDoc extends Document {
   passwordverification: string;
   created: Date;
   listings: [Schema.Types.ObjectId];
+  buys: [Schema.Types.ObjectId];
   admin: boolean;
   verified: string;
   ratings: [{ rating: number; rater: Schema.Types.ObjectId }];
   completedtransactions: number;
   generateHash: (password: string) => boolean;
   validPassword: (password: string) => boolean;
+  bitswapbalance: number;
 }
 
 const userSchema = new Schema<UserDoc>({
@@ -37,8 +39,13 @@ const userSchema = new Schema<UserDoc>({
     default: Date.now,
   },
   listings: [{ type: Schema.Types.ObjectId, ref: "Listing" }],
+  buys: [{ type: Schema.Types.ObjectId, ref: "Listing" }],
   admin: { type: Boolean, default: false },
-  verified: { type: String, default: "unverified" },
+  verified: {
+    type: String,
+    default: "unverified",
+    enum: ["unverified", "pending", "verified"],
+  },
   ratings: [
     {
       rating: {
