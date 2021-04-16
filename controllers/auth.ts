@@ -1,8 +1,19 @@
 import { generateAccessToken, generateCode } from "../utils/functions";
-
+var ExpressBrute = require("express-brute");
+var MongooseStore = require("express-brute-mongoose");
+var BruteForceSchema = require("express-brute-mongoose/dist/schema");
+const mongoose = require("mongoose");
 const authRouter = require("express").Router();
-const User = require("../models/user");
+import User from "../models/user";
 const sendMail = require("../utils/mailer");
+const bcrypt = require("bcrypt");
+
+var bruteforce_model = mongoose.model(
+  "bruteforce",
+  new mongoose.Schema(BruteForceSchema)
+);
+var store = new MongooseStore(bruteforce_model);
+var bruteforce = new ExpressBrute(store);
 
 authRouter.post("/register", (req, res) => {
   const { username, email, password } = req.body;
@@ -13,7 +24,7 @@ authRouter.post("/register", (req, res) => {
       username: username,
       email: email,
     });
-    newUser.password = newUser.generateHash(password);
+    newUser.password = bcrypt.hashSync(password, 8);
     const code = generateCode();
     newUser.emailverification = code;
     newUser
@@ -34,7 +45,7 @@ authRouter.post("/register", (req, res) => {
   }
 });
 
-authRouter.post("/login", (req, res) => {
+authRouter.post("/login", bruteforce.prevent, (req, res) => {
   const { username, password } = req.body;
   const token = generateAccessToken({ username: username });
   User.findOne(

@@ -1,11 +1,13 @@
 const userRouter = require("express").Router();
-const User = require("../models/user");
+import User from "../models/user";
 const { tokenAuthenticator } = require("../utils/middleware");
 const sendMail = require("../utils/mailer");
 import Transaction from "../models/transaction";
 import { generateCode } from "../utils/functions";
 import proxy from "../utils/proxy";
 import { Types } from "mongoose";
+const bcrypt = require("bcrypt");
+
 userRouter.get("/profile/:username", tokenAuthenticator, async (req, res) => {
   const user = await User.findOne({
     username: req.params.username,
@@ -30,7 +32,8 @@ userRouter.put("/updateprofile", tokenAuthenticator, async (req, res) => {
       ethereumaddress: ethereumaddress,
       name: name,
     },
-    (err: any) => {
+    {},
+    (err: any, doc: any) => {
       if (err) {
         res.status(500).send(err);
       } else {
@@ -43,8 +46,8 @@ userRouter.put("/updateprofile", tokenAuthenticator, async (req, res) => {
 userRouter.post("/updatepassword", tokenAuthenticator, async (req, res) => {
   const { username, oldpassword, newpassword } = req.body;
   const user = await User.findOne({ username: username }).exec();
-  if (user.validPassword(oldpassword)) {
-    user.password = user.generateHash(newpassword);
+  if (user && user.validPassword(oldpassword)) {
+    user.password = bcrypt.hashSync(newpassword, 8);
     user.save((err: any) => {
       if (err) {
         res.status(500).send(err);
@@ -88,7 +91,7 @@ userRouter.post("/verifyemail/:code", tokenAuthenticator, async (req, res) => {
   const user = await User.findOne({ emailverification: code }).exec();
   if (user) {
     user.emailverified = true;
-    user.emailverification = null;
+    user.emailverification = "";
     user
       .save()
       .then(() => {
@@ -111,7 +114,7 @@ userRouter.post(
     if (user) {
       const password = generateCode();
       user.password = password;
-      user.passwordverification = null;
+      user.passwordverification = "";
       user
         .save()
         .then(() => {
@@ -134,26 +137,25 @@ userRouter.post("/deposit", tokenAuthenticator, async (req, res) => {
   const { username, bitcloutpubkey, bitcloutvalue } = req.body;
   const user = await User.findOne({ username: username }).exec();
   if (user) {
-    const tx_genid = new Types.ObjectId();
     const transaction = new Transaction({
-      _id: tx_genid,
       username: username,
       bitcloutpubkey: bitcloutpubkey,
       transactiontype: "deposit",
       status: "pending",
       bitcloutnanos: bitcloutvalue * 1e9,
     });
-    user.transactions.push(tx_genid);
-    user.save((err: any) => {
-      if (err) {
-        res.status(500).send(err);
-      }
-    });
     transaction.save((err: any) => {
       if (err) {
         res.status(500).send(err);
       } else {
-        res.status(200).send(transaction);
+        user.transactions.push(transaction._id);
+        user.save((err: any) => {
+          if (err) {
+            res.status(500).send(err);
+          } else {
+            res.status(200).send(transaction);
+          }
+        });
       }
     });
   } else {
@@ -170,9 +172,7 @@ userRouter.post("/withdraw", tokenAuthenticator, async (req, res) => {
       await proxy.sendBitclout().then((response) => {
         if (JSON.parse(response).TransactionIDBase58Check) {
           const res_json = JSON.parse(response);
-          const tx_genid = new Types.ObjectId();
           const transaction = new Transaction({
-            _id: tx_genid,
             username: username,
             bitcloutpubkey: bitcloutpubkey,
             transactiontype: "withdraw",
@@ -181,17 +181,18 @@ userRouter.post("/withdraw", tokenAuthenticator, async (req, res) => {
             tx_id: res_json.TransactionIDBase58Check,
           });
           user.bitswapbalance -= res_json.SpendAmountNanos;
-          user.transactions.push(tx_genid);
-          user.save((err: any) => {
-            if (err) {
-              res.status(500).send("error saving user");
-            }
-          });
           transaction.save((err: any) => {
             if (err) {
               res.status(500).send("error saving transaction");
             } else {
-              res.status(200);
+              user.transactions.push(transaction._id);
+              user.save((err: any) => {
+                if (err) {
+                  res.status(500).send("error saving user");
+                } else {
+                  res.status(200);
+                }
+              });
             }
           });
         } else {

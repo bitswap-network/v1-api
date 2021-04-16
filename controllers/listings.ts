@@ -1,6 +1,6 @@
 const listingRouter = require("express").Router();
-const Listing = require("../models/listing");
-const User = require("../models/user");
+import Listing from "../models/Listing";
+import User from "../models/user";
 const { tokenAuthenticator } = require("../utils/middleware");
 import { Types } from "mongoose";
 
@@ -9,46 +9,47 @@ listingRouter.post("/create", tokenAuthenticator, async (req, res) => {
   const user = await User.findOne({ username: seller }).exec();
   if (user) {
     if (user.bitswapbalance >= bitcloutnanos) {
-      const listing_genid = new Types.ObjectId();
-      user.listings.push(listing_genid);
       if (saletype == "ETH") {
         const listing = new Listing({
-          _id: listing_genid,
           seller: user._id,
           currencysaletype: "ETH",
           bitcloutamount: bitcloutnanos,
           etheramount: etheramount,
         });
-        user.save((err: any) => {
-          if (err) {
-            res.status(500).send("error saving user");
-          }
-        });
+
         listing.save((err: any) => {
           if (err) {
             res.status(500).send("error saving listing");
           } else {
-            res.status(200);
+            user.listings.push(listing._id);
+            user.save((err: any) => {
+              if (err) {
+                res.status(500).send("error saving user");
+              } else {
+                res.status(200);
+              }
+            });
           }
         });
       } else if (saletype == "USD") {
         const listing = new Listing({
-          _id: listing_genid,
           seller: user._id,
           currencysaletype: "USD",
           bitcloutamount: bitcloutnanos,
           usdamount: usdamount,
         });
-        user.save((err: any) => {
-          if (err) {
-            res.status(500).send("error saving user");
-          }
-        });
         listing.save((err: any) => {
           if (err) {
             res.status(500).send("error saving listing");
           } else {
-            res.status(200);
+            user.listings.push(listing._id);
+            user.save((err: any) => {
+              if (err) {
+                res.status(500).send("error saving user");
+              } else {
+                res.status(200);
+              }
+            });
           }
         });
       } else {

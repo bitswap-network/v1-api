@@ -1,14 +1,14 @@
-const config = require("./utils/config");
-const express = require("express");
-const app = express();
-const cors = require("cors");
-const middleware = require("./utils/middleware");
-const logger = require("./utils/logger");
-const mongoose = require("mongoose");
+import express from "express";
+import cors from "cors";
+import helmet from "helmet";
+import * as middleware from "./utils/middleware";
 import userRouter from "./controllers/users";
 import listingRouter from "./controllers/listings";
 import authRouter from "./controllers/auth";
-
+const logger = require("./utils/logger");
+const mongoose = require("mongoose");
+const config = require("./utils/config");
+const app: express.Application = express();
 mongoose
   .connect(config.MONGODB_URI, {
     useUnifiedTopology: true,
@@ -24,18 +24,22 @@ mongoose
   });
 
 app.use(cors());
+app.use(helmet()); //security
 app.use(express.json());
 app.use(middleware.requestLogger);
+app.use(middleware.errorHandler);
 
 // API Routes Here
-app.get("/", (req, res) => {
+app.get("/", (req: express.Request, res: express.Response) => {
   res.status(200).send(`BitSwap API`);
 });
+
 app.use("/user", userRouter);
 app.use("/listing", listingRouter);
 app.use("/auth", authRouter);
 
-app.use(middleware.unknownEndpoint);
-app.use(middleware.errorHandler);
-
+//unknown endpoint handler
+app.use((req, res, next) => {
+  res.status(404).send({ message: "unknown endpoint" });
+});
 export default app;
