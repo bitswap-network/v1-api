@@ -9,3 +9,5 @@ export let WHITELIST = JSON.parse(
 export let MAIL = process.env.MAIL;
 export let ENCRYPTEDSEEDHEX = process.env.ENCRYPTEDSEEDHEX;
 export let PWSALTHEX = process.env.PWSALTHEX;
+export let HttpProvider = process.env.HttpProvider;
+export let XAlchemyToken = process.env.XAlchemyToken;

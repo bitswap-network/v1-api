@@ -29,7 +29,7 @@ userRouter.put("/updateprofile", tokenAuthenticator, async (req, res) => {
     {
       email: email,
       bitcloutpubkey: bitcloutpubkey,
-      ethereumaddress: ethereumaddress,
+      ethereumaddress: ethereumaddress.toLowerCase(),
       name: name,
     },
     {},

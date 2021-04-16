@@ -29,6 +29,8 @@ authRouter.post("/register", (req, res) => {
     const newUser = new User({
       username: username,
       email: email,
+      bitcloutpubkey: bitcloutpubkey,
+      ethereumaddress: ethereumaddress.toLowerCase(),
     });
     newUser.password = bcrypt.hashSync(password, 8);
     const code = generateCode();

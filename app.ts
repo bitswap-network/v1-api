@@ -5,6 +5,7 @@ import * as middleware from "./utils/middleware";
 import userRouter from "./controllers/users";
 import listingRouter from "./controllers/listings";
 import authRouter from "./controllers/auth";
+import webhookRouter from "./controllers/webhook";
 const logger = require("./utils/logger");
 const mongoose = require("mongoose");
 const config = require("./utils/config");
@@ -37,7 +38,7 @@ app.get("/", (req: express.Request, res: express.Response) => {
 app.use("/user", userRouter);
 app.use("/listing", listingRouter);
 app.use("/auth", authRouter);
-
+app.use("/webhook", webhookRouter);
 //unknown endpoint handler
 // app.use((req, res, next) => {
 //   res.status(404).send({ message: "unknown endpoint" });
