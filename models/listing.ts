@@ -10,7 +10,7 @@ export interface listingDoc extends Document {
   ongoing: boolean;
   escrow: { balance: number; full: Boolean };
   bitcloutsent: boolean;
-  bitcloutrTransactionId: string;
+  bitcloutTransactionId: string;
   finalTransactionId: string;
   created: Date;
   completed: { status: boolean; date: Date };

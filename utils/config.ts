@@ -11,3 +11,4 @@ export let ENCRYPTEDSEEDHEX = process.env.ENCRYPTEDSEEDHEX;
 export let PWSALTHEX = process.env.PWSALTHEX;
 export let HttpProvider = process.env.HttpProvider;
 export let XAlchemyToken = process.env.XAlchemyToken;
+export let KEY = process.env.KEY;
