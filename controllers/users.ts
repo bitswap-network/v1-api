@@ -207,6 +207,7 @@ userRouter.post("/withdraw", tokenAuthenticator, async (req, res) => {
             } else {
               axios
                 .post(`${config.FULFILLMENT_API}/withdraw`, {
+                  username: username,
                   txn_id: transaction._id,
                 })
                 .then((response) => {
