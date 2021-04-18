@@ -1,21 +1,12 @@
 import { generateAccessToken, generateCode } from "../utils/functions";
-var ExpressBrute = require("express-brute");
-var MongooseStore = require("express-brute-mongoose");
-var BruteForceSchema = require("express-brute-mongoose/dist/schema");
-const mongoose = require("mongoose");
+
 const authRouter = require("express").Router();
 import User from "../models/user";
 import sendMail from "../utils/mailer";
-const bcrypt = require("bcrypt");
+import { bruteforce } from "../utils/middleware";
 
-var bruteforce_model = mongoose.model(
-  "bruteforce",
-  new mongoose.Schema(BruteForceSchema)
-);
-var store = new MongooseStore(bruteforce_model);
-var bruteforce = new ExpressBrute(store);
 
-authRouter.post("/register", (req, res) => {
+authRouter.post("/register", bruteforce.prevent, async (req, res) => {
   const {
     username,
     email,
@@ -25,30 +16,41 @@ authRouter.post("/register", (req, res) => {
   } = req.body;
   if (!username || !email || !password || !bitcloutpubkey || !ethereumaddress) {
     res.status(400).send("Missing fields in request body");
+  } else if (password.length < 8) {
+    res.status(400).send("Password formatting error");
   } else {
-    const newUser = new User({
-      username: username,
-      email: email,
-      bitcloutpubkey: bitcloutpubkey,
-      ethereumaddress: ethereumaddress.toLowerCase(),
-    });
-    newUser.password = newUser.generateHash(password);
-    const code = generateCode();
-    newUser.emailverification = code;
-    newUser.save((err: any) => {
-      if (err) {
-        res.status(500).send(err);
-      } else {
-        sendMail(
-          email,
-          "Verify your BitSwap email",
-          `<!DOCTYPE html><html><head><title>BitSwap Email Verification</title><body>` +
-            `<p>Click <a href="https://api.bitswap.network/user/verifyemail/${code}">here</a> to verify your email. If this wasn't you, simply ignore this email.` +
-            `</body></html>`
-        );
-        res.status(201).send("Registration successful");
-      }
-    });
+    const user = await User.findOne({$or: [{ username: username }, { email: username }, {bitcloutpubkey: bitcloutpubkey}, {ethereumaddress: ethereumaddress}] }).exec();
+    if (user) {
+      res.status(409).send("There is already a user with that information")
+    } else {
+      const newUser = new User({
+        username: username,
+        email: email,
+        bitcloutpubkey: bitcloutpubkey,
+        ethereumaddress: ethereumaddress.toLowerCase(),
+      });
+      newUser.password = newUser.generateHash(password);
+      const code = generateCode();
+      newUser.emailverification = code;
+      newUser.save((err: any) => {
+        if (err) {
+          res.status(500).send(err);
+        } else {
+          try {
+            sendMail(
+              email,
+              "Verify your BitSwap email",
+              `<!DOCTYPE html><html><head><title>BitSwap Email Verification</title><body>` +
+                `<p>Click <a href="https://api.bitswap.network/user/verifyemail/${code}">here</a> to verify your email. If this wasn't you, simply ignore this email.` +
+                `</body></html>`
+            );
+            res.status(201).send("Registration successful");
+          } catch (err) {
+            res.status(500).send(err);
+          }
+        }
+      });
+    }
   }
 });
 

@@ -1,6 +1,17 @@
 const logger = require("./logger");
 const config = require("./config");
 const jwt = require("jsonwebtoken");
+const mongoose = require("mongoose");
+var ExpressBrute = require("express-brute");
+var MongooseStore = require("express-brute-mongoose");
+var BruteForceSchema = require("express-brute-mongoose/dist/schema");
+
+var bruteforce_model = mongoose.model(
+  "bruteforce",
+  new mongoose.Schema(BruteForceSchema)
+);
+var store = new MongooseStore(bruteforce_model);
+export var bruteforce = new ExpressBrute(store);
 
 export const requestLogger = (request, response, next) => {
   logger.info("Method:", request.method);
