@@ -8,7 +8,7 @@ const mongoose = require("mongoose");
 import userRouter from "./controllers/users";
 import listingRouter from "./controllers/listings";
 import authRouter from "./controllers/auth";
-import webhookRouter from "./controllers/webhook";
+// import webhookRouter from "./controllers/webhook";
 
 // Middleware
 import * as middleware from "./utils/middleware";
@@ -44,7 +44,7 @@ app.get("/", (req: express.Request, res: express.Response) => {
 app.use("/user", userRouter);
 app.use("/listing", listingRouter);
 app.use("/auth", authRouter);
-app.use("/webhook", webhookRouter);
+// app.use("/webhook", webhookRouter);
 
 app.use(middleware.unknownEndpoint);
 app.use(middleware.errorHandler);

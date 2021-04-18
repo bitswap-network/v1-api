@@ -135,11 +135,11 @@ userRouter.get("/verifypassword/:code", async (req, res) => {
 });
 
 userRouter.post("/deposit", tokenAuthenticator, async (req, res) => {
-  const { username, bitcloutpubkey, bitcloutvalue } = req.body;
-  const user = await User.findOne({ username: username }).exec();
+  const { bitcloutpubkey, bitcloutvalue } = req.body;
+  const user = await User.findOne({ username: req.user.username }).exec();
   if (user) {
     const transaction = new Transaction({
-      username: username,
+      username: req.user.username,
       bitcloutpubkey: bitcloutpubkey,
       transactiontype: "deposit",
       status: "pending",
