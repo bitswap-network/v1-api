@@ -211,8 +211,8 @@ userRouter.post("/withdraw", tokenAuthenticator, async (req, res) => {
                   txn_id: transaction._id,
                 })
                 .then((response) => {
-                  console.log(response);
-                  res.sendStatus(200);
+                  // console.log(response);
+                  res.status(response.status).send(response.statusText);
                 })
                 .catch((err) => {
                   res.status(500).send(err);

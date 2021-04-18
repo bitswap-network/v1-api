@@ -10,6 +10,7 @@ export interface listingDoc extends Document {
   ongoing: boolean;
   escrow: { balance: number; full: Boolean };
   bitcloutsent: boolean;
+  escrowsent: boolean;
   bitcloutTransactionId: string;
   finalTransactionId: string;
   created: Date;
@@ -29,6 +30,7 @@ const listingSchema = new Schema<listingDoc>({
     full: { type: Boolean, default: false },
   },
   bitcloutsent: { type: Boolean, default: false },
+  escrowsent: { type: Boolean, default: false },
   bitcloutTransactionId: { type: String, default: "" },
   finalTransactionId: { type: String, default: "" },
   created: {

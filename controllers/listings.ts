@@ -96,20 +96,27 @@ listingRouter.post("/buy", tokenAuthenticator, async (req, res) => {
           .then((response) => {
             let eth_usdrate = parseFloat(response.data.result.ethusd);
             listing.etheramount = listing.usdamount / eth_usdrate;
+            listing.save((err: any) => {
+              if (err) {
+                res.status(500).send("error saving listing");
+              } else {
+                res.sendStatus(200);
+              }
+            });
           })
           .catch((error) => {
             console.log(error);
             res.status(500).send("error fetching usd/eth rates");
           });
+      } else if (listing.currencysaletype == "ETH") {
+        listing.save((err: any) => {
+          if (err) {
+            res.status(500).send("error saving listing");
+          } else {
+            res.sendStatus(200);
+          }
+        });
       }
-
-      listing.save((err: any) => {
-        if (err) {
-          res.status(500).send("error saving listing");
-        } else {
-          res.sendStatus(200);
-        }
-      });
     } else {
       res.status(400).send("user cannot have multiple ongoing buys");
     }
