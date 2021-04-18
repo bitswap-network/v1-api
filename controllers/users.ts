@@ -8,7 +8,6 @@ import sendMail, {
 } from "../utils/mailer";
 import Transaction from "../models/transaction";
 import { generateCode } from "../utils/functions";
-import proxy from "../utils/proxy";
 const config = require("../utils/config");
 import axios from "axios";
 
