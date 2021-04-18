@@ -1,11 +1,16 @@
 const userRouter = require("express").Router();
 import User from "../models/user";
 const { tokenAuthenticator } = require("../utils/middleware");
-import sendMail, {emailverified, invalidlink, servererror} from "../utils/mailer";
+import sendMail, {
+  emailverified,
+  invalidlink,
+  servererror,
+} from "../utils/mailer";
 import Transaction from "../models/transaction";
 import { generateCode } from "../utils/functions";
 import proxy from "../utils/proxy";
-
+const config = require("../utils/config");
+import axios from "axios";
 userRouter.get("/profile/:username", tokenAuthenticator, async (req, res) => {
   const user = await User.findOne({
     username: req.params.username,
@@ -60,7 +65,6 @@ userRouter.post("/updatepassword", tokenAuthenticator, async (req, res) => {
   } else {
     res.status(400).send("Missing fields");
   }
-  
 });
 
 userRouter.post("/forgotpassword", async (req, res) => {
@@ -76,8 +80,8 @@ userRouter.post("/forgotpassword", async (req, res) => {
           email,
           "Reset your BitSwap password",
           `<!DOCTYPE html><html><head><title>BitSwap Password Reset</title><body>` +
-          `<p>Click <a href="https://api.bitswap.network/user/verifypassword/${code}">here</a> to reset your password. If you didn't request a password change, simply ignore this email.` +
-          `</body></html>`
+            `<p>Click <a href="https://api.bitswap.network/user/verifypassword/${code}">here</a> to reset your password. If you didn't request a password change, simply ignore this email.` +
+            `</body></html>`
         );
       })
       .then(() => {
@@ -169,37 +173,47 @@ userRouter.post("/withdraw", tokenAuthenticator, async (req, res) => {
   const user = await User.findOne({ username: username }).exec();
   if (user) {
     if (bitcloutnanos <= user.bitswapbalance) {
-      await proxy.initiateSendBitclout(20, bitcloutpubkey, bitcloutnanos);
-      await proxy.sendBitclout().then((response) => {
-        if (JSON.parse(response).TransactionIDBase58Check) {
-          const res_json = JSON.parse(response);
-          const transaction = new Transaction({
-            username: username,
-            bitcloutpubkey: bitcloutpubkey,
-            transactiontype: "withdraw",
-            status: "completed",
-            bitcloutvalue: res_json.SpendAmountNanos,
-            tx_id: res_json.TransactionIDBase58Check,
-          });
-          user.bitswapbalance -= res_json.SpendAmountNanos;
-          transaction.save((err: any) => {
+      const transaction = new Transaction({
+        username: username,
+        bitcloutpubkey: bitcloutpubkey,
+        transactiontype: "withdraw",
+        status: "pending",
+        bitcloutvalue: bitcloutnanos,
+      });
+      transaction.save((err: any) => {
+        if (err) {
+          console.log(err);
+          res.status(500).send("error saving transaction");
+        } else {
+          user.transactions.push(transaction._id);
+          user.save((err: any) => {
             if (err) {
-              res.status(500).send("error saving transaction");
+              console.log(err);
+              res.status(500).send("error saving user");
             } else {
-              user.transactions.push(transaction._id);
-              user.save((err: any) => {
-                if (err) {
-                  res.status(500).send("error saving user");
-                } else {
-                  res.status(200);
-                }
-              });
+              axios
+                .post(`${config.FULFILLMENT_API}/withdraw`, {
+                  txn_id: transaction._id,
+                })
+                .then((response) => {
+                  console.log(response);
+                  res.sendStatus(200);
+                })
+                .catch((err) => {
+                  res.status(500).send(err);
+                });
             }
           });
-        } else {
-          res.status(500).send("error sending txn");
         }
       });
+
+      // await proxy.initiateSendBitclout(20, bitcloutpubkey, bitcloutnanos);
+      // await proxy.sendBitclout().then((response) => {
+      //   if (JSON.parse(response).TransactionIDBase58Check) {
+      //   } else {
+      //     res.status(500).send("error sending txn");
+      //   }
+      // });
     } else {
       res.status(400).send("insufficient balance");
     }
