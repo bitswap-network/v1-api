@@ -3,8 +3,7 @@ import { generateAccessToken, generateCode } from "../utils/functions";
 const authRouter = require("express").Router();
 import User from "../models/user";
 import sendMail from "../utils/mailer";
-import { bruteforce } from "../utils/middleware";
-
+import { bruteforce, tokenAuthenticator } from "../utils/middleware";
 
 authRouter.post("/register", bruteforce.prevent, async (req, res) => {
   const {
@@ -80,5 +79,9 @@ authRouter.post("/login", bruteforce.prevent, (req, res) => {
     }
   );
 });
+
+authRouter.get("/verifytoken", tokenAuthenticator, (req, res) => {
+  res.sendStatus(204);
+})
 
 export default authRouter;

@@ -114,6 +114,20 @@ class Proxy {
     this.isLinkCrawlTest = true;
   }
 
+  // async getBitcloutProfile() {
+  //   logger.info("starting crawl");
+  //   const link = "https://api.bitclout.com/get-profiles";
+  //   const userAgent = randomUseragent.getRandom();
+  //   const crawlResults = {isValidPage: true, pageSource: null};
+  //   try {
+  //     await this.page.setUserAgent(userAgent);
+  //     logger.info("going to link: ", link);
+  //     const resp = await this.page.goto(link, this.pageOptions);
+  //   } catch(e) {
+
+  //   }
+  // }
+
   async crawlTransactionInfo() {
     logger.info("starting crawl");
     const link = "https://api.bitclout.com/api/v1/transaction-info";
