@@ -19,11 +19,14 @@ listingRouter.post("/create", tokenAuthenticator, async (req, res) => {
 
         listing.save((err: any) => {
           if (err) {
+            console.log(err);
             res.status(500).send("error saving listing");
           } else {
+            user.bitswapbalance -= bitcloutnanos;
             user.listings.push(listing._id);
             user.save((err: any) => {
               if (err) {
+                console.log(err);
                 res.status(500).send("error saving user");
               } else {
                 res.status(200);
@@ -32,6 +35,7 @@ listingRouter.post("/create", tokenAuthenticator, async (req, res) => {
           }
         });
       } else if (saletype == "USD") {
+        console.log("usd");
         const listing = new Listing({
           seller: user._id,
           currencysaletype: "USD",
@@ -40,11 +44,14 @@ listingRouter.post("/create", tokenAuthenticator, async (req, res) => {
         });
         listing.save((err: any) => {
           if (err) {
+            console.log(err);
             res.status(500).send("error saving listing");
           } else {
+            user.bitswapbalance -= bitcloutnanos;
             user.listings.push(listing._id);
             user.save((err: any) => {
               if (err) {
+                console.log(err);
                 res.status(500).send("error saving user");
               } else {
                 res.status(200);
@@ -59,11 +66,11 @@ listingRouter.post("/create", tokenAuthenticator, async (req, res) => {
       res.status(402).send("insufficient funds to post this listing");
     }
   } else {
-    res.status(400).send("user not found");
+    res.status(400).send("invalid");
   }
 });
 
-listingRouter.get("/buy", tokenAuthenticator, async (req, res) => {
+listingRouter.post("/buy", tokenAuthenticator, async (req, res) => {
   const { id, buyer } = req.body;
   const listing = await Listing.findById(id).exec();
   const user = await User.findOne({ username: buyer });
@@ -106,7 +113,7 @@ listingRouter.get("/buy", tokenAuthenticator, async (req, res) => {
     res.status(400).send("user or listing not found");
   }
 });
-listingRouter.get("/cancel", tokenAuthenticator, async (req, res) => {
+listingRouter.post("/cancel", tokenAuthenticator, async (req, res) => {
   const { id, buyer } = req.body;
   const listing = await Listing.findById(id).exec();
   const user = await User.findOne({ username: buyer });
@@ -132,6 +139,44 @@ listingRouter.get("/cancel", tokenAuthenticator, async (req, res) => {
                 res.sendStatus(200);
               }
             });
+          }
+        });
+      }
+    } else {
+      res
+        .status(400)
+        .send(
+          "user is not currently processing a transaction or listing is not active"
+        );
+    }
+  } else {
+    res.status(400).send("user or listing not found");
+  }
+});
+listingRouter.post("/delete", tokenAuthenticator, async (req, res) => {
+  const { id, seller } = req.body;
+  const listing = await Listing.findById(id).exec();
+  const user = await User.findOne({ username: seller });
+
+  if (listing && user) {
+    if (
+      user.buystate ||
+      !listing.ongoing ||
+      !listing.bitcloutsent ||
+      !listing.completed.status
+    ) {
+      if (listing.escrow.balance > 0 || listing.escrow.full) {
+        res.status(400).send("cannot delete a listing that is in progress");
+      } else {
+        user.listings.splice(user.listings.indexOf(listing._id), 1);
+        user.buystate = false;
+        user.bitswapbalance += listing.bitcloutamount;
+        await Listing.deleteOne({ _id: listing._id });
+        user.save((err: any) => {
+          if (err) {
+            res.status(500).send("could not save user");
+          } else {
+            res.sendStatus(200);
           }
         });
       }
