@@ -13,7 +13,7 @@ listingRouter.post("/create", tokenAuthenticator, async (req, res) => {
         const listing = new Listing({
           seller: user._id,
           currencysaletype: "ETH",
-          bitcloutamount: bitcloutnanos,
+          bitcloutnanos: bitcloutnanos,
           etheramount: etheramount,
         });
 
@@ -29,7 +29,7 @@ listingRouter.post("/create", tokenAuthenticator, async (req, res) => {
                 console.log(err);
                 res.status(500).send("error saving user");
               } else {
-                res.status(200);
+                res.sendStatus(200);
               }
             });
           }
@@ -39,7 +39,7 @@ listingRouter.post("/create", tokenAuthenticator, async (req, res) => {
         const listing = new Listing({
           seller: user._id,
           currencysaletype: "USD",
-          bitcloutamount: bitcloutnanos,
+          bitcloutnanos: bitcloutnanos,
           usdamount: usdamount,
         });
         listing.save((err: any) => {
@@ -54,7 +54,7 @@ listingRouter.post("/create", tokenAuthenticator, async (req, res) => {
                 console.log(err);
                 res.status(500).send("error saving user");
               } else {
-                res.status(200);
+                res.sendStatus(200);
               }
             });
           }
@@ -95,6 +95,7 @@ listingRouter.post("/buy", tokenAuthenticator, async (req, res) => {
             listing.etheramount = listing.usdamount / eth_usdrate;
           })
           .catch((error) => {
+            console.log(error);
             res.status(500).send("error fetching usd/eth rates");
           });
       }
@@ -170,7 +171,7 @@ listingRouter.post("/delete", tokenAuthenticator, async (req, res) => {
       } else {
         user.listings.splice(user.listings.indexOf(listing._id), 1);
         user.buystate = false;
-        user.bitswapbalance += listing.bitcloutamount;
+        user.bitswapbalance += listing.bitcloutnanos;
         await Listing.deleteOne({ _id: listing._id });
         user.save((err: any) => {
           if (err) {
