@@ -239,6 +239,7 @@ userRouter.post("/withdrawretry", tokenAuthenticator, async (req, res) => {
         console.log(txn);
         axios
           .post(`${config.FULFILLMENT_API}/withdraw`, {
+            username: username,
             txn_id: txn._id,
           })
           .then((response) => {
