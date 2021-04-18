@@ -141,44 +141,58 @@ userRouter.get("/verifypassword/:code", async (req, res) => {
 userRouter.post("/deposit", tokenAuthenticator, async (req, res) => {
   const { bitcloutpubkey, bitcloutvalue } = req.body;
   const user = await User.findOne({ username: req.user.username }).exec();
+  const txns = await Transaction.find({
+    bitcloutpubkey: bitcloutpubkey,
+    transactiontype: "deposit",
+    status: "pending",
+  }).exec();
+
   if (user) {
-    const transaction = new Transaction({
-      username: req.user.username,
-      bitcloutpubkey: bitcloutpubkey,
-      transactiontype: "deposit",
-      status: "pending",
-      bitcloutnanos: bitcloutvalue * 1e9,
-    });
-    transaction.save((err: any) => {
-      if (err) {
-        res.status(500).send(err);
-      } else {
-        user.transactions.push(transaction._id);
-        user.save((err: any) => {
-          if (err) {
-            res.status(500).send(err);
-          } else {
-            res.status(200).send(transaction);
-          }
-        });
-      }
-    });
+    if (txns.length == 0) {
+      const transaction = new Transaction({
+        username: req.user.username,
+        bitcloutpubkey: bitcloutpubkey,
+        transactiontype: "deposit",
+        status: "pending",
+        bitcloutnanos: bitcloutvalue * 1e9,
+      });
+      transaction.save((err: any) => {
+        if (err) {
+          res.status(500).send(err);
+        } else {
+          user.transactions.push(transaction._id);
+          user.save((err: any) => {
+            if (err) {
+              res.status(500).send(err);
+            } else {
+              res.status(200).send(transaction);
+            }
+          });
+        }
+      });
+    } else {
+      res
+        .status(400)
+        .send(
+          "cannot have multiple ongoing deposits. please wait for previous deposit to complete."
+        );
+    }
   } else {
     res.status(400).send("user not found");
   }
 });
 
 userRouter.post("/withdraw", tokenAuthenticator, async (req, res) => {
-  const { username, bitcloutpubkey, bitcloutnanos } = req.body;
+  const { username, bitcloutpubkey, bitcloutvalue } = req.body;
   const user = await User.findOne({ username: username }).exec();
   if (user) {
-    if (bitcloutnanos <= user.bitswapbalance) {
+    if (bitcloutvalue * 1e9 <= user.bitswapbalance) {
       const transaction = new Transaction({
         username: username,
         bitcloutpubkey: bitcloutpubkey,
         transactiontype: "withdraw",
         status: "pending",
-        bitcloutvalue: bitcloutnanos,
+        bitcloutnanos: bitcloutvalue * 1e9,
       });
       transaction.save((err: any) => {
         if (err) {
