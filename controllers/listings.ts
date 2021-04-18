@@ -49,11 +49,13 @@ listingRouter.post("/create", tokenAuthenticator, async (req, res) => {
           } else {
             user.bitswapbalance -= bitcloutnanos;
             user.listings.push(listing._id);
+            console.log("saved listing");
             user.save((err: any) => {
               if (err) {
                 console.log(err);
                 res.status(500).send("error saving user");
               } else {
+                console.log("saved user");
                 res.sendStatus(200);
               }
             });
@@ -79,6 +81,7 @@ listingRouter.post("/buy", tokenAuthenticator, async (req, res) => {
     if (!user.buystate && !listing.completed.status) {
       listing.buyer = user._id;
       listing.ongoing = true;
+      user.buystate = true;
       user.buys.push(listing._id);
       user.save((err: any) => {
         if (err) {
@@ -127,8 +130,9 @@ listingRouter.post("/cancel", tokenAuthenticator, async (req, res) => {
           .send("cannot cancel as escrow funds have been deposited");
       } else {
         listing.ongoing = false;
-        // listing.buyer = null;
+        listing.buyer = null;
         user.buystate = false;
+        user.buys.splice(user.listings.indexOf(listing._id), 1);
         listing.save((err: any) => {
           if (err) {
             res.status(500).send("could not save listing");

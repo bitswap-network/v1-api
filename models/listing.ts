@@ -2,7 +2,7 @@ import { model, Schema, Document } from "mongoose";
 
 export interface listingDoc extends Document {
   seller: Schema.Types.ObjectId;
-  buyer: Schema.Types.ObjectId;
+  buyer: Schema.Types.ObjectId | null;
   currencysaletype: string;
   bitcloutnanos: number;
   usdamount: number;
@@ -28,7 +28,7 @@ const listingSchema = new Schema<listingDoc>({
     balance: { type: Number, default: 0 },
     full: { type: Boolean, default: false },
   },
-  bitcloutsent: { type: Boolean, default: true },
+  bitcloutsent: { type: Boolean, default: false },
   bitcloutTransactionId: { type: String, default: "" },
   finalTransactionId: { type: String, default: "" },
   created: {
