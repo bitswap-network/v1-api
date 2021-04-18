@@ -11,6 +11,7 @@ import { generateCode } from "../utils/functions";
 import proxy from "../utils/proxy";
 const config = require("../utils/config");
 import axios from "axios";
+
 userRouter.get("/profile/:username", tokenAuthenticator, async (req, res) => {
   const user = await User.findOne({
     username: req.params.username,
@@ -206,7 +207,7 @@ userRouter.post("/withdraw", tokenAuthenticator, async (req, res) => {
               res.status(500).send("error saving user");
             } else {
               axios
-                .post(`${config.FULFILLMENT_API}/webhook/withdraw`, {
+                .post(`${config.FULFILLMENT_API}/withdraw`, {
                   txn_id: transaction._id,
                 })
                 .then((response) => {
@@ -225,6 +226,37 @@ userRouter.post("/withdraw", tokenAuthenticator, async (req, res) => {
     }
   } else {
     res.status(400).send("user not found");
+  }
+});
+
+userRouter.post("/withdrawretry", tokenAuthenticator, async (req, res) => {
+  const { username, txn_id } = req.body;
+  const user = await User.findOne({ username: username }).exec();
+  const txn = await Transaction.findById(txn_id).exec();
+  if (username && txn_id) {
+    if (user) {
+      console.log(txn);
+      if (txn && txn.status == "pending" && txn.transactiontype == "withdraw") {
+        console.log(txn);
+        axios
+          .post(`${config.FULFILLMENT_API}/withdraw`, {
+            txn_id: txn._id,
+          })
+          .then((response) => {
+            console.log(response);
+            res.sendStatus(200);
+          })
+          .catch((err) => {
+            res.status(500).send(err);
+          });
+      } else {
+        res.status(400).send("txn not valid");
+      }
+    } else {
+      res.status(400).send("user not valid");
+    }
+  } else {
+    res.status(400).send("invalid request");
   }
 });
 
