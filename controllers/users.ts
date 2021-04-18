@@ -192,7 +192,7 @@ userRouter.post("/withdraw", tokenAuthenticator, async (req, res) => {
               res.status(500).send("error saving user");
             } else {
               axios
-                .post(`${config.FULFILLMENT_API}/withdraw`, {
+                .post(`${config.FULFILLMENT_API}/webhook/withdraw`, {
                   txn_id: transaction._id,
                 })
                 .then((response) => {
@@ -206,14 +206,6 @@ userRouter.post("/withdraw", tokenAuthenticator, async (req, res) => {
           });
         }
       });
-
-      // await proxy.initiateSendBitclout(20, bitcloutpubkey, bitcloutnanos);
-      // await proxy.sendBitclout().then((response) => {
-      //   if (JSON.parse(response).TransactionIDBase58Check) {
-      //   } else {
-      //     res.status(500).send("error sending txn");
-      //   }
-      // });
     } else {
       res.status(400).send("insufficient balance");
     }
