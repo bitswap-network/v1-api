@@ -1,12 +1,10 @@
 const userRouter = require("express").Router();
 import User from "../models/user";
 const { tokenAuthenticator } = require("../utils/middleware");
-import sendMail from "../utils/mailer";
+import sendMail, {emailverified, invalidlink, servererror} from "../utils/mailer";
 import Transaction from "../models/transaction";
 import { generateCode } from "../utils/functions";
 import proxy from "../utils/proxy";
-import { Types } from "mongoose";
-const bcrypt = require("bcrypt");
 
 userRouter.get("/profile/:username", tokenAuthenticator, async (req, res) => {
   const user = await User.findOne({
@@ -21,13 +19,13 @@ userRouter.get("/profile/:username", tokenAuthenticator, async (req, res) => {
 });
 
 userRouter.put("/updateprofile", tokenAuthenticator, async (req, res) => {
-  const { username, name, email, ethereumaddress, bitcloutpubkey } = req.body;
+  const { name, email, ethereumaddress, bitcloutpubkey } = req.body;
   await User.updateOne(
     {
-      username: username,
+      username: req.user.username,
     },
     {
-      email: email,
+      email: email.toLowerCase(),
       bitcloutpubkey: bitcloutpubkey,
       ethereumaddress: ethereumaddress.toLowerCase(),
       name: name,
@@ -44,23 +42,28 @@ userRouter.put("/updateprofile", tokenAuthenticator, async (req, res) => {
 });
 
 userRouter.post("/updatepassword", tokenAuthenticator, async (req, res) => {
-  const { username, oldpassword, newpassword } = req.body;
-  const user = await User.findOne({ username: username }).exec();
-  if (user && user.validPassword(oldpassword)) {
-    user.password = user.generateHash(newpassword);
-    user.save((err: any) => {
-      if (err) {
-        res.status(500).send(err);
-      } else {
-        res.status(201).send("Password successfully updated");
-      }
-    });
+  const { oldpassword, newpassword } = req.body;
+  if (oldpassword && newpassword) {
+    const user = await User.findOne({ username: req.user.username }).exec();
+    if (user && user.validPassword(oldpassword) && newpassword.length >= 8) {
+      user.password = user.generateHash(newpassword);
+      user.save((err: any) => {
+        if (err) {
+          res.status(500).send(err);
+        } else {
+          res.status(201).send("Password successfully updated");
+        }
+      });
+    } else {
+      res.status(400).send("Invalid password");
+    }
   } else {
-    res.status(400).send("Incorrect password");
+    res.status(400).send("Missing fields");
   }
+  
 });
 
-userRouter.post("/forgotpassword", tokenAuthenticator, async (req, res) => {
+userRouter.post("/forgotpassword", async (req, res) => {
   const { email } = req.body;
   const user = await User.findOne({ email: email }).exec();
   if (user) {
@@ -72,7 +75,9 @@ userRouter.post("/forgotpassword", tokenAuthenticator, async (req, res) => {
         sendMail(
           email,
           "Reset your BitSwap password",
-          `Click <a href="https://api.bitswap.network/user/verifypassword/${code}">here</a> to reset your password. If you didn't request a password change, simply ignore this email.`
+          `<!DOCTYPE html><html><head><title>BitSwap Password Reset</title><body>` +
+          `<p>Click <a href="https://api.bitswap.network/user/verifypassword/${code}">here</a> to reset your password. If you didn't request a password change, simply ignore this email.` +
+          `</body></html>`
         );
       })
       .then(() => {
@@ -95,15 +100,14 @@ userRouter.get("/verifyemail/:code", async (req, res) => {
     user
       .save()
       .then(() => {
-        res.status(200).sendFile(__dirname, "../pages/emailverified.html");
+        res.status(200).send(emailverified);
       })
       .catch((error) => {
-        res.status(500).sendFile(__dirname, "../pages/servererror.html");
+        res.status(500).send(servererror);
       });
   } else {
-    res.status(404).sendFile(__dirname, "../pages/invalidlink.html");
+    res.status(404).send(invalidlink);
   }
-  //responses dont work, verification checks through
 });
 
 userRouter.get("/verifypassword/:code", async (req, res) => {
@@ -111,7 +115,7 @@ userRouter.get("/verifypassword/:code", async (req, res) => {
   const user = await User.findOne({ passwordverification: code }).exec();
   if (user) {
     const password = generateCode();
-    user.password = password;
+    user.password = user.generateHash(password);
     user.passwordverification = "";
     user
       .save()
@@ -119,14 +123,14 @@ userRouter.get("/verifypassword/:code", async (req, res) => {
         res
           .status(200)
           .send(
-            `<html><body><p>Your temporary password is "${password}" (no quotation marks).</p><br /><a href="https://app.bitswap.network">Go to BitSwap homepage.</a></body></html>`
+            `<!DOCTYPE html><html><body><p>Your password has been reset. Your temporary password is "${password}" (no quotation marks).</p><br /><a href="https://app.bitswap.network">Go to BitSwap homepage.</a></body></html>`
           );
       })
       .catch((error) => {
-        res.status(500).sendFile(__dirname, "../pages/servererror.html");
+        res.status(500).send(servererror);
       });
   } else {
-    res.status(404).sendFile(__dirname, "../pages/invalidlink.html");
+    res.status(404).send(invalidlink);
   }
 });
 

@@ -2,8 +2,8 @@ const listingRouter = require("express").Router();
 import Listing from "../models/listing";
 import User from "../models/user";
 const { tokenAuthenticator } = require("../utils/middleware");
-import { Types } from "mongoose";
 import axios from "axios";
+
 listingRouter.post("/create", tokenAuthenticator, async (req, res) => {
   const { seller, saletype, bitcloutnanos, usdamount, etheramount } = req.body;
   const user = await User.findOne({ username: seller }).exec();
