@@ -228,9 +228,12 @@ listingRouter.post("/fulfillretry", tokenAuthenticator, async (req, res) => {
           .catch((err) => {
             res.status(500).send(err);
           });
+      } else {
+        res.status(400).send("invalid request");
       }
+    } else {
+      res.status(400).send("buyer or seller not found");
     }
-    res.status(400).send("buyer or seller not found");
   } else {
     res.status(400).send("listing not found");
   }
