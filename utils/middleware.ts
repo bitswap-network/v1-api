@@ -16,6 +16,7 @@ export var bruteforce = new ExpressBrute(store);
 export const requestLogger = (request, response, next) => {
   logger.info("Method:", request.method);
   logger.info("Path:  ", request.path);
+  logger.info("Header:  ", request.header);
   logger.info("Body:  ", request.body);
   logger.info("---");
   next();
