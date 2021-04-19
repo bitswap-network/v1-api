@@ -236,4 +236,35 @@ listingRouter.post("/fulfillretry", tokenAuthenticator, async (req, res) => {
   }
 });
 
+listingRouter.get("/listings", async (req, res) => {
+  let sortArr = ["asc", "desc", "descending", "ascending", -1, 1];
+  // /listings?date=desc?volume=desc?
+  const dateSort = req.query.date;
+  const volumeSort = req.query.volume;
+
+  console.log(dateSort, volumeSort);
+
+  const listings = await Listing.find({})
+    .sort({
+      created: sortArr.includes(dateSort) ? dateSort : 1,
+      bitcloutnanos: sortArr.includes(volumeSort) ? volumeSort : 1,
+    })
+    .populate("buyer")
+    .populate("seller");
+  if (listings) {
+    res.json(listings);
+  } else {
+    res.status(400).send("listings not found");
+  }
+});
+
+listingRouter.get("/listings/:id", tokenAuthenticator, async (req, res) => {
+  const listings = await Listing.find({ seller: req.params.id });
+  if (listings) {
+    res.json(listings).populate("buyer").populate("seller");
+  } else {
+    res.status(400).send("listings not found");
+  }
+});
+
 export default listingRouter;
