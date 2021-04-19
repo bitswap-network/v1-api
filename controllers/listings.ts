@@ -1,6 +1,7 @@
 const listingRouter = require("express").Router();
 import Listing from "../models/listing";
 import User from "../models/user";
+const config = require("../utils/config");
 const { tokenAuthenticator } = require("../utils/middleware");
 import axios from "axios";
 
@@ -201,6 +202,26 @@ listingRouter.post("/delete", tokenAuthenticator, async (req, res) => {
     }
   } else {
     res.status(400).send("user or listing not found");
+  }
+});
+
+listingRouter.post("/fulfillretry", tokenAuthenticator, async (req, res) => {
+  const { id } = req.body;
+
+  if (id) {
+    axios
+      .post(`${config.FULFILLMENT_API}/fulfillretry`, {
+        listing_id: id,
+      })
+      .then((response) => {
+        console.log(response);
+        res.sendStatus(200);
+      })
+      .catch((err) => {
+        res.status(500).send(err);
+      });
+  } else {
+    res.status(400).send("no id");
   }
 });
 
