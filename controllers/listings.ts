@@ -207,7 +207,6 @@ listingRouter.post("/delete", tokenAuthenticator, async (req, res) => {
 
 listingRouter.post("/fulfillretry", tokenAuthenticator, async (req, res) => {
   const { id } = req.body;
-
   if (id) {
     axios
       .post(`${config.FULFILLMENT_API}/fulfillretry`, {
