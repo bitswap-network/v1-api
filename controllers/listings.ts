@@ -244,7 +244,10 @@ listingRouter.get("/listings", async (req, res) => {
 
   console.log(dateSort, volumeSort);
 
-  const listings = await Listing.find({})
+  const listings = await Listing.find({
+    ongoing: false,
+    "completed.status": true, //change to false
+  })
     .sort({
       created: sortArr.includes(dateSort) ? dateSort : 1,
       bitcloutnanos: sortArr.includes(volumeSort) ? volumeSort : 1,
