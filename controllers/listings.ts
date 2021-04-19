@@ -69,7 +69,7 @@ listingRouter.post("/create", tokenAuthenticator, async (req, res) => {
       res.status(402).send("insufficient funds to post this listing");
     }
   } else {
-    res.status(400).send("invalid");
+    res.status(404).send("user not found");
   }
 });
 
@@ -122,7 +122,7 @@ listingRouter.post("/buy", tokenAuthenticator, async (req, res) => {
       res.status(400).send("user cannot have multiple ongoing buys");
     }
   } else {
-    res.status(400).send("user or listing not found");
+    res.status(404).send("user or listing not found");
   }
 });
 listingRouter.post("/cancel", tokenAuthenticator, async (req, res) => {
