@@ -182,12 +182,12 @@ userRouter.post("/deposit", tokenAuthenticator, async (req, res) => {
 });
 
 userRouter.post("/withdraw", tokenAuthenticator, async (req, res) => {
-  const { username, bitcloutpubkey, bitcloutvalue } = req.body;
-  const user = await User.findOne({ username: username }).exec();
+  const { bitcloutpubkey, bitcloutvalue } = req.body;
+  const user = await User.findOne({ username: req.user.username }).exec();
   if (user) {
     if (bitcloutvalue * 1e9 <= user.bitswapbalance) {
       const transaction = new Transaction({
-        username: username,
+        username: req.user.username,
         bitcloutpubkey: bitcloutpubkey,
         transactiontype: "withdraw",
         status: "pending",
@@ -206,7 +206,7 @@ userRouter.post("/withdraw", tokenAuthenticator, async (req, res) => {
             } else {
               axios
                 .post(`${config.FULFILLMENT_API}/withdraw`, {
-                  username: username,
+                  username: req.user.username,
                   txn_id: transaction._id,
                 })
                 .then((response) => {
@@ -229,17 +229,17 @@ userRouter.post("/withdraw", tokenAuthenticator, async (req, res) => {
 });
 
 userRouter.post("/withdrawretry", tokenAuthenticator, async (req, res) => {
-  const { username, txn_id } = req.body;
-  const user = await User.findOne({ username: username }).exec();
+  const { txn_id } = req.body;
+  const user = await User.findOne({ username: req.user.username }).exec();
   const txn = await Transaction.findById(txn_id).exec();
-  if (username && txn_id) {
+  if (txn_id) {
     if (user) {
       console.log(txn);
       if (txn && txn.status == "pending" && txn.transactiontype == "withdraw") {
         console.log(txn);
         axios
           .post(`${config.FULFILLMENT_API}/withdraw`, {
-            username: username,
+            username: req.user.username,
             txn_id: txn._id,
           })
           .then((response) => {

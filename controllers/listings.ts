@@ -6,8 +6,8 @@ const { tokenAuthenticator } = require("../utils/middleware");
 import axios from "axios";
 
 listingRouter.post("/create", tokenAuthenticator, async (req, res) => {
-  const { seller, saletype, bitcloutnanos, usdamount, etheramount } = req.body;
-  const user = await User.findOne({ username: seller }).exec();
+  const { saletype, bitcloutnanos, usdamount, etheramount } = req.body;
+  const user = await User.findOne({ username: req.user.username }).exec();
   if (user) {
     if (user.bitswapbalance >= bitcloutnanos) {
       if (saletype == "ETH") {
@@ -74,12 +74,12 @@ listingRouter.post("/create", tokenAuthenticator, async (req, res) => {
 });
 
 listingRouter.post("/buy", tokenAuthenticator, async (req, res) => {
-  const { id, buyer } = req.body;
+  const { id } = req.body;
   const listing = await Listing.findById(id).exec();
-  const user = await User.findOne({ username: buyer });
+  const user = await User.findOne({ username: req.user.username });
 
   if (listing && user) {
-    if (!user.buystate && !listing.completed.status) {
+    if (!user.buystate && !listing.completed.status && !listing.ongoing) {
       listing.buyer = user._id;
       listing.ongoing = true;
       user.buystate = true;
@@ -126,9 +126,9 @@ listingRouter.post("/buy", tokenAuthenticator, async (req, res) => {
   }
 });
 listingRouter.post("/cancel", tokenAuthenticator, async (req, res) => {
-  const { id, buyer } = req.body;
+  const { id } = req.body;
   const listing = await Listing.findById(id).exec();
-  const user = await User.findOne({ username: buyer });
+  const user = await User.findOne({ username: req.user.username });
 
   if (listing && user) {
     if (user.buystate || !listing.ongoing) {
@@ -167,9 +167,9 @@ listingRouter.post("/cancel", tokenAuthenticator, async (req, res) => {
   }
 });
 listingRouter.post("/delete", tokenAuthenticator, async (req, res) => {
-  const { id, seller } = req.body;
+  const { id } = req.body;
   const listing = await Listing.findById(id).exec();
-  const user = await User.findOne({ username: seller });
+  const user = await User.findOne({ username: req.user.username });
 
   if (listing && user) {
     if (
@@ -207,20 +207,32 @@ listingRouter.post("/delete", tokenAuthenticator, async (req, res) => {
 
 listingRouter.post("/fulfillretry", tokenAuthenticator, async (req, res) => {
   const { id } = req.body;
-  if (id) {
-    axios
-      .post(`${config.FULFILLMENT_API}/fulfillretry`, {
-        listing_id: id,
-      })
-      .then((response) => {
-        console.log(response);
-        res.sendStatus(200);
-      })
-      .catch((err) => {
-        res.status(500).send(err);
-      });
+  const listing = await Listing.findById(id).exec();
+
+  if (listing) {
+    const buyer = await User.findOne({ _id: listing.buyer }).exec();
+    const seller = await User.findOne({ _id: listing.seller }).exec();
+    if (buyer && seller) {
+      if (
+        req.user.username == buyer.username ||
+        req.user.username == seller.username
+      ) {
+        axios
+          .post(`${config.FULFILLMENT_API}/fulfillretry`, {
+            listing_id: id,
+          })
+          .then((response) => {
+            console.log(response);
+            res.sendStatus(200);
+          })
+          .catch((err) => {
+            res.status(500).send(err);
+          });
+      }
+    }
+    res.status(400).send("buyer or seller not found");
   } else {
-    res.status(400).send("no id");
+    res.status(400).send("listing not found");
   }
 });
 
