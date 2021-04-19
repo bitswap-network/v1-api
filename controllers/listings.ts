@@ -1,6 +1,7 @@
 const listingRouter = require("express").Router();
 import Listing from "../models/listing";
 import User from "../models/user";
+const config = require("../utils/config");
 const { tokenAuthenticator } = require("../utils/middleware");
 import axios from "axios";
 
@@ -13,7 +14,7 @@ listingRouter.post("/create", tokenAuthenticator, async (req, res) => {
         const listing = new Listing({
           seller: user._id,
           currencysaletype: "ETH",
-          bitcloutamount: bitcloutnanos,
+          bitcloutnanos: bitcloutnanos,
           etheramount: etheramount,
         });
 
@@ -29,7 +30,7 @@ listingRouter.post("/create", tokenAuthenticator, async (req, res) => {
                 console.log(err);
                 res.status(500).send("error saving user");
               } else {
-                res.status(200);
+                res.sendStatus(200);
               }
             });
           }
@@ -39,7 +40,7 @@ listingRouter.post("/create", tokenAuthenticator, async (req, res) => {
         const listing = new Listing({
           seller: user._id,
           currencysaletype: "USD",
-          bitcloutamount: bitcloutnanos,
+          bitcloutnanos: bitcloutnanos,
           usdamount: usdamount,
         });
         listing.save((err: any) => {
@@ -49,12 +50,14 @@ listingRouter.post("/create", tokenAuthenticator, async (req, res) => {
           } else {
             user.bitswapbalance -= bitcloutnanos;
             user.listings.push(listing._id);
+            console.log("saved listing");
             user.save((err: any) => {
               if (err) {
                 console.log(err);
                 res.status(500).send("error saving user");
               } else {
-                res.status(200);
+                console.log("saved user");
+                res.sendStatus(200);
               }
             });
           }
@@ -79,6 +82,7 @@ listingRouter.post("/buy", tokenAuthenticator, async (req, res) => {
     if (!user.buystate && !listing.completed.status) {
       listing.buyer = user._id;
       listing.ongoing = true;
+      user.buystate = true;
       user.buys.push(listing._id);
       user.save((err: any) => {
         if (err) {
@@ -93,19 +97,27 @@ listingRouter.post("/buy", tokenAuthenticator, async (req, res) => {
           .then((response) => {
             let eth_usdrate = parseFloat(response.data.result.ethusd);
             listing.etheramount = listing.usdamount / eth_usdrate;
+            listing.save((err: any) => {
+              if (err) {
+                res.status(500).send("error saving listing");
+              } else {
+                res.sendStatus(200);
+              }
+            });
           })
           .catch((error) => {
+            console.log(error);
             res.status(500).send("error fetching usd/eth rates");
           });
+      } else if (listing.currencysaletype == "ETH") {
+        listing.save((err: any) => {
+          if (err) {
+            res.status(500).send("error saving listing");
+          } else {
+            res.sendStatus(200);
+          }
+        });
       }
-
-      listing.save((err: any) => {
-        if (err) {
-          res.status(500).send("error saving listing");
-        } else {
-          res.sendStatus(200);
-        }
-      });
     } else {
       res.status(400).send("user cannot have multiple ongoing buys");
     }
@@ -126,8 +138,9 @@ listingRouter.post("/cancel", tokenAuthenticator, async (req, res) => {
           .send("cannot cancel as escrow funds have been deposited");
       } else {
         listing.ongoing = false;
-        // listing.buyer = null;
+        listing.buyer = null;
         user.buystate = false;
+        user.buys.splice(user.listings.indexOf(listing._id), 1);
         listing.save((err: any) => {
           if (err) {
             res.status(500).send("could not save listing");
@@ -170,7 +183,7 @@ listingRouter.post("/delete", tokenAuthenticator, async (req, res) => {
       } else {
         user.listings.splice(user.listings.indexOf(listing._id), 1);
         user.buystate = false;
-        user.bitswapbalance += listing.bitcloutamount;
+        user.bitswapbalance += listing.bitcloutnanos;
         await Listing.deleteOne({ _id: listing._id });
         user.save((err: any) => {
           if (err) {
@@ -189,6 +202,26 @@ listingRouter.post("/delete", tokenAuthenticator, async (req, res) => {
     }
   } else {
     res.status(400).send("user or listing not found");
+  }
+});
+
+listingRouter.post("/fulfillretry", tokenAuthenticator, async (req, res) => {
+  const { id } = req.body;
+
+  if (id) {
+    axios
+      .post(`${config.FULFILLMENT_API}/fulfillretry`, {
+        listing_id: id,
+      })
+      .then((response) => {
+        console.log(response);
+        res.sendStatus(200);
+      })
+      .catch((err) => {
+        res.status(500).send(err);
+      });
+  } else {
+    res.status(400).send("no id");
   }
 });
 
