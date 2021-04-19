@@ -14,13 +14,13 @@ authRouter.post("/register", bruteforce.prevent, async (req, res) => {
     ethereumaddress,
   } = req.body;
   if (!username || !email || !password || !bitcloutpubkey || !ethereumaddress) {
-    res.status(400).send("Missing fields in request body");
+    res.status(400).send({message: "Missing fields in request body"});
   } else if (password.length < 8) {
-    res.status(400).send("Password formatting error");
+    res.status(400).send({message: "Password formatting error"});
   } else {
     const user = await User.findOne({$or: [{ username: username }, { email: username }, {bitcloutpubkey: bitcloutpubkey}, {ethereumaddress: ethereumaddress}] }).exec();
     if (user) {
-      res.status(409).send("There is already a user with that information")
+      res.status(409).send({message: "There is already a user with that information"})
     } else {
       const newUser = new User({
         username: username,
@@ -62,17 +62,30 @@ authRouter.post("/login", bruteforce.prevent, (req, res) => {
     },
     function (err, user) {
       if (err) {
-        res.status(500).send(err);
+        res.status(500).send({error: "An error occurred on the server"});
       } else if (!user) {
-        res.status(404).send("A user with that email or password doesn't exist!")
+        res.status(404).send({error: "A user with that email or password doesn't exist!"})
       } else if (!user.validPassword(password)) {
-        res.status(400).send("Invalid username or password");
+        res.status(400).send({error: "Invalid username or password"});
       } else if (!user.emailverified) {
-        res.status(403).send("Email not verified");
+        res.status(403).send({error: "Email not verified"});
       } else {
-        // user.token = token;
         res.json({
-          user,
+          admin: user.admin,
+          bitcloutpubkey: user.bitcloutpubkey,
+          bitswapbalance: user.bitswapbalance,
+          buys: user.buys,
+          buystate: user.buystate,
+          completedorders: user.completedorders,
+          created: user.created,
+          email: user.email,
+          emailverified: user.emailverified,
+          ethereumaddress: user.ethereumaddress,
+          listings: user.listings,
+          ratings: user.ratings,
+          transactions: user.transactions,
+          username: user.username,
+          verified: user.verified,
           token: token,
         });
       }

@@ -11,7 +11,9 @@ var bruteforce_model = mongoose.model(
   new mongoose.Schema(BruteForceSchema)
 );
 var store = new MongooseStore(bruteforce_model);
-export var bruteforce = new ExpressBrute(store);
+export var bruteforce = new ExpressBrute(store, {
+  freeRetries: 5
+});
 
 export const requestLogger = (request, response, next) => {
   logger.info("Method:", request.method);
