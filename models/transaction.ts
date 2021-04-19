@@ -1,14 +1,14 @@
 import { model, Schema, Document } from "mongoose";
 
 export interface transactionDoc extends Document {
-  username: String;
-  transactiontype: String;
-  status: String;
-  bitcloutnanos: Number;
-  bitcloutpubkey: String;
+  username: string;
+  transactiontype: string;
+  status: string;
+  bitcloutnanos: number;
+  bitcloutpubkey: string;
   created: Date;
   completed: Date;
-  tx_id: String;
+  tx_id: string;
 }
 
 const transactionSchema = new Schema<transactionDoc>({
