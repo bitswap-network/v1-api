@@ -260,11 +260,11 @@ userRouter.post("/withdrawretry", tokenAuthenticator, async (req, res) => {
 });
 
 userRouter.get("/transactions", tokenAuthenticator, async (req, res) => {
-  const transactions = await Transaction.find({ username: req.user.username })
-    .sort({ status: -1 })
+  const user = await User.findOne({ username: req.user.username })
+    .populate("transactions")
     .exec();
-  if (transactions) {
-    res.json(transactions);
+  if (user) {
+    res.json(user.transactions);
   } else {
     res.status(500).send("unable to fetch transactions");
   }

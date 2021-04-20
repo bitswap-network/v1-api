@@ -1,5 +1,4 @@
 import { model, Schema, Document } from "mongoose";
-
 export interface listingDoc extends Document {
   seller: Schema.Types.ObjectId;
   buyer: Schema.Types.ObjectId | null;

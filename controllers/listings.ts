@@ -4,44 +4,47 @@ import User from "../models/user";
 const config = require("../utils/config");
 const { tokenAuthenticator } = require("../utils/middleware");
 import axios from "axios";
+const logger = require("../utils/logger");
 
 listingRouter.post("/create", tokenAuthenticator, async (req, res) => {
   const { saletype, bitcloutnanos, usdamount, etheramount } = req.body;
   const user = await User.findOne({ username: req.user.username }).exec();
   if (user) {
     if (user.bitswapbalance >= bitcloutnanos) {
-      if (saletype == "ETH") {
-        const listing = new Listing({
-          seller: user._id,
-          currencysaletype: "ETH",
-          bitcloutnanos: bitcloutnanos,
-          etheramount: etheramount,
-        });
+      // if (saletype == "ETH") {
+      //   const listing = new Listing({
+      //     seller: user._id,
+      //     currencysaletype: "ETH",
+      //     bitcloutnanos: bitcloutnanos,
+      //     etheramount: etheramount,
+      //   });
 
-        listing.save((err: any) => {
-          if (err) {
-            console.log(err);
-            res.status(500).send("error saving listing");
-          } else {
-            user.bitswapbalance -= bitcloutnanos;
-            user.listings.push(listing._id);
-            user.save((err: any) => {
-              if (err) {
-                console.log(err);
-                res.status(500).send("error saving user");
-              } else {
-                res.sendStatus(200);
-              }
-            });
-          }
-        });
-      } else if (saletype == "USD") {
+      //   listing.save((err: any) => {
+      //     if (err) {
+      //       console.log(err);
+      //       res.status(500).send("error saving listing");
+      //     } else {
+      //       user.bitswapbalance -= bitcloutnanos;
+      //       user.listings.push(listing._id);
+      //       user.save((err: any) => {
+      //         if (err) {
+      //           console.log(err);
+      //           res.status(500).send("error saving user");
+      //         } else {
+      //           res.sendStatus(200);
+      //         }
+      //       });
+      //     }
+      //   });
+      // }
+      if (saletype == "USD") {
         console.log("usd");
         const listing = new Listing({
           seller: user._id,
           currencysaletype: "USD",
           bitcloutnanos: bitcloutnanos,
           usdamount: usdamount,
+          etheramount: etheramount,
         });
         listing.save((err: any) => {
           if (err) {
@@ -264,14 +267,51 @@ listingRouter.get("/listings", async (req, res) => {
   }
 });
 
-listingRouter.get("/listings/:id", tokenAuthenticator, async (req, res) => {
-  const listings = await Listing.find({ seller: req.params.id })
-    .populate("buyer")
-    .populate("seller");
-  if (listings) {
-    res.json(listings);
+listingRouter.get("/mylistings", tokenAuthenticator, async (req, res) => {
+  //return all user's listings
+  const user = await User.findOne({ username: req.user.username }).populate({
+    path: "listings",
+    populate: { path: "buyer seller" },
+  });
+  if (user) {
+    res.json(user.listings);
   } else {
     res.status(400).send("listings not found");
+  }
+});
+
+listingRouter.get("/listing/:id", tokenAuthenticator, async (req, res) => {
+  //get specific listing
+  const listing = await Listing.findOne({ _id: req.params.id }).exec();
+  const user = await User.findOne({ username: req.user.username }).exec();
+  if (user && listing) {
+    if (!listing.completed.status && !listing.ongoing) {
+      //if listing has no buyer
+      if (user._id == listing.seller.toString()) {
+        let popListing = await Listing.findOne({ _id: req.params.id })
+          .populate("buyer")
+          .populate("seller")
+          .exec();
+        res.json(popListing);
+      } else {
+        res.status(403).send("unauthorized request");
+      }
+    } else if (listing.completed.status || listing.ongoing) {
+      if (
+        user._id == listing.seller.toString() ||
+        user._id == listing!.buyer!.toString()
+      ) {
+        let popListing = await Listing.findOne({ _id: req.params.id })
+          .populate("buyer")
+          .populate("seller")
+          .exec();
+        res.json(popListing);
+      } else {
+        res.status(403).send("unauthorized request");
+      }
+    }
+  } else {
+    res.status(404).send("no listing or user found");
   }
 });
 
