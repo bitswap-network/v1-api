@@ -261,7 +261,7 @@ userRouter.post("/withdrawretry", tokenAuthenticator, async (req, res) => {
 
 userRouter.get("/transactions", tokenAuthenticator, async (req, res) => {
   const transactions = await Transaction.find({ username: req.user.username })
-    .sort({ status: 1 })
+    .sort({ status: -1 })
     .exec();
   if (transactions) {
     res.json(transactions);

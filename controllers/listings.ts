@@ -265,9 +265,11 @@ listingRouter.get("/listings", async (req, res) => {
 });
 
 listingRouter.get("/listings/:id", tokenAuthenticator, async (req, res) => {
-  const listings = await Listing.find({ seller: req.params.id });
+  const listings = await Listing.find({ seller: req.params.id })
+    .populate("buyer")
+    .populate("seller");
   if (listings) {
-    res.json(listings).populate("buyer").populate("seller");
+    res.json(listings);
   } else {
     res.status(400).send("listings not found");
   }
