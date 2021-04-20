@@ -138,19 +138,18 @@ userRouter.get("/verifypassword/:code", async (req, res) => {
 });
 
 userRouter.post("/deposit", tokenAuthenticator, async (req, res) => {
-  const { bitcloutpubkey, bitcloutvalue } = req.body;
+  const { bitcloutvalue } = req.body;
   const user = await User.findOne({ username: req.user.username }).exec();
-  const txns = await Transaction.find({
-    bitcloutpubkey: bitcloutpubkey,
-    transactiontype: "deposit",
-    status: "pending",
-  }).exec();
-
   if (user) {
+    const txns = await Transaction.find({
+      bitcloutpubkey: user.bitcloutpubkey,
+      transactiontype: "deposit",
+      status: "pending",
+    }).exec();
     if (txns.length == 0) {
       const transaction = new Transaction({
         username: req.user.username,
-        bitcloutpubkey: bitcloutpubkey,
+        bitcloutpubkey: user.bitcloutpubkey,
         transactiontype: "deposit",
         status: "pending",
         bitcloutnanos: bitcloutvalue * 1e9,
@@ -164,14 +163,14 @@ userRouter.post("/deposit", tokenAuthenticator, async (req, res) => {
             if (err) {
               res.status(500).send(err);
             } else {
-              res.status(200).send(transaction);
+              res.status(201).send(transaction);
             }
           });
         }
       });
     } else {
       res
-        .status(400)
+        .status(409)
         .send(
           "cannot have multiple ongoing deposits. please wait for previous deposit to complete."
         );
@@ -182,13 +181,13 @@ userRouter.post("/deposit", tokenAuthenticator, async (req, res) => {
 });
 
 userRouter.post("/withdraw", tokenAuthenticator, async (req, res) => {
-  const { bitcloutpubkey, bitcloutvalue } = req.body;
+  const { bitcloutvalue } = req.body;
   const user = await User.findOne({ username: req.user.username }).exec();
   if (user) {
     if (bitcloutvalue * 1e9 <= user.bitswapbalance) {
       const transaction = new Transaction({
         username: req.user.username,
-        bitcloutpubkey: bitcloutpubkey,
+        bitcloutpubkey: user.bitcloutpubkey,
         transactiontype: "withdraw",
         status: "pending",
         bitcloutnanos: bitcloutvalue * 1e9,
