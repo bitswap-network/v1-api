@@ -252,7 +252,7 @@ listingRouter.get("/listings", async (req, res) => {
 
   const listings = await Listing.find({
     ongoing: false,
-    "completed.status": true, //change to false
+    "completed.status": false, //change to false
   })
     .sort({
       created: sortArr.includes(dateSort) ? dateSort : 1,
