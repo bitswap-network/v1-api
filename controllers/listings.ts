@@ -143,7 +143,10 @@ listingRouter.post("/cancel", tokenAuthenticator, async (req, res) => {
         listing.ongoing = false;
         listing.buyer = null;
         user.buystate = false;
-        user.buys.splice(user.listings.indexOf(listing._id), 1);
+        await User.findOneAndUpdate(
+          { username: req.user.username },
+          { $pull: { buys: listing._id } }
+        ).exec();
         listing.save((err: any) => {
           if (err) {
             res.status(500).send("could not save listing");
