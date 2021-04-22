@@ -195,7 +195,7 @@ userRouter.post("/withdraw", tokenAuthenticator, async (req, res) => {
   const { bitcloutvalue } = req.body;
   const user = await User.findOne({ username: req.user.username }).exec();
   if (user) {
-    if (bitcloutvalue * 1e9 <= user.bitswapbalance) {
+    if (bitcloutvalue <= user.bitswapbalance) {
       const transaction = new Transaction({
         username: req.user.username,
         bitcloutpubkey: user.bitcloutpubkey,

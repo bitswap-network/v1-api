@@ -10,7 +10,7 @@ listingRouter.post("/create", tokenAuthenticator, async (req, res) => {
   const { saletype, bitcloutnanos, usdamount, etheramount } = req.body;
   const user = await User.findOne({ username: req.user.username }).exec();
   if (user) {
-    if (user.bitswapbalance >= bitcloutnanos) {
+    if (user.bitswapbalance >= bitcloutnanos / 1e9) {
       // if (saletype == "ETH") {
       //   const listing = new Listing({
       //     seller: user._id,
@@ -51,7 +51,7 @@ listingRouter.post("/create", tokenAuthenticator, async (req, res) => {
             console.log(err);
             res.status(500).send("error saving listing");
           } else {
-            user.bitswapbalance -= bitcloutnanos;
+            user.bitswapbalance -= bitcloutnanos / 1e9;
             user.listings.push(listing._id);
             console.log("saved listing");
             user.save((err: any) => {
@@ -143,7 +143,10 @@ listingRouter.post("/cancel", tokenAuthenticator, async (req, res) => {
         listing.ongoing = false;
         listing.buyer = null;
         user.buystate = false;
-        user.buys.splice(user.listings.indexOf(listing._id), 1);
+        await User.findOneAndUpdate(
+          { username: req.user.username },
+          { $pull: { buys: listing._id } }
+        ).exec();
         listing.save((err: any) => {
           if (err) {
             res.status(500).send("could not save listing");
@@ -186,7 +189,7 @@ listingRouter.post("/delete", tokenAuthenticator, async (req, res) => {
       } else {
         user.listings.splice(user.listings.indexOf(listing._id), 1);
         user.buystate = false;
-        user.bitswapbalance += listing.bitcloutnanos;
+        user.bitswapbalance += listing.bitcloutnanos / 1e9;
         await Listing.deleteOne({ _id: listing._id });
         user.save((err: any) => {
           if (err) {
@@ -252,7 +255,7 @@ listingRouter.get("/listings", async (req, res) => {
 
   const listings = await Listing.find({
     ongoing: false,
-    "completed.status": true, //change to false
+    "completed.status": false, //change to false
   })
     .sort({
       created: sortArr.includes(dateSort) ? dateSort : 1,
