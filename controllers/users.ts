@@ -11,6 +11,17 @@ import { generateCode } from "../utils/functions";
 const config = require("../utils/config");
 import axios from "axios";
 
+userRouter.get("/data", tokenAuthenticator, async (req, res) => {
+  const user = await User.findOne({
+    username: req.user.username
+  }).exec();
+  if (user) {
+    res.status(200).json(user);
+  } else {
+    res.status(404).send("User not found");
+  }
+})
+
 userRouter.get("/profile/:username", tokenAuthenticator, async (req, res) => {
   const user = await User.findOne({
     username: req.params.username,
