@@ -13,14 +13,19 @@ import axios from "axios";
 
 userRouter.get("/data", tokenAuthenticator, async (req, res) => {
   const user = await User.findOne({
-    username: req.user.username
-  }).exec();
+    username: req.user.username,
+  })
+    .populate("listings")
+    .populate("buys")
+    .populate("transactions")
+    .exec();
+  // console.log(user);
   if (user) {
-    res.status(200).json(user);
+    res.json(user);
   } else {
     res.status(404).send("User not found");
   }
-})
+});
 
 userRouter.get("/profile/:username", tokenAuthenticator, async (req, res) => {
   const user = await User.findOne({

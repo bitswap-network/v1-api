@@ -187,7 +187,10 @@ listingRouter.post("/delete", tokenAuthenticator, async (req, res) => {
       if (listing.escrow.balance > 0 || listing.escrow.full) {
         res.status(400).send("cannot delete a listing that is in progress");
       } else {
-        user.listings.splice(user.listings.indexOf(listing._id), 1);
+        await User.findOneAndUpdate(
+          { username: req.user.username },
+          { $pull: { listings: listing._id } }
+        ).exec();
         user.buystate = false;
         user.bitswapbalance += listing.bitcloutnanos / 1e9;
         await Listing.deleteOne({ _id: listing._id });
