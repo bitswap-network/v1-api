@@ -15,7 +15,10 @@ userRouter.get("/data", tokenAuthenticator, async (req, res) => {
   const user = await User.findOne({
     username: req.user.username,
   })
-    .populate("listings")
+    .populate({
+      path: "listings",
+      populate: { path: "buyer seller" },
+    })
     .populate("buys")
     .populate("transactions")
     .exec();
