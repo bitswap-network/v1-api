@@ -4,14 +4,18 @@ const authRouter = require("express").Router();
 import User from "../models/user";
 import sendMail from "../utils/mailer";
 import { bruteforce, tokenAuthenticator } from "../utils/middleware";
+import Proxy from "../utils/proxy";
 
-authRouter.post("/register", bruteforce.prevent, async (req, res) => {
+authRouter.post("/register", async (req, res) => {
   const {
     username,
     email,
     password,
     bitcloutpubkey,
     ethereumaddress,
+    profilepicture,
+    bitcloutverified,
+    description,
   } = req.body;
   if (!username || !email || !password || !bitcloutpubkey || !ethereumaddress) {
     res.status(400).send({ message: "Missing fields in request body" });
@@ -36,6 +40,9 @@ authRouter.post("/register", bruteforce.prevent, async (req, res) => {
         email: email,
         bitcloutpubkey: bitcloutpubkey,
         ethereumaddress: ethereumaddress.toLowerCase(),
+        profilepicture: profilepicture,
+        bitcloutverified: bitcloutverified,
+        description: description,
       });
       newUser.password = newUser.generateHash(password);
       const code = generateCode();
@@ -50,6 +57,7 @@ authRouter.post("/register", bruteforce.prevent, async (req, res) => {
               "Verify your BitSwap email",
               `<!DOCTYPE html><html><head><title>BitSwap Email Verification</title><body>` +
                 `<p>Click <a href="https://api.bitswap.network/user/verifyemail/${code}">here</a> to verify your email. If this wasn't you, simply ignore this email.` +
+                `<p>Make a post on your $${username} BitClout profile saying: "Verifying my @BitSwap account." (make sure you tag us) to verify that you own this BitClout account.</p>` +
                 `</body></html>`
             );
             res.status(201).send("Registration successful");
@@ -99,10 +107,36 @@ authRouter.post("/login", bruteforce.prevent, (req, res) => {
           verified: user.verified,
           token: token,
           _id: user._id,
+          bitcloutverified: user.bitcloutverified,
+          profilepicture: user.profilepicture,
+          description: user.description,
         });
       }
     }
   );
+});
+
+authRouter.post("/getbitcloutprofile", async (req, res) => {
+  const { PublicKeyBase58Check, Username } = req.body;
+  let proxy = new Proxy();
+  await proxy.initiateProfileQuery(10, PublicKeyBase58Check, Username);
+  await proxy
+    .getProfile()
+    .then((response) => {
+      proxy.close();
+      let resJSON = JSON.parse(response);
+      if (resJSON.error) {
+        res.status(400).send(resJSON.error);
+      } else if (resJSON.Profile) {
+        res.json(JSON.parse(response)["Profile"]);
+      } else {
+        res.sendStatus(405);
+      }
+    })
+    .catch((error) => {
+      console.log(error);
+      res.status(500).send(error);
+    });
 });
 
 authRouter.get("/verifytoken", tokenAuthenticator, (req, res) => {

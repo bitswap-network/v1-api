@@ -42,14 +42,13 @@ userRouter.get("/profile/:username", tokenAuthenticator, async (req, res) => {
 });
 
 userRouter.put("/updateprofile", tokenAuthenticator, async (req, res) => {
-  const { name, email, ethereumaddress, bitcloutpubkey } = req.body;
+  const { name, email, ethereumaddress } = req.body;
   await User.updateOne(
     {
       username: req.user.username,
     },
     {
       email: email.toLowerCase(),
-      bitcloutpubkey: bitcloutpubkey,
       ethereumaddress: ethereumaddress.toLowerCase(),
       name: name,
     },

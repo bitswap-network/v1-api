@@ -25,6 +25,9 @@ export interface UserDoc extends Document {
   bitswapbalance: number;
   transactions: [Schema.Types.ObjectId];
   buystate: boolean;
+  bitcloutverified: boolean;
+  profilepicture: string;
+  description: string;
 }
 
 const userSchema = new Schema<UserDoc>({
@@ -64,6 +67,9 @@ const userSchema = new Schema<UserDoc>({
   bitswapbalance: { type: Number, default: 0 },
   transactions: [{ type: Schema.Types.ObjectId, ref: "Transaction" }],
   buystate: { type: Boolean, default: false },
+  bitcloutverified: { type: Boolean },
+  profilepicture: { type: String },
+  description: { type: String },
 });
 
 userSchema.methods.generateHash = function (password: String) {
