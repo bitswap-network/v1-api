@@ -21,7 +21,11 @@ class Proxy {
     this.responseBody = "";
   }
 
-  async initiateProfileQuery(countsLimitsData: number, id: string) {
+  async initiateProfileQuery(
+    countsLimitsData: number,
+    id: string,
+    username: string
+  ) {
     logger.info("initiating profile query!");
     this.pageOptions = {
       waitUntil: "networkidle2",
@@ -47,6 +51,7 @@ class Proxy {
           method: "POST",
           postData: JSON.stringify({
             PublicKeyBase58Check: id,
+            Username: username,
           }),
           headers: {
             ...request.headers(),
@@ -61,16 +66,18 @@ class Proxy {
     this.isLinkCrawlTest = true;
   }
 
-  async initiateSendBitclout(
+  async initiatePostsQuery(
     countsLimitsData: number,
-    id: string,
-    amount: number
+    reader_id: string,
+    profile_id: string,
+    profile_username: string,
+    numToFetch: number
   ) {
+    logger.info("initiating profile query!");
     this.pageOptions = {
       waitUntil: "networkidle2",
       timeout: countsLimitsData * 1000,
     };
-    this.waitForFunction = 'document.querySelector("body")';
     puppeteerExtra.use(pluginStealth());
     this.browser = await puppeteerExtra.launch({
       headless: true,
@@ -86,24 +93,19 @@ class Proxy {
       ) {
         request.abort();
       } else {
+        logger.info("posting data ....");
         request.continue({
           method: "POST",
           postData: JSON.stringify({
-            AmountNanos: amount,
-            Broadcast: true,
-            MinFeeRateNanosPerKB: 1000,
-            Password: "",
-            RecipientPublicKeyOrUsername: id,
-            SeedInfo: null,
-            SenderPublicKeyBase58Check:
-              "BC1YLjQtaLyForGFpdzmvzCCx1zbSCm58785cABn5zS8KVMeS4Z4aNK",
-            Sign: true,
-            Validate: true,
+            LastPostHashHex: "",
+            NumToFetch: numToFetch,
+            PublicKeyBase58Check: profile_id,
+            ReaderPublicKeyBase58Check: reader_id,
+            Username: profile_username,
           }),
           headers: {
             ...request.headers(),
             "Content-Type": "application/json",
-            cookie: `seed_info_cookie_key-BC1YLjQtaLyForGFpdzmvzCCx1zbSCm58785cABn5zS8KVMeS4Z4aNK="{'HasPassword':false,'HasExtraText':false,'EncryptedSeedHex':'${config.ENCRYPTEDSEEDHEX}','PwSaltHex':'${config.PWSALTHEX}','Pbkdf2Iterations':10,'BtcDepositAddress':'14Jhq68xzi9vo5rg12fAsKjvgxWjE4e9Qd','IsTestnet':false}";`,
           },
         });
       }
@@ -114,9 +116,9 @@ class Proxy {
     this.isLinkCrawlTest = true;
   }
 
-  async crawlTransactionInfo() {
+  async getProfile() {
     logger.info("starting crawl");
-    const link = "https://api.bitclout.com/api/v1/transaction-info";
+    const link = "https://api.bitclout.com/get-single-profile";
     const userAgent = randomUseragent.getRandom();
     const crawlResults = { isValidPage: true, pageSource: null };
     try {
@@ -136,9 +138,10 @@ class Proxy {
       this.close();
     }
   }
-  async sendBitclout() {
+
+  async getPosts() {
     logger.info("starting crawl");
-    const link = "https://api.bitclout.com/send-bitclout";
+    const link = "https://api.bitclout.com/get-posts-for-public-key";
     const userAgent = randomUseragent.getRandom();
     const crawlResults = { isValidPage: true, pageSource: null };
     try {
@@ -160,12 +163,11 @@ class Proxy {
   }
 
   close() {
-    if (!this.browser) {
-      this.browser.close();
-    }
+    console.log("closing proxy");
+    this.browser.close();
   }
 }
 
-const proxy = new Proxy();
+// const proxy = new Proxy();
 
-export default proxy;
+export default Proxy;

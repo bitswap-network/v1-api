@@ -11,32 +11,6 @@ listingRouter.post("/create", tokenAuthenticator, async (req, res) => {
   const user = await User.findOne({ username: req.user.username }).exec();
   if (user) {
     if (user.bitswapbalance >= bitcloutnanos / 1e9) {
-      // if (saletype == "ETH") {
-      //   const listing = new Listing({
-      //     seller: user._id,
-      //     currencysaletype: "ETH",
-      //     bitcloutnanos: bitcloutnanos,
-      //     etheramount: etheramount,
-      //   });
-
-      //   listing.save((err: any) => {
-      //     if (err) {
-      //       console.log(err);
-      //       res.status(500).send("error saving listing");
-      //     } else {
-      //       user.bitswapbalance -= bitcloutnanos;
-      //       user.listings.push(listing._id);
-      //       user.save((err: any) => {
-      //         if (err) {
-      //           console.log(err);
-      //           res.status(500).send("error saving user");
-      //         } else {
-      //           res.sendStatus(200);
-      //         }
-      //       });
-      //     }
-      //   });
-      // }
       if (saletype == "USD") {
         console.log("usd");
         const listing = new Listing({
