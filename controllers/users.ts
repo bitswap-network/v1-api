@@ -30,7 +30,7 @@ userRouter.get("/data", tokenAuthenticator, async (req, res) => {
   }
 });
 
-userRouter.get("/profile/:username", tokenAuthenticator, async (req, res) => {
+userRouter.get("/profile/:username", async (req, res) => {
   const user = await User.findOne({
     username: req.params.username,
   }).exec();
