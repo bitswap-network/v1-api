@@ -58,7 +58,7 @@ authRouter.post("/register", async (req, res) => {
               email,
               "Verify your BitSwap email",
               `<!DOCTYPE html><html><head><title>BitSwap Email Verification</title><body>` +
-                `<p>Click <a href="https://api.bitswap.network/user/verifyemail/${email_code}">here</a> to verify your email. If this wasn't you, simply ignore this email.` +
+                `<p>Click <a href="http://localhost:5000/user/verifyemail/${email_code}">here</a> to verify your email. If this wasn't you, simply ignore this email.` +
                 `<p>Make a post on your $${username} BitClout profile saying: "Verifying my @BitSwap account. ${bitclout_code}" (make sure you tag us) to verify that you own this BitClout account.</p>` +
                 `</body></html>`
             );
