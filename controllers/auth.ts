@@ -45,8 +45,10 @@ authRouter.post("/register", async (req, res) => {
         description: description,
       });
       newUser.password = newUser.generateHash(password);
-      const code = generateCode();
-      newUser.emailverification = code;
+      const email_code = generateCode(8);
+      const bitclout_code = generateCode(16);
+      newUser.emailverification = email_code;
+      newUser.bitcloutverification = bitclout_code;
       newUser.save((err: any) => {
         if (err) {
           res.status(500).send(err);
@@ -56,8 +58,8 @@ authRouter.post("/register", async (req, res) => {
               email,
               "Verify your BitSwap email",
               `<!DOCTYPE html><html><head><title>BitSwap Email Verification</title><body>` +
-                `<p>Click <a href="https://api.bitswap.network/user/verifyemail/${code}">here</a> to verify your email. If this wasn't you, simply ignore this email.` +
-                `<p>Make a post on your $${username} BitClout profile saying: "Verifying my @BitSwap account." (make sure you tag us) to verify that you own this BitClout account.</p>` +
+                `<p>Click <a href="https://api.bitswap.network/user/verifyemail/${email_code}">here</a> to verify your email. If this wasn't you, simply ignore this email.` +
+                `<p>Make a post on your $${username} BitClout profile saying: "Verifying my @BitSwap account. ${bitclout_code}" (make sure you tag us) to verify that you own this BitClout account.</p>` +
                 `</body></html>`
             );
             res.status(201).send("Registration successful");

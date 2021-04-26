@@ -10,6 +10,7 @@ import Transaction from "../models/transaction";
 import { generateCode } from "../utils/functions";
 const config = require("../utils/config");
 import axios from "axios";
+import Proxy from "../utils/proxy";
 
 userRouter.get("/data", tokenAuthenticator, async (req, res) => {
   const user = await User.findOne({
@@ -19,10 +20,12 @@ userRouter.get("/data", tokenAuthenticator, async (req, res) => {
       path: "listings",
       populate: { path: "buyer seller" },
     })
-    .populate("buys")
+    .populate({
+      path: "buys",
+      populate: { path: "buyer seller" },
+    })
     .populate("transactions")
     .exec();
-  // console.log(user);
   if (user) {
     res.json(user);
   } else {
@@ -88,7 +91,7 @@ userRouter.post("/forgotpassword", async (req, res) => {
   const { email } = req.body;
   const user = await User.findOne({ email: email }).exec();
   if (user) {
-    const code = generateCode();
+    const code = generateCode(8);
     user.passwordverification = code;
     user
       .save()
@@ -135,7 +138,7 @@ userRouter.get("/verifypassword/:code", async (req, res) => {
   const code = req.params.code;
   const user = await User.findOne({ passwordverification: code }).exec();
   if (user) {
-    const password = generateCode();
+    const password = generateCode(8);
     user.password = user.generateHash(password);
     user.passwordverification = "";
     user
@@ -274,6 +277,66 @@ userRouter.post("/withdrawretry", tokenAuthenticator, async (req, res) => {
     }
   } else {
     res.status(400).send("invalid request");
+  }
+});
+
+userRouter.post("/verifyBitclout", tokenAuthenticator, async (req, res) => {
+  const user = await User.findOne({ username: req.user.username }).exec();
+  if (user) {
+    let proxy = new Proxy();
+    await proxy.initiatePostsQuery(
+      20,
+      "BC1YLjQtaLyForGFpdzmvzCCx1zbSCm58785cABn5zS8KVMeS4Z4aNK",
+      user.bitcloutpubkey,
+      user.username,
+      5
+    );
+    proxy
+      .getPosts()
+      .then((response) => {
+        proxy.close();
+        let resJSON = JSON.parse(response);
+        let error = resJSON["error"];
+        let posts = resJSON["Posts"];
+        if (error) {
+          res.status(500).send(error);
+        } else if (posts) {
+          console.log(posts);
+          let i = 0;
+          let found = false;
+          let key = user.bitcloutverification;
+          for (const post of posts) {
+            i += 1;
+            let body = post.Body.toLowerCase();
+            if (body.includes(key.toLowerCase())) {
+              found = true;
+            }
+            if (i === posts.length) {
+              if (found) {
+                console.log("found");
+                user.verified = "verified";
+                user.save();
+                res.status(200).send(post);
+              } else {
+                user.verified = "pending";
+                user.save();
+                res
+                  .status(400)
+                  .send("unable to find profile verification post");
+              }
+            }
+          }
+          res.status(200).send(posts);
+        }
+        console.log(error);
+      })
+      .catch((error) => {
+        proxy.close();
+        console.log(error);
+        res.send(500);
+      });
+  } else {
+    res.status(400).send("user not found");
   }
 });
 

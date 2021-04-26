@@ -28,6 +28,7 @@ export interface UserDoc extends Document {
   bitcloutverified: boolean;
   profilepicture: string;
   description: string;
+  bitcloutverification: string;
 }
 
 const userSchema = new Schema<UserDoc>({
@@ -70,6 +71,7 @@ const userSchema = new Schema<UserDoc>({
   bitcloutverified: { type: Boolean },
   profilepicture: { type: String },
   description: { type: String },
+  bitcloutverification: { type: String },
 });
 
 userSchema.methods.generateHash = function (password: String) {
