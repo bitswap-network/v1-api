@@ -202,7 +202,7 @@ userRouter.post("/deposit", tokenAuthenticator, async (req, res) => {
 });
 
 userRouter.post("/withdraw", tokenAuthenticator, async (req, res) => {
-  const { bitcloutvalue } = req.body;
+  const { bitcloutvalue, fees } = req.body;
   const user = await User.findOne({ username: req.user.username }).exec();
   if (user) {
     if (bitcloutvalue <= user.bitswapbalance) {
@@ -211,8 +211,9 @@ userRouter.post("/withdraw", tokenAuthenticator, async (req, res) => {
         bitcloutpubkey: user.bitcloutpubkey,
         transactiontype: "withdraw",
         status: "pending",
-        bitcloutnanos: bitcloutvalue * 1e9,
+        bitcloutnanos: parseInt((bitcloutvalue * 1e9 - fees).toString()),
       });
+      console.log(parseInt((bitcloutvalue * 1e9 - fees).toString()));
       transaction.save((err: any) => {
         if (err) {
           console.log(err);
@@ -228,7 +229,6 @@ userRouter.post("/withdraw", tokenAuthenticator, async (req, res) => {
                 username: req.user.username,
                 txn_id: transaction._id,
               };
-
               axios
                 .post(`${config.FULFILLMENT_API}/withdraw`, body, {
                   headers: { "server-signature": generateHMAC(body) },
@@ -251,36 +251,41 @@ userRouter.post("/withdraw", tokenAuthenticator, async (req, res) => {
     res.status(400).send("user not found");
   }
 });
-
-userRouter.post("/withdrawretry", tokenAuthenticator, async (req, res) => {
-  const { txn_id } = req.body;
+userRouter.post("/preFlightTxn", tokenAuthenticator, async (req, res) => {
+  const { bitcloutvalue } = req.body;
   const user = await User.findOne({ username: req.user.username }).exec();
-  const txn = await Transaction.findById(txn_id).exec();
-  if (txn_id) {
-    if (user) {
-      console.log(txn);
-      if (txn && txn.status == "pending" && txn.transactiontype == "withdraw") {
-        console.log(txn);
-        axios
-          .post(`${config.FULFILLMENT_API}/withdraw`, {
-            username: req.user.username,
-            txn_id: txn._id,
-          })
-          .then((response) => {
-            console.log(response);
-            res.sendStatus(200);
-          })
-          .catch((err) => {
-            res.status(500).send(err);
-          });
-      } else {
-        res.status(400).send("txn not valid");
-      }
+  if (user) {
+    if (bitcloutvalue) {
+      await axios
+        .post(
+          "https://api.bitclout.com/send-bitclout",
+          JSON.stringify({
+            AmountNanos: bitcloutvalue * 1e9,
+            MinFeeRateNanosPerKB: 1000,
+            RecipientPublicKeyOrUsername: user.bitcloutpubkey,
+            SenderPublicKeyBase58Check: config.PUBLIC_KEY_BITCLOUT,
+          }),
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Cookie:
+                "__cfduid=d0e96960ab7b9233d869e566cddde2b311619467183; INGRESSCOOKIE=e663da5b29ea8969365c1794da20771c",
+            },
+          }
+        )
+        .then((response) => {
+          console.log(response.data);
+          res.send(response.data);
+        })
+        .catch((error) => {
+          console.log(error);
+          res.status(error.response.status).send(error.response.data);
+        });
     } else {
-      res.status(400).send("user not valid");
+      res.status(400).send("invalid request");
     }
   } else {
-    res.status(400).send("invalid request");
+    res.status(400).send("User not found");
   }
 });
 

@@ -19,7 +19,7 @@ export interface UserDoc extends Document {
   admin: boolean;
   verified: string;
   ratings: [{ rating: number; rater: Schema.Types.ObjectId }];
-  completedtransactions: number;
+  completedorders: number;
   generateHash: (password: string) => string;
   validPassword: (password: string) => boolean;
   bitswapbalance: number;
