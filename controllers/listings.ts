@@ -1,10 +1,10 @@
 const listingRouter = require("express").Router();
 import Listing from "../models/listing";
 import User from "../models/user";
+import { generateHMAC } from "../utils/functions";
 const config = require("../utils/config");
 const { tokenAuthenticator } = require("../utils/middleware");
 import axios from "axios";
-const logger = require("../utils/logger");
 
 listingRouter.post("/create", tokenAuthenticator, async (req, res) => {
   const { saletype, bitcloutnanos, usdamount, etheramount } = req.body;
