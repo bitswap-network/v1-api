@@ -211,9 +211,10 @@ userRouter.post("/withdraw", tokenAuthenticator, async (req, res) => {
         bitcloutpubkey: user.bitcloutpubkey,
         transactiontype: "withdraw",
         status: "pending",
-        bitcloutnanos: parseInt((bitcloutvalue * 1e9 - fees).toString()),
+        bitcloutnanos: bitcloutvalue * 1e9,
+        fees: fees,
       });
-      console.log(parseInt((bitcloutvalue * 1e9 - fees).toString()));
+      console.log(parseInt((bitcloutvalue - fees).toString()));
       transaction.save((err: any) => {
         if (err) {
           console.log(err);

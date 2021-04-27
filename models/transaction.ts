@@ -9,6 +9,7 @@ export interface transactionDoc extends Document {
   created: Date;
   completed: Date;
   tx_id: string;
+  fees: number;
 }
 
 const transactionSchema = new Schema<transactionDoc>({
@@ -24,6 +25,7 @@ const transactionSchema = new Schema<transactionDoc>({
   created: { type: Date, default: Date.now },
   completed: { type: Date },
   tx_id: { type: String },
+  fees: { type: Number },
 });
 
 const Transaction = model<transactionDoc>("Transaction", transactionSchema);
