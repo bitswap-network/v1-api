@@ -7,7 +7,7 @@ import sendMail, {
   servererror,
 } from "../utils/mailer";
 import Transaction from "../models/transaction";
-import { generateCode } from "../utils/functions";
+import { generateCode, generateHMAC } from "../utils/functions";
 const config = require("../utils/config");
 import axios from "axios";
 import Proxy from "../utils/proxy";
@@ -224,10 +224,14 @@ userRouter.post("/withdraw", tokenAuthenticator, async (req, res) => {
               console.log(err);
               res.status(500).send("error saving user");
             } else {
+              let body = {
+                username: req.user.username,
+                txn_id: transaction._id,
+              };
+
               axios
-                .post(`${config.FULFILLMENT_API}/withdraw`, {
-                  username: req.user.username,
-                  txn_id: transaction._id,
+                .post(`${config.FULFILLMENT_API}/withdraw`, body, {
+                  headers: { "server-signature": generateHMAC(body) },
                 })
                 .then((response) => {
                   // console.log(response);

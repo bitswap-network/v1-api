@@ -13,3 +13,4 @@ export let HttpProvider = process.env.HttpProvider;
 export let XAlchemyToken = process.env.XAlchemyToken;
 export let KEY = process.env.KEY;
 export let FULFILLMENT_API = process.env.FULFILLMENT_API;
+export let ServerAuth = process.env.SERVER_AUTH;
