@@ -81,9 +81,6 @@ authRouter.post("/login", bruteforce.prevent, async (req, res) => {
     if (!user.emailverified) {
       res.status(403).send({ error: "Email not verified" });
 
-    } else if (user.verified !== "verified") {
-      res.status(403).send({error: `Bitclout profile not verified, please make a post on your $${username} BitClout profile saying: "Verifying my @BitSwap account. ${user.bitcloutverification}" (make sure you tag us) to verify that you own this BitClout account.`})
-
     } else {
       try {
         const response = await axios.post("https://api.bitclout.com/get-single-profile", {PublicKeyBase58Check: user.bitcloutpubkey}, {headers: { 
