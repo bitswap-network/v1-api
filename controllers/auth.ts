@@ -90,9 +90,11 @@ authRouter.post("/login", bruteforce.prevent, async (req, res) => {
           'Content-Type': 'application/json', 
           'Cookie': '__cfduid=d948f4d42aa8cf1c00b7f93ba8951d45b1619496624; INGRESSCOOKIE=c7d7d1526f37eb58ae5a7a5f87b91d24'
         },});
-        user.profilepicture = response.data.Profile.ProfilePic;
-        user.description = response.data.Profile.Description;
-        await user.save()
+        if (response.status === 200) {
+          user.profilepicture = response.data.Profile.ProfilePic;
+          user.description = response.data.Profile.Description;
+          await user.save()
+        }
         res.json({
           admin: user.admin,
           bitcloutpubkey: user.bitcloutpubkey,
