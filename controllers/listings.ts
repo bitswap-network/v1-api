@@ -105,10 +105,10 @@ listingRouter.post("/buy", tokenAuthenticator, async (req, res) => {
 listingRouter.post("/cancel", tokenAuthenticator, async (req, res) => {
   const { id } = req.body;
   const listing = await Listing.findById(id).exec();
-  const user = await User.findOne({ username: req.user.username });
+  const buyer = await User.findOne({ username: req.user.username });
 
-  if (listing && user) {
-    if (user.buystate || !listing.ongoing) {
+  if (listing && buyer) {
+    if (listing.ongoing) {
       if (listing.escrow.balance > 0 || listing.escrow.full) {
         res
           .status(400)
@@ -116,7 +116,7 @@ listingRouter.post("/cancel", tokenAuthenticator, async (req, res) => {
       } else {
         listing.ongoing = false;
         listing.buyer = null;
-        user.buystate = false;
+        buyer.buystate = false;
         await User.findOneAndUpdate(
           { username: req.user.username },
           { $pull: { buys: listing._id } }
@@ -125,7 +125,7 @@ listingRouter.post("/cancel", tokenAuthenticator, async (req, res) => {
           if (err) {
             res.status(500).send("could not save listing");
           } else {
-            user.save((err: any) => {
+            buyer.save((err: any) => {
               if (err) {
                 res.status(500).send("could not save user");
               } else {
@@ -136,11 +136,7 @@ listingRouter.post("/cancel", tokenAuthenticator, async (req, res) => {
         });
       }
     } else {
-      res
-        .status(400)
-        .send(
-          "user is not currently processing a transaction or listing is not active"
-        );
+      res.status(400).send("listing is not active");
     }
   } else {
     res.status(400).send("user or listing not found");
@@ -185,40 +181,6 @@ listingRouter.post("/delete", tokenAuthenticator, async (req, res) => {
     }
   } else {
     res.status(400).send("user or listing not found");
-  }
-});
-
-listingRouter.post("/fulfillretry", tokenAuthenticator, async (req, res) => {
-  const { id } = req.body;
-  const listing = await Listing.findById(id).exec();
-
-  if (listing) {
-    const buyer = await User.findOne({ _id: listing.buyer }).exec();
-    const seller = await User.findOne({ _id: listing.seller }).exec();
-    if (buyer && seller) {
-      if (
-        req.user.username == buyer.username ||
-        req.user.username == seller.username
-      ) {
-        axios
-          .post(`${config.FULFILLMENT_API}/fulfillretry`, {
-            listing_id: id,
-          })
-          .then((response) => {
-            console.log(response);
-            res.sendStatus(200);
-          })
-          .catch((err) => {
-            res.status(500).send(err);
-          });
-      } else {
-        res.status(400).send("invalid request");
-      }
-    } else {
-      res.status(400).send("buyer or seller not found");
-    }
-  } else {
-    res.status(400).send("listing not found");
   }
 });
 

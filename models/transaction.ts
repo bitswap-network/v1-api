@@ -26,7 +26,7 @@ const transactionSchema = new Schema<transactionDoc>({
   completed: { type: Date },
   tx_id: { type: String },
   fees: { type: Number },
-});
+  });
 
 const Transaction = model<transactionDoc>("Transaction", transactionSchema);
 
