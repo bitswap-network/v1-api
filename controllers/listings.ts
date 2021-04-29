@@ -9,7 +9,7 @@ import axios from "axios";
 listingRouter.post("/create", tokenAuthenticator, async (req, res) => {
   const { saletype, bitcloutnanos, usdamount, etheramount } = req.body;
   const user = await User.findOne({ username: req.user.username }).exec();
-  if (user) {
+  if (user && user.verified === "verified") {
     if (user.bitswapbalance >= bitcloutnanos / 1e9) {
       if (saletype == "USD") {
         console.log("usd");
@@ -55,7 +55,7 @@ listingRouter.post("/buy", tokenAuthenticator, async (req, res) => {
   const listing = await Listing.findById(id).exec();
   const user = await User.findOne({ username: req.user.username });
 
-  if (listing && user) {
+  if (listing && user && user.verified === "verified") {
     if (!user.buystate && !listing.completed.status && !listing.ongoing) {
       listing.buyer = user._id;
       listing.ongoing = true;

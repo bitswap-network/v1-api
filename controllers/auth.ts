@@ -14,7 +14,7 @@ authRouter.post("/register", async (req, res) => {
     password,
     bitcloutpubkey,
     ethereumaddress,
-    bitcloutverified
+    bitcloutverified,
   } = req.body;
   if (!username || !email || !password || !bitcloutpubkey || !ethereumaddress) {
     res.status(400).send({ message: "Missing fields in request body" });
@@ -55,7 +55,7 @@ authRouter.post("/register", async (req, res) => {
               email,
               "Verify your BitSwap email",
               `<!DOCTYPE html><html><head><title>BitSwap Email Verification</title><body>` +
-                `<p>Click <a href="http://localhost:5000/user/verifyemail/${email_code}">here</a> to verify your email. If this wasn't you, simply ignore this email.` +
+                `<p>Click <a href="https://bitswap-api.herokuapp.com/user/verifyemail/${email_code}">here</a> to verify your email. If this wasn't you, simply ignore this email.` +
                 `<p>Make a post on your $${username} BitClout profile saying: "Verifying my @BitSwap account. ${bitclout_code}" (make sure you tag us) to verify that you own this BitClout account.</p>` +
                 `</body></html>`
             );
@@ -74,26 +74,31 @@ authRouter.post("/login", bruteforce.prevent, async (req, res) => {
   const token = generateAccessToken({ username: username });
 
   const user = await User.findOne({
-    $or: [{username: username}, {email: username}],
+    $or: [{ username: username }, { email: username }],
   }).exec();
 
   if (user && user.validPassword(password)) {
     if (!user.emailverified) {
       res.status(403).send({ error: "Email not verified" });
-
     } else {
       try {
-        const response = await axios.post("https://api.bitclout.com/get-single-profile", {PublicKeyBase58Check: user.bitcloutpubkey}, {headers: { 
-          'Content-Type': 'application/json', 
-          'Cookie': '__cfduid=d948f4d42aa8cf1c00b7f93ba8951d45b1619496624; INGRESSCOOKIE=c7d7d1526f37eb58ae5a7a5f87b91d24'
-        },});
+        const response = await axios.post(
+          "https://api.bitclout.com/get-single-profile",
+          { PublicKeyBase58Check: user.bitcloutpubkey },
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Cookie:
+                "__cfduid=d948f4d42aa8cf1c00b7f93ba8951d45b1619496624; INGRESSCOOKIE=c7d7d1526f37eb58ae5a7a5f87b91d24",
+            },
+          }
+        );
         if (response.status === 200) {
           user.profilepicture = response.data.Profile.ProfilePic;
           user.description = response.data.Profile.Description;
-          await user.save()
+          await user.save();
         }
-        
-      } catch(error) {
+      } catch (error) {
         console.log(error);
         // res.status(500).send(error);
       }
@@ -120,7 +125,9 @@ authRouter.post("/login", bruteforce.prevent, async (req, res) => {
       });
     }
   } else {
-    res.status(404).send({error: "A user with those credentials does not exist"})
+    res
+      .status(404)
+      .send({ error: "A user with those credentials does not exist" });
   }
 
   // User.findOne(
@@ -140,7 +147,7 @@ authRouter.post("/login", bruteforce.prevent, async (req, res) => {
   //     } else if (!user.bitcloutverified) {
   //     } else {
   //       axios.post("https://api.bitclout.com/get-single-profile", {username: username}).then(response => {
-          
+
   //       })
   //       res.json({
   //         admin: user.admin,

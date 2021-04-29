@@ -161,7 +161,7 @@ userRouter.get("/verifypassword/:code", async (req, res) => {
 userRouter.post("/deposit", tokenAuthenticator, async (req, res) => {
   const { bitcloutvalue } = req.body;
   const user = await User.findOne({ username: req.user.username }).exec();
-  if (user) {
+  if (user && user.verified === "verified") {
     const txns = await Transaction.find({
       bitcloutpubkey: user.bitcloutpubkey,
       transactiontype: "deposit",
@@ -204,7 +204,7 @@ userRouter.post("/deposit", tokenAuthenticator, async (req, res) => {
 userRouter.post("/withdraw", tokenAuthenticator, async (req, res) => {
   const { bitcloutvalue, fees } = req.body;
   const user = await User.findOne({ username: req.user.username }).exec();
-  if (user) {
+  if (user && user.verified === "verified") {
     if (bitcloutvalue <= user.bitswapbalance) {
       const transaction = new Transaction({
         username: req.user.username,
@@ -255,7 +255,7 @@ userRouter.post("/withdraw", tokenAuthenticator, async (req, res) => {
 userRouter.post("/preFlightTxn", tokenAuthenticator, async (req, res) => {
   const { bitcloutvalue } = req.body;
   const user = await User.findOne({ username: req.user.username }).exec();
-  if (user) {
+  if (user && user.verified === "verified") {
     if (bitcloutvalue) {
       await axios
         .post(
