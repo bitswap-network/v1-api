@@ -30,7 +30,7 @@ const listingSchema = new Schema<listingDoc>({
   },
   bitcloutsent: { type: Boolean, default: false },
   escrowsent: { type: Boolean, default: false },
-  bitcloutTransactionId: { type: String, default: "" },
+  // bitcloutTransactionId: { type: String, default: "" },
   finalTransactionId: { type: String, default: "" },
   created: {
     type: Date,

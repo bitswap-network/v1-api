@@ -189,6 +189,7 @@ listingRouter.get("/listings", async (req, res) => {
   // /listings?date=desc?volume=desc?
   const dateSort = req.query.date;
   const volumeSort = req.query.volume;
+  const resultsCount = req.query.count;
 
   console.log(dateSort, volumeSort);
 
@@ -200,6 +201,7 @@ listingRouter.get("/listings", async (req, res) => {
       created: sortArr.includes(dateSort) ? dateSort : 1,
       bitcloutnanos: sortArr.includes(volumeSort) ? volumeSort : 1,
     })
+    .limit(resultsCount)
     .populate("buyer")
     .populate("seller");
   if (listings) {
