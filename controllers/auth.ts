@@ -92,31 +92,32 @@ authRouter.post("/login", bruteforce.prevent, async (req, res) => {
           user.description = response.data.Profile.Description;
           await user.save()
         }
-        res.json({
-          admin: user.admin,
-          bitcloutpubkey: user.bitcloutpubkey,
-          bitswapbalance: user.bitswapbalance,
-          buys: user.buys,
-          buystate: user.buystate,
-          created: user.created,
-          email: user.email,
-          emailverified: user.emailverified,
-          ethereumaddress: user.ethereumaddress,
-          listings: user.listings,
-          ratings: user.ratings,
-          transactions: user.transactions,
-          username: user.username,
-          verified: user.verified,
-          token: token,
-          _id: user._id,
-          bitcloutverified: user.bitcloutverified,
-          profilepicture: user.profilepicture,
-          description: user.description,
-        });
+        
       } catch(error) {
         console.log(error);
-        res.status(500).send(error);
+        // res.status(500).send(error);
       }
+      res.json({
+        admin: user.admin,
+        bitcloutpubkey: user.bitcloutpubkey,
+        bitswapbalance: user.bitswapbalance,
+        buys: user.buys,
+        buystate: user.buystate,
+        created: user.created,
+        email: user.email,
+        emailverified: user.emailverified,
+        ethereumaddress: user.ethereumaddress,
+        listings: user.listings,
+        ratings: user.ratings,
+        transactions: user.transactions,
+        username: user.username,
+        verified: user.verified,
+        token: token,
+        _id: user._id,
+        bitcloutverified: user.bitcloutverified,
+        profilepicture: user.profilepicture,
+        description: user.description,
+      });
     }
   } else {
     res.status(404).send({error: "A user with those credentials does not exist"})
