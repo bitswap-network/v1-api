@@ -136,51 +136,6 @@ authRouter.post("/login", bruteforce.prevent, async (req, res) => {
       .status(404)
       .send({ error: "A user with those credentials does not exist" });
   }
-
-  // User.findOne(
-  //   {
-  //     $or: [{ username: username }, { email: username }],
-  //   },
-  //   function (err, user) {
-  //     if (err) {
-  //       res.status(500).send({ error: "An error occurred on the server" });
-  //     } else if (!user) {
-  //       res
-  //         .status(404)
-  //         .send({ error: "A user with that email or password doesn't exist!" });
-  //     } else if (!user.validPassword(password)) {
-  //       res.status(400).send({ error: "Invalid username or password" });
-  //     } else if (!user.emailverified) {
-  //     } else if (!user.bitcloutverified) {
-  //     } else {
-  //       axios.post("https://api.bitclout.com/get-single-profile", {username: username}).then(response => {
-
-  //       })
-  //       res.json({
-  //         admin: user.admin,
-  //         bitcloutpubkey: user.bitcloutpubkey,
-  //         bitswapbalance: user.bitswapbalance,
-  //         buys: user.buys,
-  //         buystate: user.buystate,
-  //         completedorders: user.completedorders,
-  //         created: user.created,
-  //         email: user.email,
-  //         emailverified: user.emailverified,
-  //         ethereumaddress: user.ethereumaddress,
-  //         listings: user.listings,
-  //         ratings: user.ratings,
-  //         transactions: user.transactions,
-  //         username: user.username,
-  //         verified: user.verified,
-  //         token: token,
-  //         _id: user._id,
-  //         bitcloutverified: user.bitcloutverified,
-  //         profilepicture: user.profilepicture,
-  //         description: user.description,
-  //       });
-  //     }
-  //   }
-  // );
 });
 
 authRouter.post("/getbitcloutprofile", async (req, res) => {

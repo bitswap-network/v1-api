@@ -2,6 +2,7 @@ const listingRouter = require("express").Router();
 import Listing from "../models/listing";
 import User from "../models/user";
 import { generateHMAC } from "../utils/functions";
+import sendMail from "../utils/mailer";
 const config = require("../utils/config");
 const { tokenAuthenticator } = require("../utils/middleware");
 import axios from "axios";
@@ -53,15 +54,21 @@ listingRouter.post("/create", tokenAuthenticator, async (req, res) => {
 listingRouter.post("/buy", tokenAuthenticator, async (req, res) => {
   const { id } = req.body;
   const listing = await Listing.findById(id).exec();
-  const user = await User.findOne({ username: req.user.username });
+  const buyer = await User.findOne({ username: req.user.username });
 
-  if (listing && user && user.verified === "verified") {
-    if (!user.buystate && !listing.completed.status && !listing.ongoing) {
-      listing.buyer = user._id;
+  if (listing && buyer && buyer.verified === "verified") {
+    const seller = await User.findById(listing.seller).exec();
+    if (
+      seller &&
+      !buyer.buystate &&
+      !listing.completed.status &&
+      !listing.ongoing
+    ) {
+      listing.buyer = buyer._id;
       listing.ongoing = true;
-      user.buystate = true;
-      user.buys.push(listing._id);
-      user.save((err: any) => {
+      buyer.buystate = true;
+      buyer.buys.push(listing._id);
+      buyer.save((err: any) => {
         if (err) {
           res.status(500).send("error saving user");
         }
@@ -78,7 +85,19 @@ listingRouter.post("/buy", tokenAuthenticator, async (req, res) => {
               if (err) {
                 res.status(500).send("error saving listing");
               } else {
-                res.sendStatus(200);
+                try {
+                  sendMail(
+                    seller.email,
+                    `Transaction Notification Alert`,
+                    `<!DOCTYPE html><html><head><title>Transaction Notification Alert</title><body>` +
+                      `<p>@${buyer.username} has started a transaction with your listing.` +
+                      `<p>Click <a href="https://app.bitswap.network/listing/${listing._id}">here</a> to view.</p>` +
+                      `</body></html>`
+                  );
+                  res.sendStatus(200);
+                } catch (err) {
+                  res.status(500).send(err);
+                }
               }
             });
           })
