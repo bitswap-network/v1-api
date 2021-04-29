@@ -10,7 +10,13 @@ import axios from "axios";
 listingRouter.post("/create", tokenAuthenticator, async (req, res) => {
   const { saletype, bitcloutnanos, usdamount, etheramount } = req.body;
   const user = await User.findOne({ username: req.user.username }).exec();
-  if (user && user.verified === "verified") {
+  if (
+    user &&
+    user.verified === "verified" &&
+    etheramount &&
+    bitcloutnanos &&
+    usdamount
+  ) {
     if (user.bitswapbalance >= bitcloutnanos / 1e9) {
       if (saletype == "USD") {
         console.log("usd");
@@ -280,36 +286,39 @@ listingRouter.get("/listing/:id", tokenAuthenticator, async (req, res) => {
 
 listingRouter.get("/totalcompleted", async (req, res) => {
   const listings = await Listing.find({
-    "completed.status": true
+    "completed.status": true,
   }).exec();
   let totalbitcloutnanos = 0;
   let totaletheramount = 0;
-  listings.forEach(listing => {
-    totalbitcloutnanos += listing.bitcloutnanos
-    totaletheramount += listing.etheramount
-  })
+  listings.forEach((listing) => {
+    totalbitcloutnanos += listing.bitcloutnanos;
+    totaletheramount += listing.etheramount;
+  });
   res.send({
     count: listings.length,
     totalbitcloutnanos: totalbitcloutnanos,
-    totaletheramount: totaletheramount
-  })
+    totaletheramount: totaletheramount,
+  });
 });
 
 listingRouter.get("/avgprice", async (req, res) => {
   const limit = !isNaN(Number(req.query.limit)) ? Number(req.query.limit) : 10;
   const listings = await Listing.find({
-    "completed.status": true
-  }).sort({
-    "completed.date": "descending"
-  }).limit(limit).exec();
-  let total = 0;
-  listings.forEach(listing => {
-    total += listing.usdamount / (listing.bitcloutnanos / 1e9);
+    "completed.status": true,
   })
+    .sort({
+      "completed.date": "descending",
+    })
+    .limit(limit)
+    .exec();
+  let total = 0;
+  listings.forEach((listing) => {
+    total += listing.usdamount / (listing.bitcloutnanos / 1e9);
+  });
   res.send({
     count: listings.length,
-    avgprice: total/listings.length
-  })
-})
+    avgprice: total / listings.length,
+  });
+});
 
 export default listingRouter;
