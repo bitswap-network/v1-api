@@ -1,4 +1,4 @@
-import { createHmac } from "crypto";
+import { createHmac, randomBytes } from "crypto";
 
 const jwt = require("jsonwebtoken");
 const config = require("./config");
@@ -17,4 +17,8 @@ export const generateHMAC = (body: any) => {
   const hmac = createHmac("sha256", token); // Create a HMAC SHA256 hash using the auth token
   hmac.update(JSON.stringify(body), "utf8");
   return hmac.digest("hex"); // If signature equals your computed hash, return true
+};
+
+export const genString = (size: number) => {
+  return randomBytes(size).toString("base64").slice(0, size);
 };
