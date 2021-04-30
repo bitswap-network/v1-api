@@ -56,7 +56,7 @@ utilRouter.get("/logging/:type", tokenAuthenticator, async (req, res) => {
             res.send(response.data);
           }
         } catch (error) {
-          console.log(error);
+          console.log(error.data);
           res.status(500).send(error.data);
         }
       } else {
