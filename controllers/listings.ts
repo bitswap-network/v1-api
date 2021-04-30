@@ -61,7 +61,7 @@ listingRouter.post("/create", tokenAuthenticator, async (req, res) => {
       res.status(402).send("insufficient funds to post this listing");
     }
   } else {
-    res.status(404).send("user not found");
+    res.status(400).send("invalid request: user not verified or fields missing");
   }
 });
 
