@@ -4,7 +4,6 @@ const authRouter = require("express").Router();
 import User from "../models/user";
 import sendMail from "../utils/mailer";
 import { bruteforce, tokenAuthenticator } from "../utils/middleware";
-import Proxy from "../utils/proxy";
 import axios from "axios";
 import whitelist from "../whitelist.json";
 authRouter.post("/register", async (req, res) => {
