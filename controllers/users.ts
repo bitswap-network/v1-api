@@ -231,7 +231,7 @@ userRouter.post("/withdraw", tokenAuthenticator, async (req, res) => {
                 txn_id: transaction._id,
               };
               axios
-                .post(`${config.FULFILLMENT_API}/withdraw`, body, {
+                .post(`${config.FULFILLMENT_API}/core/withdraw`, body, {
                   headers: { "server-signature": generateHMAC(body) },
                 })
                 .then((response) => {
