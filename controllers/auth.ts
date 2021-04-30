@@ -81,7 +81,8 @@ authRouter.post("/login", bruteforce.prevent, async (req, res) => {
   const token = generateAccessToken({ username: username });
 
   const user = await User.findOne({
-    $or: [{ username: username }, { email: username }],
+    username: username
+    // $or: [{ username: username }, { email: username }],
   }).exec();
 
   if (user && user.validPassword(password)) {
