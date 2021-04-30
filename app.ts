@@ -8,6 +8,7 @@ const mongoose = require("mongoose");
 import userRouter from "./controllers/users";
 import listingRouter from "./controllers/listings";
 import authRouter from "./controllers/auth";
+import utilRouter from "./controllers/utility";
 // import webhookRouter from "./controllers/webhook";
 
 // Middleware
@@ -36,7 +37,6 @@ app.use(helmet());
 app.use(express.json());
 app.use(middleware.requestLogger);
 
-
 app.get("/", (req: express.Request, res: express.Response) => {
   res.status(200).send(`BitSwap API`);
 });
@@ -44,6 +44,7 @@ app.get("/", (req: express.Request, res: express.Response) => {
 app.use("/user", userRouter);
 app.use("/listing", listingRouter);
 app.use("/auth", authRouter);
+app.use("/utility", utilRouter);
 // app.use("/webhook", webhookRouter);
 
 app.use(middleware.unknownEndpoint);

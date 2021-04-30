@@ -9,3 +9,5 @@ export let XAlchemyToken = process.env.XAlchemyToken;
 export let FULFILLMENT_API = process.env.FULFILLMENT_API;
 export let ServerAuth = process.env.SERVER_AUTH;
 export let PUBLIC_KEY_BITCLOUT = process.env.PUBLIC_KEY_BITCLOUT;
+export let ETHERSCAN_KEY = process.env.ETHERSCAN_KEY;
+export let CRYPTOCOMPARE_KEY = process.env.CRYPTOCOMPARE_KEY;
