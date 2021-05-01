@@ -110,4 +110,22 @@ utilRouter.get("/avgprice", async (req, res) => {
   });
 });
 
+utilRouter.post("/retry", async (req, res) => {
+  const { listing_id } = req.body;
+  try {
+    let body = { listing_id: listing_id };
+    const response = await axios.post(
+      `${config.FULFILLMENT_API}/webhook/retry`,
+      body,
+      {
+        headers: { "server-signature": generateHMAC(body) },
+      }
+    );
+    res.status(response.status).send(response.data);
+  } catch (error) {
+    console.log(error.data);
+    res.status(500).send(error.data);
+  }
+});
+
 export default utilRouter;
