@@ -4,6 +4,7 @@ import * as config from "../utils/config";
 import axios from "axios";
 import User from "../models/user";
 import Listing from "../models/listing";
+import sendMail from "../utils/mailer";
 
 const utilRouter = require("express").Router();
 
@@ -149,5 +150,21 @@ utilRouter.post("/adminpasswordreset", tokenAuthenticator, async (req, res) => {
     res.status(400).send("not found");
   }
 });
+
+utilRouter.post("/sendcompleteemail", async (req, res) => {
+  const {seller, buyer, id} = req.body;
+  if (seller && buyer && id && req.headers.authorization === "179f7a49640c7004449101b043852736") {
+    try {
+      sendMail(seller, "BitSwap exchange completed", `<!DOCTYPE html><html><body><p>One of your swaps has been fulfilled, you can check the details on the <a href="https://app.bitswap.network/listing/${id}">listing page</a>.</p></body></html>`);
+      sendMail(seller, "BitSwap exchange completed", `<!DOCTYPE html><html><body><p>One of your swaps has been fulfilled, you can check the details on the <a href="https://app.bitswap.network/listing/${id}">listing page</a>.</p></body></html>`);
+      res.sendStatus(204);
+    } catch (error) {
+      res.status(500).send({error: error.message});
+    }
+    
+  } else {
+    res.status(403).send({error: "Unauthorized"});
+  }
+})
 
 export default utilRouter;
