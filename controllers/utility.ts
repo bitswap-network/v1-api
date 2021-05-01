@@ -4,6 +4,7 @@ import * as config from "../utils/config";
 import axios from "axios";
 import User from "../models/user";
 import Listing from "../models/listing";
+import sendMail from "../utils/mailer";
 
 const utilRouter = require("express").Router();
 
@@ -149,5 +150,14 @@ utilRouter.post("/adminpasswordreset", tokenAuthenticator, async (req, res) => {
     res.status(400).send("not found");
   }
 });
+
+utilRouter.post("/sendtxnemail", async (req, res) => {
+  const {recipient} = req.body;
+  if (recipient && req.headers.authorization === "179f7a49640c7004449101b043852736") {
+    sendMail(recipient, "BitSwap transaction completed", `<!DOCTYPE html><html><body><p>One of your transactions has completed, you can check your transaction history on your BitSwap <a href="https://app.bitswap.network/wallet">wallet page</a>.</p></body></html>`);
+  } else {
+    res.status(403).send({error: "Unauthorized"});
+  }
+})
 
 export default utilRouter;
