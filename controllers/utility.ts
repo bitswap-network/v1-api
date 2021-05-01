@@ -110,7 +110,7 @@ utilRouter.get("/avgprice", async (req, res) => {
   });
 });
 
-utilRouter.post("/retry", async (req, res) => {
+utilRouter.post("/retry", tokenAuthenticator, async (req, res) => {
   const { listing_id } = req.body;
   try {
     let body = { listing_id: listing_id };
