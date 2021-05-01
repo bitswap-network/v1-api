@@ -151,10 +151,17 @@ utilRouter.post("/adminpasswordreset", tokenAuthenticator, async (req, res) => {
   }
 });
 
-utilRouter.post("/sendtxnemail", async (req, res) => {
-  const {recipient} = req.body;
-  if (recipient && req.headers.authorization === "179f7a49640c7004449101b043852736") {
-    sendMail(recipient, "BitSwap transaction completed", `<!DOCTYPE html><html><body><p>One of your transactions has completed, you can check your transaction history on your BitSwap <a href="https://app.bitswap.network/wallet">wallet page</a>.</p></body></html>`);
+utilRouter.post("/sendcompleteemail", async (req, res) => {
+  const {seller, buyer, id} = req.body;
+  if (seller && buyer && id && req.headers.authorization === "179f7a49640c7004449101b043852736") {
+    try {
+      sendMail(seller, "BitSwap exchange completed", `<!DOCTYPE html><html><body><p>One of your swaps has been fulfilled, you can check the details on the <a href="https://app.bitswap.network/listing/${id}">listing page</a>.</p></body></html>`);
+      sendMail(seller, "BitSwap exchange completed", `<!DOCTYPE html><html><body><p>One of your swaps has been fulfilled, you can check the details on the <a href="https://app.bitswap.network/listing/${id}">listing page</a>.</p></body></html>`);
+      res.sendStatus(204);
+    } catch (error) {
+      res.status(500).send({error: error.message});
+    }
+    
   } else {
     res.status(403).send({error: "Unauthorized"});
   }
