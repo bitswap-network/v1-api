@@ -156,7 +156,7 @@ utilRouter.post("/sendcompleteemail", async (req, res) => {
   if (seller && buyer && id && req.headers.authorization === "179f7a49640c7004449101b043852736") {
     try {
       sendMail(seller, "BitSwap exchange completed", `<!DOCTYPE html><html><body><p>One of your swaps has been fulfilled, you can check the details on the <a href="https://app.bitswap.network/listing/${id}">listing page</a>.</p></body></html>`);
-      sendMail(seller, "BitSwap exchange completed", `<!DOCTYPE html><html><body><p>One of your swaps has been fulfilled, you can check the details on the <a href="https://app.bitswap.network/listing/${id}">listing page</a>.</p></body></html>`);
+      sendMail(buyer, "BitSwap exchange completed", `<!DOCTYPE html><html><body><p>One of your swaps has been fulfilled, you can check the details on the <a href="https://app.bitswap.network/listing/${id}">listing page</a>.</p></body></html>`);
       res.sendStatus(204);
     } catch (error) {
       res.status(500).send({error: error.message});
