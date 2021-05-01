@@ -4,6 +4,7 @@ import * as config from "../utils/config";
 import axios from "axios";
 import User from "../models/user";
 import Listing from "../models/listing";
+import Transaction from "../models/transaction";
 import sendMail from "../utils/mailer";
 
 const utilRouter = require("express").Router();
@@ -19,6 +20,24 @@ utilRouter.get("/getGas", async (req, res) => {
   } catch (error) {
     console.log(error);
     res.status(500).send(error.data);
+  }
+});
+
+utilRouter.get("/pendingtxns", tokenAuthenticator, async (req, res) => {
+  const user = await User.findOne({ username: req.user.username }).exec();
+  if (user) {
+    if (user.admin) {
+      const Txns = await Transaction.find({ status: "pending" }).exec();
+      if (Txns) {
+        res.status(200).send(Txns);
+      } else {
+        res.status(500).send("error getting txns");
+      }
+    } else {
+      res.status(403).send("user not admin");
+    }
+  } else {
+    res.status(400).send("user not found");
   }
 });
 
@@ -152,19 +171,31 @@ utilRouter.post("/adminpasswordreset", tokenAuthenticator, async (req, res) => {
 });
 
 utilRouter.post("/sendcompleteemail", async (req, res) => {
-  const {seller, buyer, id} = req.body;
-  if (seller && buyer && id && req.headers.authorization === "179f7a49640c7004449101b043852736") {
+  const { seller, buyer, id } = req.body;
+  if (
+    seller &&
+    buyer &&
+    id &&
+    req.headers.authorization === "179f7a49640c7004449101b043852736"
+  ) {
     try {
-      sendMail(seller, "BitSwap exchange completed", `<!DOCTYPE html><html><body><p>One of your swaps has been fulfilled, you can check the details on the <a href="https://app.bitswap.network/listing/${id}">listing page</a>.</p></body></html>`);
-      sendMail(buyer, "BitSwap exchange completed", `<!DOCTYPE html><html><body><p>One of your swaps has been fulfilled, you can check the details on the <a href="https://app.bitswap.network/listing/${id}">listing page</a>.</p></body></html>`);
+      sendMail(
+        seller,
+        "BitSwap exchange completed",
+        `<!DOCTYPE html><html><body><p>One of your swaps has been fulfilled, you can check the details on the <a href="https://app.bitswap.network/listing/${id}">listing page</a>.</p></body></html>`
+      );
+      sendMail(
+        buyer,
+        "BitSwap exchange completed",
+        `<!DOCTYPE html><html><body><p>One of your swaps has been fulfilled, you can check the details on the <a href="https://app.bitswap.network/listing/${id}">listing page</a>.</p></body></html>`
+      );
       res.sendStatus(204);
     } catch (error) {
-      res.status(500).send({error: error.message});
+      res.status(500).send({ error: error.message });
     }
-    
   } else {
-    res.status(403).send({error: "Unauthorized"});
+    res.status(403).send({ error: "Unauthorized" });
   }
-})
+});
 
 export default utilRouter;
