@@ -8,14 +8,21 @@ const { tokenAuthenticator } = require("../utils/middleware");
 import axios from "axios";
 
 listingRouter.post("/create", tokenAuthenticator, async (req, res) => {
-  const { saletype, bitcloutnanos, usdamount, etheramount } = req.body;
+  const {
+    saletype,
+    bitcloutnanos,
+    usdamount,
+    etheramount,
+    ethaddress,
+  } = req.body;
   const user = await User.findOne({ username: req.user.username }).exec();
   if (
     user &&
     user.verified === "verified" &&
     etheramount &&
     bitcloutnanos &&
-    usdamount
+    usdamount &&
+    ethaddress
   ) {
     if (user.bitswapbalance >= bitcloutnanos / 1e9) {
       if (saletype == "USD") {
@@ -26,6 +33,7 @@ listingRouter.post("/create", tokenAuthenticator, async (req, res) => {
           bitcloutnanos: bitcloutnanos,
           usdamount: usdamount,
           etheramount: etheramount,
+          ethaddress: ethaddress,
         });
         listing.save((err: any) => {
           if (err) {

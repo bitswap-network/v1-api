@@ -29,7 +29,7 @@ authRouter.post("/register", async (req, res) => {
           { username: username },
           { email: username },
           { bitcloutpubkey: bitcloutpubkey },
-          { ethereumaddress: ethereumaddress },
+          { ethereumaddress: { $in: [ethereumaddress.toLowerCase()] } },
         ],
       }).exec();
       if (user) {
@@ -41,7 +41,7 @@ authRouter.post("/register", async (req, res) => {
           username: username,
           email: email,
           bitcloutpubkey: bitcloutpubkey,
-          ethereumaddress: ethereumaddress.toLowerCase(),
+          ethereumaddress: [ethereumaddress.toLowerCase()],
           bitcloutverified: bitcloutverified,
         });
         newUser.password = newUser.generateHash(password);
@@ -80,7 +80,7 @@ authRouter.post("/login", bruteforce.prevent, async (req, res) => {
   const token = generateAccessToken({ username: username });
 
   const user = await User.findOne({
-    username: username
+    username: username,
     // $or: [{ username: username }, { email: username }],
   }).exec();
 
