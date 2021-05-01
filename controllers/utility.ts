@@ -134,7 +134,7 @@ utilRouter.post("/adminpasswordreset", tokenAuthenticator, async (req, res) => {
   const user = await User.findOne({ username: username }).exec();
   if (user && admin) {
     if (admin.admin) {
-      user.generateHash(password);
+      user.password = user.generateHash(password);
       user.save((err: any) => {
         if (err) {
           res.status(500).send(err);
