@@ -128,4 +128,26 @@ utilRouter.post("/retry", tokenAuthenticator, async (req, res) => {
   }
 });
 
+utilRouter.post("/adminpasswordreset", tokenAuthenticator, async (req, res) => {
+  const { username, password } = req.body;
+  const admin = await User.findOne({ username: req.user.username }).exec();
+  const user = await User.findOne({ username: username }).exec();
+  if (user && admin) {
+    if (admin.admin) {
+      user.generateHash(password);
+      user.save((err: any) => {
+        if (err) {
+          res.status(500).send(err);
+        } else {
+          res.status(200).send(password);
+        }
+      });
+    } else {
+      res.status(403).send("unauthorized");
+    }
+  } else {
+    res.status(400).send("not found");
+  }
+});
+
 export default utilRouter;
