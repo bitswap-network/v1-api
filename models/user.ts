@@ -8,7 +8,7 @@ export interface UserDoc extends Document {
   emailverified: boolean;
   emailverification: string;
   bitcloutpubkey: string;
-  ethereumaddress: string;
+  ethereumaddress: string[];
   password: string;
   passwordverification: string;
   created: Date;
@@ -38,7 +38,7 @@ const userSchema = new Schema<UserDoc>({
   bitcloutpubkey: { type: String, unique: true },
   bitcloutbio: { type: String },
   bitcloutpicture: { type: String },
-  ethereumaddress: { type: String, unique: true },
+  ethereumaddress: [{ type: String, unique: true }],
   password: { type: String, required: true },
   passwordverification: { type: String },
   incomplete: { type: Boolean, required: true, default: true },

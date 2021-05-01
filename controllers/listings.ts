@@ -8,14 +8,21 @@ const { tokenAuthenticator } = require("../utils/middleware");
 import axios from "axios";
 
 listingRouter.post("/create", tokenAuthenticator, async (req, res) => {
-  const { saletype, bitcloutnanos, usdamount, etheramount } = req.body;
+  const {
+    saletype,
+    bitcloutnanos,
+    usdamount,
+    etheramount,
+    ethaddress,
+  } = req.body;
   const user = await User.findOne({ username: req.user.username }).exec();
   if (
     user &&
     user.verified === "verified" &&
     etheramount &&
     bitcloutnanos &&
-    usdamount
+    usdamount &&
+    ethaddress
   ) {
     if (user.bitswapbalance >= bitcloutnanos / 1e9) {
       if (saletype == "USD") {
@@ -26,6 +33,7 @@ listingRouter.post("/create", tokenAuthenticator, async (req, res) => {
           bitcloutnanos: bitcloutnanos,
           usdamount: usdamount,
           etheramount: etheramount,
+          ethaddress: ethaddress,
         });
         listing.save((err: any) => {
           if (err) {
@@ -282,43 +290,6 @@ listingRouter.get("/listing/:id", tokenAuthenticator, async (req, res) => {
   } else {
     res.status(404).send("no listing or user found");
   }
-});
-
-listingRouter.get("/totalcompleted", async (req, res) => {
-  const listings = await Listing.find({
-    "completed.status": true,
-  }).exec();
-  let totalbitcloutnanos = 0;
-  let totaletheramount = 0;
-  listings.forEach((listing) => {
-    totalbitcloutnanos += listing.bitcloutnanos;
-    totaletheramount += listing.etheramount;
-  });
-  res.send({
-    count: listings.length,
-    totalbitcloutnanos: totalbitcloutnanos,
-    totaletheramount: totaletheramount,
-  });
-});
-
-listingRouter.get("/avgprice", async (req, res) => {
-  const limit = !isNaN(Number(req.query.limit)) ? Number(req.query.limit) : 10;
-  const listings = await Listing.find({
-    "completed.status": true,
-  })
-    .sort({
-      "completed.date": "descending",
-    })
-    .limit(limit)
-    .exec();
-  let total = 0;
-  listings.forEach((listing) => {
-    total += listing.usdamount / (listing.bitcloutnanos / 1e9);
-  });
-  res.send({
-    count: listings.length,
-    avgprice: total / listings.length,
-  });
 });
 
 export default listingRouter;

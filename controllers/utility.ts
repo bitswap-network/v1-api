@@ -3,6 +3,7 @@ import { generateHMAC, genString } from "../utils/functions";
 import * as config from "../utils/config";
 import axios from "axios";
 import User from "../models/user";
+import Listing from "../models/listing";
 
 const utilRouter = require("express").Router();
 
@@ -70,6 +71,43 @@ utilRouter.get("/logging/:type", tokenAuthenticator, async (req, res) => {
   } else {
     res.status(400).send("user not found");
   }
+});
+
+utilRouter.get("/totalcompleted", async (req, res) => {
+  const listings = await Listing.find({
+    "completed.status": true,
+  }).exec();
+  let totalbitcloutnanos = 0;
+  let totaletheramount = 0;
+  listings.forEach((listing) => {
+    totalbitcloutnanos += listing.bitcloutnanos;
+    totaletheramount += listing.etheramount;
+  });
+  res.send({
+    count: listings.length,
+    totalbitcloutnanos: totalbitcloutnanos,
+    totaletheramount: totaletheramount,
+  });
+});
+
+utilRouter.get("/avgprice", async (req, res) => {
+  const limit = !isNaN(Number(req.query.limit)) ? Number(req.query.limit) : 10;
+  const listings = await Listing.find({
+    "completed.status": true,
+  })
+    .sort({
+      "completed.date": "descending",
+    })
+    .limit(limit)
+    .exec();
+  let total = 0;
+  listings.forEach((listing) => {
+    total += listing.usdamount / (listing.bitcloutnanos / 1e9);
+  });
+  res.send({
+    count: listings.length,
+    avgprice: total / listings.length,
+  });
 });
 
 export default utilRouter;

@@ -14,6 +14,7 @@ export interface listingDoc extends Document {
   finalTransactionId: string;
   created: Date;
   completed: { status: boolean; date: Date };
+  ethaddress: string;
 }
 
 const listingSchema = new Schema<listingDoc>({
@@ -40,6 +41,7 @@ const listingSchema = new Schema<listingDoc>({
     status: { type: Boolean, default: false },
     date: { type: Date },
   },
+  ethaddress: { type: String },
 });
 const Listing = model<listingDoc>("Listing", listingSchema);
 

@@ -44,26 +44,25 @@ userRouter.get("/profile/:username", async (req, res) => {
   }
 });
 
-userRouter.put("/updateprofile", tokenAuthenticator, async (req, res) => {
-  const { name, email, ethereumaddress } = req.body;
-  await User.updateOne(
-    {
-      username: req.user.username,
-    },
-    {
-      email: email.toLowerCase(),
-      ethereumaddress: ethereumaddress.toLowerCase(),
-      name: name,
-    },
-    {},
-    (err: any, doc: any) => {
+userRouter.put("/updateProfile", tokenAuthenticator, async (req, res) => {
+  const { email, ethereumaddress } = req.body;
+  const user = await User.findOne({ username: req.user.username });
+  console.log(typeof ethereumaddress, ethereumaddress);
+  if (user) {
+    user.email = email.toLowerCase();
+    let LCmap = ethereumaddress.map((_: string) => _.toLowerCase());
+    user.ethereumaddress = LCmap;
+
+    user.save((err: any, doc: any) => {
       if (err) {
         res.status(500).send(err);
       } else {
         res.status(201).send("Profile successfully updated");
       }
-    }
-  );
+    });
+  } else {
+    res.sendStatus(400);
+  }
 });
 
 userRouter.post("/updatepassword", tokenAuthenticator, async (req, res) => {
