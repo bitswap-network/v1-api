@@ -61,7 +61,9 @@ listingRouter.post("/create", tokenAuthenticator, async (req, res) => {
       res.status(402).send("insufficient funds to post this listing");
     }
   } else {
-    res.status(400).send("invalid request: user not verified or fields missing");
+    res
+      .status(400)
+      .send("invalid request: user not verified or fields missing");
   }
 });
 
@@ -228,7 +230,7 @@ listingRouter.get("/listings", async (req, res) => {
 
   const listings = await Listing.find({
     ongoing: false,
-    "completed.status": false, //change to false
+    "completed.status": false,
   })
     .sort({
       created: sortArr.includes(dateSort) ? dateSort : 1,
