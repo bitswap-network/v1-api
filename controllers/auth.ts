@@ -77,14 +77,14 @@ authRouter.post("/register", async (req, res) => {
 
 authRouter.post("/login", bruteforce.prevent, async (req, res) => {
   const { username, password } = req.body;
-  const token = generateAccessToken({ username: username });
 
   const user = await User.findOne({
-    username: username,
+    username: { $regex: new RegExp(`^${username}$`, "i") },
     // $or: [{ username: username }, { email: username }],
   }).exec();
 
   if (user && user.validPassword(password)) {
+    const token = generateAccessToken({ username: user.username });
     if (!user.emailverified) {
       res.status(403).send({ error: "Email not verified" });
     } else {
