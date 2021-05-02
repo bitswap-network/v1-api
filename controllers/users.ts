@@ -289,6 +289,41 @@ userRouter.post("/preFlightTxn", tokenAuthenticator, async (req, res) => {
   }
 });
 
+userRouter.post("/submit-deposit", tokenAuthenticator, async (req, res) => {
+  const { TransactionHex } = req.body;
+  const user = await User.findOne({ username: req.user.username }).exec();
+  if (user && user.verified === "verified") {
+    if (TransactionHex) {
+      await axios
+        .post(
+          "https://api.bitclout.com/submit-transaction",
+          JSON.stringify({
+            TransactionHex: TransactionHex,
+          }),
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Cookie:
+                "__cfduid=d0e96960ab7b9233d869e566cddde2b311619467183; INGRESSCOOKIE=e663da5b29ea8969365c1794da20771c",
+            },
+          }
+        )
+        .then((response) => {
+          console.log(response.data);
+          res.send(response.data);
+        })
+        .catch((error) => {
+          console.log(error);
+          res.status(error.response.status).send(error.response.data);
+        });
+    } else {
+      res.status(400).send("invalid request");
+    }
+  } else {
+    res.status(400).send("User not found");
+  }
+});
+
 userRouter.post("/verifyBitclout", tokenAuthenticator, async (req, res) => {
   const user = await User.findOne({ username: req.user.username }).exec();
   if (user) {

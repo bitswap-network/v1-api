@@ -1,4 +1,8 @@
-import { generateAccessToken, generateCode } from "../utils/functions";
+import {
+  generateAccessToken,
+  generateCode,
+  validateBitcloutJWT,
+} from "../utils/functions";
 
 const authRouter = require("express").Router();
 import User from "../models/user";
@@ -135,6 +139,65 @@ authRouter.post("/login", bruteforce.prevent, async (req, res) => {
     res
       .status(404)
       .send({ error: "A user with those credentials does not exist" });
+  }
+});
+
+authRouter.post("/login-bitclout", async (req, res) => {
+  const { bitcloutpubkey, jwt } = req.body;
+  // validateBitcloutJWT(bitcloutpubkey, jwt);
+  const user = await User.findOne({
+    bitcloutpubkey: bitcloutpubkey,
+  }).exec();
+  if (user) {
+    const token = generateAccessToken({ username: user.username });
+    if (!user.emailverified) {
+      res.status(403).send({ error: "Email not verified" });
+    } else {
+      try {
+        const response = await axios.post(
+          "https://api.bitclout.com/get-single-profile",
+          { PublicKeyBase58Check: user.bitcloutpubkey },
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Cookie:
+                "__cfduid=d948f4d42aa8cf1c00b7f93ba8951d45b1619496624; INGRESSCOOKIE=c7d7d1526f37eb58ae5a7a5f87b91d24",
+            },
+          }
+        );
+        if (response.status === 200) {
+          user.profilepicture = response.data.Profile.ProfilePic;
+          user.description = response.data.Profile.Description;
+          await user.save();
+        }
+      } catch (error) {
+        console.log(error);
+        // res.status(500).send(error);
+      }
+      res.json({
+        admin: user.admin,
+        bitcloutpubkey: user.bitcloutpubkey,
+        bitswapbalance: user.bitswapbalance,
+        buys: user.buys,
+        buystate: user.buystate,
+        created: user.created,
+        email: user.email,
+        emailverified: user.emailverified,
+        ethereumaddress: user.ethereumaddress,
+        listings: user.listings,
+        ratings: user.ratings,
+        transactions: user.transactions,
+        username: user.username,
+        verified: user.verified,
+        token: token,
+        _id: user._id,
+        bitcloutverified: user.bitcloutverified,
+        profilepicture: user.profilepicture,
+        description: user.description,
+      });
+    }
+  } else {
+    res.status(404).send({ error: "User does not exist" });
   }
 });
 
