@@ -222,24 +222,44 @@ listingRouter.post("/delete", tokenAuthenticator, async (req, res) => {
 listingRouter.get("/listings", async (req, res) => {
   let sortArr = ["asc", "desc", "descending", "ascending", -1, 1];
   // /listings?date=desc?volume=desc?
-  const dateSort = req.query.date;
+  const dateSort = req.query.dateSort;
+  const priceSort = req.query.priceSort;
   const volumeSort = req.query.volume;
+
+  const minPrice = req.query.minPrice;
+  const maxPrice = req.query.maxPrice;
+  const minVolume = req.query.minVolume;
+  const maxVolume = req.query.maxVolume;
   const resultsCount = req.query.count;
 
-  console.log(dateSort, volumeSort);
+  // console.log(dateSort, volumeSort);
 
-  const listings = await Listing.find({
+  let listings = await Listing.find({
     ongoing: false,
     "completed.status": false,
   })
     .sort({
-      created: sortArr.includes(dateSort) ? dateSort : 1,
+      created: sortArr.includes(dateSort) ? dateSort : -1,
       bitcloutnanos: sortArr.includes(volumeSort) ? volumeSort : 1,
     })
     .limit(resultsCount)
     .populate("buyer")
     .populate("seller");
   if (listings) {
+    if (minPrice && maxPrice) {
+      listings = listings.filter(listing => listing.usdamount / (listing.bitcloutnanos / 1e9) <= maxPrice && listing.usdamount / (listing.bitcloutnanos / 1e9) >= minPrice)
+    }
+    if (minVolume && maxVolume) {
+      listings = listings.filter(listing => listing.usdamount / (listing.bitcloutnanos / 1e9) <= maxVolume && listing.usdamount / (listing.bitcloutnanos / 1e9) >= minVolume)
+    }
+    if (sortArr.includes(priceSort)) {
+      if (priceSort === "asc" || priceSort === "ascending" || priceSort === "1") {
+        listings.sort((a, b) => {return (a.usdamount / (a.bitcloutnanos/1e9)) - (b.usdamount / (b.bitcloutnanos/1e9))});
+      }
+      if (priceSort === "desc" || priceSort === "descending" || priceSort === "-1") {
+        listings.sort((a, b) => {return (b.usdamount / (b.bitcloutnanos/1e9)) - (a.usdamount / (a.bitcloutnanos/1e9))});
+      }
+    }
     res.json(listings);
   } else {
     res.status(400).send("listings not found");
