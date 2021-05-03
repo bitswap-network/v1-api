@@ -118,7 +118,6 @@ utilRouter.get("/avgprice", async (req, res) => {
     .sort({
       "completed.date": "descending",
     })
-    .limit(limit)
     .exec();
   let total = 0;
   listings.forEach((listing) => {
