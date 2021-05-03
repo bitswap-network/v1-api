@@ -223,8 +223,8 @@ listingRouter.get("/listings", async (req, res) => {
   let sortArr = ["asc", "desc", "descending", "ascending", -1, 1];
   // /listings?date=desc?volume=desc?
   const dateSort = req.query.dateSort;
-  const priceSort = req.query.priceSort;
   const volumeSort = req.query.volume;
+  const priceSort = req.query.priceSort;
 
   const minPrice = req.query.minPrice;
   const maxPrice = req.query.maxPrice;
@@ -250,7 +250,7 @@ listingRouter.get("/listings", async (req, res) => {
       listings = listings.filter(listing => listing.usdamount / (listing.bitcloutnanos / 1e9) <= maxPrice && listing.usdamount / (listing.bitcloutnanos / 1e9) >= minPrice)
     }
     if (minVolume && maxVolume) {
-      listings = listings.filter(listing => listing.usdamount / (listing.bitcloutnanos / 1e9) <= maxVolume && listing.usdamount / (listing.bitcloutnanos / 1e9) >= minVolume)
+      listings = listings.filter(listing => listing.bitcloutnanos/1e9 <= maxVolume && listing.bitcloutnanos/1e9 >= minVolume)
     }
     if (sortArr.includes(priceSort)) {
       if (priceSort === "asc" || priceSort === "ascending" || priceSort === "1") {
