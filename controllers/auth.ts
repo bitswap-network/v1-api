@@ -7,9 +7,9 @@ import { bruteforce, tokenAuthenticator } from "../utils/middleware";
 import axios from "axios";
 import whitelist from "../whitelist.json";
 authRouter.post("/register", async (req, res) => {
-  let userlist = whitelist.users.map(function (x) {
-    return x.toLowerCase();
-  });
+  // let userlist = whitelist.users.map(function (x) {
+  //   return x.toLowerCase();
+  // });
   const {
     username,
     email,
@@ -23,55 +23,55 @@ authRouter.post("/register", async (req, res) => {
   } else if (password.length < 8) {
     res.status(400).send({ message: "Password formatting error" });
   } else {
-    if (userlist.includes(username.toLowerCase())) {
-      const user = await User.findOne({
-        $or: [
-          { username: username },
-          { email: username },
-          { bitcloutpubkey: bitcloutpubkey },
-          { ethereumaddress: { $in: [ethereumaddress.toLowerCase()] } },
-        ],
-      }).exec();
-      if (user) {
-        res
-          .status(409)
-          .send({ message: "There is already a user with that information" });
-      } else {
-        const newUser = new User({
-          username: username,
-          email: email,
-          bitcloutpubkey: bitcloutpubkey,
-          ethereumaddress: [ethereumaddress.toLowerCase()],
-          bitcloutverified: bitcloutverified,
-        });
-        newUser.password = newUser.generateHash(password);
-        const email_code = generateCode(8);
-        const bitclout_code = generateCode(16);
-        newUser.emailverification = email_code;
-        newUser.bitcloutverification = bitclout_code;
-        newUser.save((err: any) => {
-          if (err) {
-            res.status(500).send(err);
-          } else {
-            try {
-              sendMail(
-                email,
-                "Verify your BitSwap email",
-                `<!DOCTYPE html><html><head><title>BitSwap Email Verification</title><body>` +
-                  `<p>Click <a href="https://bitswap-api.herokuapp.com/user/verifyemail/${email_code}">here</a> to verify your email. If this wasn't you, simply ignore this email.` +
-                  `<p>Make a post on your $${username} BitClout profile saying: "Verifying my @BitSwap account. ${bitclout_code}" (make sure you tag us) to verify that you own this BitClout account.</p>` +
-                  `</body></html>`
-              );
-              res.status(201).send("Registration successful");
-            } catch (err) {
-              res.status(500).send(err);
-            }
-          }
-        });
-      }
+    // if (userlist.includes(username.toLowerCase())) {
+    const user = await User.findOne({
+      $or: [
+        { username: username },
+        { email: username },
+        { bitcloutpubkey: bitcloutpubkey },
+        { ethereumaddress: { $in: [ethereumaddress.toLowerCase()] } },
+      ],
+    }).exec();
+    if (user) {
+      res
+        .status(409)
+        .send({ message: "There is already a user with that information" });
     } else {
-      res.status(401).send("User not in whitelist");
+      const newUser = new User({
+        username: username,
+        email: email,
+        bitcloutpubkey: bitcloutpubkey,
+        ethereumaddress: [ethereumaddress.toLowerCase()],
+        bitcloutverified: bitcloutverified,
+      });
+      newUser.password = newUser.generateHash(password);
+      const email_code = generateCode(8);
+      const bitclout_code = generateCode(16);
+      newUser.emailverification = email_code;
+      newUser.bitcloutverification = bitclout_code;
+      newUser.save((err: any) => {
+        if (err) {
+          res.status(500).send(err);
+        } else {
+          try {
+            sendMail(
+              email,
+              "Verify your BitSwap email",
+              `<!DOCTYPE html><html><head><title>BitSwap Email Verification</title><body>` +
+                `<p>Click <a href="https://bitswap-api.herokuapp.com/user/verifyemail/${email_code}">here</a> to verify your email. If this wasn't you, simply ignore this email.` +
+                `<p>Make a post on your $${username} BitClout profile saying: "Verifying my @BitSwap account. ${bitclout_code}" (make sure you tag us) to verify that you own this BitClout account.</p>` +
+                `</body></html>`
+            );
+            res.status(201).send("Registration successful");
+          } catch (err) {
+            res.status(500).send(err);
+          }
+        }
+      });
     }
+    // } else {
+    //   res.status(401).send("User not in whitelist");
+    // }
   }
 });
 
@@ -140,40 +140,40 @@ authRouter.post("/login", bruteforce.prevent, async (req, res) => {
 
 authRouter.post("/getbitcloutprofile", async (req, res) => {
   const { PublicKeyBase58Check, Username } = req.body;
-  let userlist = whitelist.users.map(function (x) {
-    return x.toLowerCase();
-  });
-  if (userlist.includes(Username.toLowerCase())) {
-    axios
-      .post(
-        "https://api.bitclout.com/get-single-profile",
-        { PublicKeyBase58Check: PublicKeyBase58Check, Username: Username },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Cookie:
-              "__cfduid=d948f4d42aa8cf1c00b7f93ba8951d45b1619496624; INGRESSCOOKIE=c7d7d1526f37eb58ae5a7a5f87b91d24",
-          },
-        }
-      )
-      .then((response) => {
-        let resJSON = response.data;
-        if (resJSON.error) {
-          res.status(400).send(resJSON.error);
-        } else if (resJSON.Profile) {
-          res.json(resJSON.Profile);
-        } else {
-          res.sendStatus(405);
-        }
-      })
-      .catch((error) => {
-        console.log(error);
-        res.status(500).send(error);
-      });
-  } else {
-    console.log("user not in whitelist");
-    res.status(401).send("User not in whitelist");
-  }
+  // let userlist = whitelist.users.map(function (x) {
+  //   return x.toLowerCase();
+  // });
+  // if (userlist.includes(Username.toLowerCase())) {
+  axios
+    .post(
+      "https://api.bitclout.com/get-single-profile",
+      { PublicKeyBase58Check: PublicKeyBase58Check, Username: Username },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Cookie:
+            "__cfduid=d948f4d42aa8cf1c00b7f93ba8951d45b1619496624; INGRESSCOOKIE=c7d7d1526f37eb58ae5a7a5f87b91d24",
+        },
+      }
+    )
+    .then((response) => {
+      let resJSON = response.data;
+      if (resJSON.error) {
+        res.status(400).send(resJSON.error);
+      } else if (resJSON.Profile) {
+        res.json(resJSON.Profile);
+      } else {
+        res.sendStatus(405);
+      }
+    })
+    .catch((error) => {
+      console.log(error);
+      res.status(500).send(error);
+    });
+  // } else {
+  //   console.log("user not in whitelist");
+  //   res.status(401).send("User not in whitelist");
+  // }
 });
 
 authRouter.get("/verifytoken", tokenAuthenticator, (req, res) => {
