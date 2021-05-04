@@ -12,7 +12,7 @@ export interface listingDoc extends Document {
   escrowsent: boolean;
   finalTransactionId: string;
   created: Date;
-  buy_time: Date | undefined;
+  buy_time: Date | null;
   completed: { status: boolean; date: Date };
   ethaddress: string;
   pool: Schema.Types.ObjectId | null;
@@ -37,7 +37,7 @@ const listingSchema = new Schema<listingDoc>({
     type: Date,
     default: Date.now,
   },
-  buy_time: { type: Date },
+  buy_time: { type: Date, default: null },
   completed: {
     status: { type: Boolean, default: false },
     date: { type: Date },

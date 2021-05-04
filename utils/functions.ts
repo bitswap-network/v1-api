@@ -25,6 +25,7 @@ export const buyListingExecute = async (
     await listing.save();
     await listing.save();
     await buyer.save();
+    await pool.save();
     return 200;
   } catch (e) {
     throw 500;

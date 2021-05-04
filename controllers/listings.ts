@@ -154,6 +154,7 @@ listingRouter.post("/cancel", tokenAuthenticator, async (req, res) => {
         } else {
           listing.ongoing = false;
           listing.buyer = null;
+          listing.buy_time = null;
           listing.pool = null;
           pool!.active = false;
           pool!.listing = null;
@@ -344,6 +345,7 @@ listingRouter.get("/listing/:id", tokenAuthenticator, async (req, res) => {
         let popListing = await Listing.findOne({ _id: req.params.id })
           .populate("buyer")
           .populate("seller")
+          .populate("pool", "address active listing")
           .exec();
         res.json(popListing);
       } else {
