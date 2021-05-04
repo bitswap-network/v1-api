@@ -11,3 +11,5 @@ export let ServerAuth = process.env.SERVER_AUTH;
 export let PUBLIC_KEY_BITCLOUT = process.env.PUBLIC_KEY_BITCLOUT;
 export let ETHERSCAN_KEY = process.env.ETHERSCAN_KEY;
 export let CRYPTOCOMPARE_KEY = process.env.CRYPTOCOMPARE_KEY;
+export let cfuid = "d948f4d42aa8cf1c00b7f93ba8951d45b1619496624";
+export let ingressCookie = "c7d7d1526f37eb58ae5a7a5f87b91d24";

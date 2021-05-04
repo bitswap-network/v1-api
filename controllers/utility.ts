@@ -1,19 +1,21 @@
 import { tokenAuthenticator } from "../utils/middleware";
-import { generateHMAC, genString } from "../utils/functions";
-import * as config from "../utils/config";
-import axios from "axios";
+import { genString, completeEmail } from "../utils/functions";
 import User from "../models/user";
 import Listing from "../models/listing";
 import Transaction from "../models/transaction";
 import sendMail from "../utils/mailer";
+import {
+  getGasEtherscan,
+  getEthUsdCC,
+  getFulfillmentLogs,
+  manualFulfillment,
+} from "../utils/helper";
 
 const utilRouter = require("express").Router();
 
 utilRouter.get("/getGas", async (req, res) => {
   try {
-    const response = await axios.get(
-      `https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=${config.ETHERSCAN_KEY}`
-    );
+    const response = await getGasEtherscan();
     if (response.status === 200) {
       res.send(response.data.result);
     }
@@ -43,12 +45,7 @@ utilRouter.get("/pendingtxns", tokenAuthenticator, async (req, res) => {
 
 utilRouter.get("/getEthUSD", async (req, res) => {
   try {
-    const response = await axios.get(
-      `https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=USD`,
-      {
-        headers: { Authorization: `Apikey ${config.CRYPTOCOMPARE_KEY}` },
-      }
-    );
+    const response = await getEthUsdCC();
     if (response.status === 200) {
       res.send(response.data);
     }
@@ -66,13 +63,7 @@ utilRouter.get("/logging/:type", tokenAuthenticator, async (req, res) => {
       if (types.includes(req.params.type)) {
         try {
           let body = { id: genString(32) };
-          const response = await axios.post(
-            `${config.FULFILLMENT_API}/logs/${req.params.type}`,
-            body,
-            {
-              headers: { "server-signature": generateHMAC(body) },
-            }
-          );
+          const response = await getFulfillmentLogs(req.params.type, body);
           if (response.status === 200) {
             res.send(response.data);
           }
@@ -133,13 +124,7 @@ utilRouter.post("/retry", tokenAuthenticator, async (req, res) => {
   const { listing_id } = req.body;
   try {
     let body = { listing_id: listing_id };
-    const response = await axios.post(
-      `${config.FULFILLMENT_API}/webhook/retry`,
-      body,
-      {
-        headers: { "server-signature": generateHMAC(body) },
-      }
-    );
+    const response = await manualFulfillment(body);
     res.status(response.status).send(response.data);
   } catch (error) {
     console.log(error.data);
@@ -178,16 +163,9 @@ utilRouter.post("/sendcompleteemail", async (req, res) => {
     req.headers.authorization === "179f7a49640c7004449101b043852736"
   ) {
     try {
-      sendMail(
-        seller,
-        "BitSwap exchange completed",
-        `<!DOCTYPE html><html><body><p>One of your swaps has been fulfilled, you can check the details on the <a href="https://app.bitswap.network/listing/${id}">listing page</a>.</p></body></html>`
-      );
-      sendMail(
-        buyer,
-        "BitSwap exchange completed",
-        `<!DOCTYPE html><html><body><p>One of your swaps has been fulfilled, you can check the details on the <a href="https://app.bitswap.network/listing/${id}">listing page</a>.</p></body></html>`
-      );
+      let mailBody = completeEmail(id);
+      sendMail(seller, mailBody.header, mailBody.body.seller);
+      sendMail(buyer, mailBody.header, mailBody.body.buyer);
       res.sendStatus(204);
     } catch (error) {
       res.status(500).send({ error: error.message });

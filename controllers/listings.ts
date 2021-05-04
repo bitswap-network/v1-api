@@ -1,20 +1,13 @@
 const listingRouter = require("express").Router();
 import Listing from "../models/listing";
 import User from "../models/user";
-import { generateHMAC } from "../utils/functions";
+import { getEthUsdCC } from "../utils/helper";
 import sendMail from "../utils/mailer";
-const config = require("../utils/config");
+import { transactionNotificationEmail } from "../utils/functions";
 const { tokenAuthenticator } = require("../utils/middleware");
-import axios from "axios";
 
 listingRouter.post("/create", tokenAuthenticator, async (req, res) => {
-  const {
-    saletype,
-    bitcloutnanos,
-    usdamount,
-    etheramount,
-    ethaddress,
-  } = req.body;
+  const { bitcloutnanos, usdamount, etheramount, ethaddress } = req.body;
   const user = await User.findOne({ username: req.user.username }).exec();
   if (
     user &&
@@ -25,38 +18,33 @@ listingRouter.post("/create", tokenAuthenticator, async (req, res) => {
     ethaddress
   ) {
     if (user.bitswapbalance >= bitcloutnanos / 1e9) {
-      if (saletype == "USD") {
-        console.log("usd");
-        const listing = new Listing({
-          seller: user._id,
-          currencysaletype: "USD",
-          bitcloutnanos: bitcloutnanos,
-          usdamount: usdamount,
-          etheramount: etheramount,
-          ethaddress: ethaddress,
-        });
-        listing.save((err: any) => {
-          if (err) {
-            console.log(err);
-            res.status(500).send("error saving listing");
-          } else {
-            user.bitswapbalance -= bitcloutnanos / 1e9;
-            user.listings.push(listing._id);
-            console.log("saved listing");
-            user.save((err: any) => {
-              if (err) {
-                console.log(err);
-                res.status(500).send("error saving user");
-              } else {
-                console.log("saved user");
-                res.sendStatus(200);
-              }
-            });
-          }
-        });
-      } else {
-        res.status(400).send("invalid sale type");
-      }
+      const listing = new Listing({
+        seller: user._id,
+        currencysaletype: "USD",
+        bitcloutnanos: bitcloutnanos,
+        usdamount: usdamount,
+        etheramount: etheramount,
+        ethaddress: ethaddress,
+      });
+      listing.save((err: any) => {
+        if (err) {
+          console.log(err);
+          res.status(500).send("error saving listing");
+        } else {
+          user.bitswapbalance -= bitcloutnanos / 1e9;
+          user.listings.push(listing._id);
+          console.log("saved listing");
+          user.save((err: any) => {
+            if (err) {
+              console.log(err);
+              res.status(500).send("error saving user");
+            } else {
+              console.log("saved user");
+              res.sendStatus(200);
+            }
+          });
+        }
+      });
     } else {
       res.status(402).send("insufficient funds to post this listing");
     }
@@ -82,54 +70,39 @@ listingRouter.post("/buy", tokenAuthenticator, async (req, res) => {
     ) {
       listing.buyer = buyer._id;
       listing.ongoing = true;
-      buyer.buystate = true;
-      buyer.buys.push(listing._id);
-      buyer.save((err: any) => {
-        if (err) {
-          res.status(500).send("error saving user");
-        }
-      });
-      if (listing.currencysaletype == "USD") {
-        axios
-          .get(
-            `https://api.etherscan.io/api?module=stats&action=ethprice&apikey=SEJUHN1GDIV8A98RJWDI7IVDV1MP3SEZTW`
-          )
-          .then((response) => {
-            let eth_usdrate = parseFloat(response.data.result.ethusd);
-            listing.etheramount = listing.usdamount / eth_usdrate;
-            listing.save((err: any) => {
-              if (err) {
-                res.status(500).send("error saving listing");
-              } else {
-                try {
-                  sendMail(
-                    seller.email,
-                    `Transaction Notification Alert`,
-                    `<!DOCTYPE html><html><head><title>Transaction Notification Alert</title><body>` +
-                      `<p>@${buyer.username} has started a transaction with your listing.` +
-                      `<p>Click <a href="https://app.bitswap.network/listing/${listing._id}">here</a> to view.</p>` +
-                      `</body></html>`
-                  );
-                  res.sendStatus(200);
-                } catch (err) {
-                  res.status(500).send(err);
+
+      await getEthUsdCC()
+        .then((response) => {
+          listing.etheramount = listing.usdamount / response.data.USD;
+          listing.save((err: any) => {
+            if (err) {
+              res.status(500).send("error saving listing");
+            } else {
+              buyer.buystate = true;
+              buyer.buys.push(listing._id);
+              buyer.save((err: any) => {
+                if (err) {
+                  res.status(500).send("error saving user");
+                } else {
+                  try {
+                    let mailBody = transactionNotificationEmail(
+                      buyer.username,
+                      listing._id
+                    );
+                    sendMail(seller.email, mailBody.header, mailBody.body);
+                    res.sendStatus(200);
+                  } catch (err) {
+                    res.status(500).send(err);
+                  }
                 }
-              }
-            });
-          })
-          .catch((error) => {
-            console.log(error);
-            res.status(500).send("error fetching usd/eth rates");
+              });
+            }
           });
-      } else if (listing.currencysaletype == "ETH") {
-        listing.save((err: any) => {
-          if (err) {
-            res.status(500).send("error saving listing");
-          } else {
-            res.sendStatus(200);
-          }
+        })
+        .catch((error) => {
+          console.log(error);
+          res.status(500).send(error);
         });
-      }
     } else {
       res.status(400).send("user cannot have multiple ongoing buys");
     }
@@ -221,7 +194,6 @@ listingRouter.post("/delete", tokenAuthenticator, async (req, res) => {
 
 listingRouter.get("/listings", async (req, res) => {
   let sortArr = ["asc", "desc", "descending", "ascending", -1, 1];
-  // /listings?date=desc?volume=desc?
   const dateSort = req.query.dateSort;
   const volumeSort = req.query.volumeSort;
   const priceSort = req.query.priceSort;
@@ -249,21 +221,58 @@ listingRouter.get("/listings", async (req, res) => {
     .sort(sortOptions)
     .limit(resultsCount)
     .populate("buyer")
-    .populate("seller").exec();
+    .populate("seller")
+    .exec();
 
   if (listings.length > 0) {
-    if (minPrice && maxPrice && minPrice !== "undefined" && maxPrice !== "undefined") {
-      listings = listings.filter(listing => listing.usdamount / (listing.bitcloutnanos / 1e9) <= maxPrice && listing.usdamount / (listing.bitcloutnanos / 1e9) >= minPrice)
+    if (
+      minPrice &&
+      maxPrice &&
+      minPrice !== "undefined" &&
+      maxPrice !== "undefined"
+    ) {
+      listings = listings.filter(
+        (listing) =>
+          listing.usdamount / (listing.bitcloutnanos / 1e9) <= maxPrice &&
+          listing.usdamount / (listing.bitcloutnanos / 1e9) >= minPrice
+      );
     }
-    if (minVolume && maxVolume && minVolume !== "undefined" && maxVolume !== "undefined") {
-      listings = listings.filter(listing => listing.bitcloutnanos/1e9 <= maxVolume && listing.bitcloutnanos/1e9 >= minVolume)
+    if (
+      minVolume &&
+      maxVolume &&
+      minVolume !== "undefined" &&
+      maxVolume !== "undefined"
+    ) {
+      listings = listings.filter(
+        (listing) =>
+          listing.bitcloutnanos / 1e9 <= maxVolume &&
+          listing.bitcloutnanos / 1e9 >= minVolume
+      );
     }
     if (sortArr.includes(priceSort)) {
-      if (priceSort === "asc" || priceSort === "ascending" || priceSort === "1") {
-        listings.sort((a, b) => {return (a.usdamount / (a.bitcloutnanos/1e9)) - (b.usdamount / (b.bitcloutnanos/1e9))});
+      if (
+        priceSort === "asc" ||
+        priceSort === "ascending" ||
+        priceSort === "1"
+      ) {
+        listings.sort((a, b) => {
+          return (
+            a.usdamount / (a.bitcloutnanos / 1e9) -
+            b.usdamount / (b.bitcloutnanos / 1e9)
+          );
+        });
       }
-      if (priceSort === "desc" || priceSort === "descending" || priceSort === "-1") {
-        listings.sort((a, b) => {return (b.usdamount / (b.bitcloutnanos/1e9)) - (a.usdamount / (a.bitcloutnanos/1e9))});
+      if (
+        priceSort === "desc" ||
+        priceSort === "descending" ||
+        priceSort === "-1"
+      ) {
+        listings.sort((a, b) => {
+          return (
+            b.usdamount / (b.bitcloutnanos / 1e9) -
+            a.usdamount / (a.bitcloutnanos / 1e9)
+          );
+        });
       }
     }
     res.json(listings);
@@ -292,7 +301,7 @@ listingRouter.get("/listing/:id", tokenAuthenticator, async (req, res) => {
   if (user && listing) {
     if (!listing.completed.status && !listing.ongoing) {
       //if listing has no buyer
-      if (user._id == listing.seller.toString()) {
+      if (user._id == listing.seller.toString() || user.admin) {
         let popListing = await Listing.findOne({ _id: req.params.id })
           .populate("buyer")
           .populate("seller")
@@ -304,7 +313,8 @@ listingRouter.get("/listing/:id", tokenAuthenticator, async (req, res) => {
     } else if (listing.completed.status || listing.ongoing) {
       if (
         user._id == listing.seller.toString() ||
-        user._id == listing!.buyer!.toString()
+        user._id == listing!.buyer!.toString() ||
+        user.admin
       ) {
         let popListing = await Listing.findOne({ _id: req.params.id })
           .populate("buyer")

@@ -1,16 +1,24 @@
-const userRouter = require("express").Router();
 import User from "../models/user";
-const { tokenAuthenticator } = require("../utils/middleware");
+import {
+  getProfilePosts,
+  handleWithdraw,
+  preFlightSendBitclout,
+} from "../utils/helper";
+import { tokenAuthenticator } from "../utils/middleware";
 import sendMail, {
   emailverified,
   invalidlink,
   servererror,
 } from "../utils/mailer";
 import Transaction from "../models/transaction";
-import { generateCode, generateHMAC } from "../utils/functions";
-const config = require("../utils/config");
-import axios from "axios";
-import Proxy from "../utils/proxy";
+import {
+  generateCode,
+  passwordResetEmail,
+  verifyPasswordHTML,
+} from "../utils/functions";
+import * as config from "../utils/config";
+
+const userRouter = require("express").Router();
 
 userRouter.get("/data", tokenAuthenticator, async (req, res) => {
   const user = await User.findOne({
@@ -95,13 +103,8 @@ userRouter.post("/forgotpassword", async (req, res) => {
     user
       .save()
       .then(() => {
-        sendMail(
-          email,
-          "Reset your BitSwap password",
-          `<!DOCTYPE html><html><head><title>BitSwap Password Reset</title><body>` +
-            `<p>Click <a href="https://api.bitswap.network/user/verifypassword/${code}">here</a> to reset your password. If you didn't request a password change, simply ignore this email.` +
-            `</body></html>`
-        );
+        let mailBody = passwordResetEmail(code);
+        sendMail(email, mailBody.header, mailBody.body);
       })
       .then(() => {
         res.status(200).send("Email successfully sent");
@@ -143,11 +146,7 @@ userRouter.get("/verifypassword/:code", async (req, res) => {
     user
       .save()
       .then(() => {
-        res
-          .status(200)
-          .send(
-            `<!DOCTYPE html><html><body><p>Your password has been reset. Your temporary password is "${password}" (no quotation marks). Please change your password once you sign in.</p><br /><a href="https://app.bitswap.network">Go to BitSwap homepage.</a></body></html>`
-          );
+        res.status(200).send(verifyPasswordHTML(password));
       })
       .catch((error) => {
         res.status(500).send(servererror);
@@ -166,7 +165,7 @@ userRouter.post("/deposit", tokenAuthenticator, async (req, res) => {
       transactiontype: "deposit",
       status: "pending",
     }).exec();
-    if (txns.length == 0) {
+    if (txns.length === 0) {
       const transaction = new Transaction({
         username: req.user.username,
         bitcloutpubkey: user.bitcloutpubkey,
@@ -213,7 +212,6 @@ userRouter.post("/withdraw", tokenAuthenticator, async (req, res) => {
         bitcloutnanos: bitcloutvalue * 1e9,
         fees: fees,
       });
-      console.log(parseInt((bitcloutvalue - fees).toString()));
       transaction.save((err: any) => {
         if (err) {
           console.log(err);
@@ -229,12 +227,8 @@ userRouter.post("/withdraw", tokenAuthenticator, async (req, res) => {
                 username: req.user.username,
                 txn_id: transaction._id,
               };
-              axios
-                .post(`${config.FULFILLMENT_API}/core/withdraw`, body, {
-                  headers: { "server-signature": generateHMAC(body) },
-                })
+              handleWithdraw(body)
                 .then((response) => {
-                  // console.log(response);
                   res.status(response.status).send(response.statusText);
                 })
                 .catch((err) => {
@@ -256,31 +250,22 @@ userRouter.post("/preFlightTxn", tokenAuthenticator, async (req, res) => {
   const user = await User.findOne({ username: req.user.username }).exec();
   if (user && user.verified === "verified") {
     if (bitcloutvalue) {
-      await axios
-        .post(
-          "https://api.bitclout.com/send-bitclout",
-          JSON.stringify({
-            AmountNanos: bitcloutvalue * 1e9,
-            MinFeeRateNanosPerKB: 1000,
-            RecipientPublicKeyOrUsername: user.bitcloutpubkey,
-            SenderPublicKeyBase58Check: config.PUBLIC_KEY_BITCLOUT,
-          }),
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Cookie:
-                "__cfduid=d0e96960ab7b9233d869e566cddde2b311619467183; INGRESSCOOKIE=e663da5b29ea8969365c1794da20771c",
-            },
-          }
-        )
-        .then((response) => {
-          console.log(response.data);
-          res.send(response.data);
-        })
-        .catch((error) => {
-          console.log(error);
-          res.status(error.response.status).send(error.response.data);
+      try {
+        let preflight = await preFlightSendBitclout({
+          AmountNanos: bitcloutvalue * 1e9,
+          MinFeeRateNanosPerKB: 1000,
+          RecipientPublicKeyOrUsername: user.bitcloutpubkey,
+          SenderPublicKeyBase58Check: config.PUBLIC_KEY_BITCLOUT,
         });
+        if (preflight.data.error) {
+          res.status(500).send(preflight.data);
+        } else {
+          res.send(preflight.data);
+        }
+      } catch (error) {
+        console.log(error);
+        res.status(error.response.status).send(error.response.data);
+      }
     } else {
       res.status(400).send("invalid request");
     }
@@ -291,59 +276,45 @@ userRouter.post("/preFlightTxn", tokenAuthenticator, async (req, res) => {
 
 userRouter.post("/verifyBitclout", tokenAuthenticator, async (req, res) => {
   const user = await User.findOne({ username: req.user.username }).exec();
+  const numToFetch = 20;
   if (user) {
-    let proxy = new Proxy();
-    await proxy.initiatePostsQuery(
-      20,
-      "BC1YLjQtaLyForGFpdzmvzCCx1zbSCm58785cABn5zS8KVMeS4Z4aNK",
-      user.bitcloutpubkey,
-      user.username,
-      5
-    );
-    proxy
-      .getPosts()
-      .then((response) => {
-        proxy.close();
-        let resJSON = JSON.parse(response);
-        let error = resJSON["error"];
-        let posts = resJSON["Posts"];
-        if (error) {
-          res.status(500).send(error);
-        } else if (posts) {
-          console.log(posts);
-          let i = 0;
-          let found = false;
-          let key = user.bitcloutverification;
-          for (const post of posts) {
-            i += 1;
-            let body = post.Body.toLowerCase();
-            if (body.includes(key.toLowerCase())) {
-              found = true;
-            }
-            if (i === posts.length) {
-              if (found) {
-                console.log("found");
-                user.verified = "verified";
-                user.save();
-                res.status(200).send(post);
-              } else {
-                user.verified = "pending";
-                user.save();
-                res
-                  .status(400)
-                  .send("unable to find profile verification post");
-              }
+    try {
+      const response = await getProfilePosts(
+        20,
+        user.bitcloutpubkey,
+        user.username
+      );
+      let error = response.data.error;
+      let posts = response.data.Posts;
+      if (error) {
+        res.status(500).send(error);
+      } else if (posts) {
+        console.log(posts);
+        let i = 0;
+        let found = false;
+        let key = user.bitcloutverification;
+        for (const post of posts) {
+          i += 1;
+          let body = post.Body.toLowerCase();
+          if (body.includes(key.toLowerCase())) {
+            found = true;
+          }
+          if (i === posts.length) {
+            if (found) {
+              user.verified = "verified";
+              user.save();
+              res.status(200).send(post);
+            } else {
+              user.verified = "pending";
+              user.save();
+              res.status(400).send("unable to find profile verification post");
             }
           }
-          res.status(200).send(posts);
         }
-        console.log(error);
-      })
-      .catch((error) => {
-        proxy.close();
-        console.log(error);
-        res.send(500);
-      });
+      }
+    } catch (e) {
+      res.status(500).send(e);
+    }
   } else {
     res.status(400).send("user not found");
   }

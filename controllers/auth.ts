@@ -1,11 +1,13 @@
 import { generateAccessToken, generateCode } from "../utils/functions";
-
-const authRouter = require("express").Router();
 import User from "../models/user";
 import sendMail from "../utils/mailer";
 import { bruteforce, tokenAuthenticator } from "../utils/middleware";
-import axios from "axios";
 import whitelist from "../whitelist.json";
+import { getSingleProfile } from "../utils/helper";
+import { safeUserObject, emailVerify } from "../utils/functions";
+
+const authRouter = require("express").Router();
+
 authRouter.post("/register", async (req, res) => {
   let userlist = whitelist.users.map(function (x) {
     return x.toLowerCase();
@@ -54,14 +56,8 @@ authRouter.post("/register", async (req, res) => {
             res.status(500).send(err);
           } else {
             try {
-              sendMail(
-                email,
-                "Verify your BitSwap email",
-                `<!DOCTYPE html><html><head><title>BitSwap Email Verification</title><body>` +
-                  `<p>Click <a href="https://bitswap-api.herokuapp.com/user/verifyemail/${email_code}">here</a> to verify your email. If this wasn't you, simply ignore this email.` +
-                  `<p>Make a post on your $${username} BitClout profile saying: "Verifying my @BitSwap account. ${bitclout_code}" (make sure you tag us) to verify that you own this BitClout account.</p>` +
-                  `</body></html>`
-              );
+              let mailBody = emailVerify(username, email_code, bitclout_code);
+              sendMail(email, mailBody.header, mailBody.body);
               res.status(201).send("Registration successful");
             } catch (err) {
               res.status(500).send(err);
@@ -78,73 +74,43 @@ authRouter.post("/register", async (req, res) => {
 authRouter.post("/login", bruteforce.prevent, async (req, res) => {
   const { username, password } = req.body;
 
-  const checkUser = await User.findOne({
-    email: username
+  const user = await User.findOne({
+    $or: [
+      { username: { $regex: new RegExp(`^${username}$`, "i") } },
+      { email: { $regex: new RegExp(`^${username}$`, "i") } },
+    ],
   }).exec();
 
-  if (checkUser) {
+  if (user && user.validPassword(password)) {
+    const token = generateAccessToken({ username: user.username });
+    let error;
+    if (!user.emailverified) {
+      res.status(403).send({ error: "Email not verified" });
+    } else {
+      try {
+        const userProfile = await getSingleProfile(user.bitcloutpubkey);
+        if (userProfile.status === 200 && userProfile.data.Profile) {
+          user.profilepicture = userProfile.data.Profile.ProfilePic;
+          user.description = userProfile.data.Profile.Description;
+          user.save();
+        }
+        if (userProfile.data.error) {
+          console.log(error);
+        }
+      } catch (error) {
+        console.log(error);
+        error = error;
+      }
+      res.json({
+        ...safeUserObject(user),
+        token: token,
+        error: error,
+      });
+    }
+  } else {
     res
       .status(404)
-      .send({ error: "Please sign in with your Bitclout username not your email" });
-  } else {
-    const user = await User.findOne({
-      username: { $regex: new RegExp(`^${username}$`, "i") },
-      // $or: [{ username: username }, { email: username }],
-    }).exec();
-  
-    if (user && user.validPassword(password)) {
-      const token = generateAccessToken({ username: user.username });
-      if (!user.emailverified) {
-        res.status(403).send({ error: "Email not verified" });
-      } else {
-        try {
-          const response = await axios.post(
-            "https://api.bitclout.com/get-single-profile",
-            { PublicKeyBase58Check: user.bitcloutpubkey },
-            {
-              headers: {
-                "Content-Type": "application/json",
-                Cookie:
-                  "__cfduid=d948f4d42aa8cf1c00b7f93ba8951d45b1619496624; INGRESSCOOKIE=c7d7d1526f37eb58ae5a7a5f87b91d24",
-              },
-            }
-          );
-          if (response.status === 200) {
-            user.profilepicture = response.data.Profile.ProfilePic;
-            user.description = response.data.Profile.Description;
-            await user.save();
-          }
-        } catch (error) {
-          console.log(error);
-          // res.status(500).send(error);
-        }
-        res.json({
-          admin: user.admin,
-          bitcloutpubkey: user.bitcloutpubkey,
-          bitswapbalance: user.bitswapbalance,
-          buys: user.buys,
-          buystate: user.buystate,
-          created: user.created,
-          email: user.email,
-          emailverified: user.emailverified,
-          ethereumaddress: user.ethereumaddress,
-          listings: user.listings,
-          ratings: user.ratings,
-          transactions: user.transactions,
-          username: user.username,
-          verified: user.verified,
-          token: token,
-          _id: user._id,
-          bitcloutverified: user.bitcloutverified,
-          profilepicture: user.profilepicture,
-          description: user.description,
-        });
-      }
-    } else {
-      res
-        .status(404)
-        .send({ error: "A user with those credentials does not exist" });
-    }
+      .send({ error: "A user with those credentials does not exist" });
   }
 });
 
@@ -154,32 +120,18 @@ authRouter.post("/getbitcloutprofile", async (req, res) => {
     return x.toLowerCase();
   });
   if (userlist.includes(Username.toLowerCase())) {
-    axios
-      .post(
-        "https://api.bitclout.com/get-single-profile",
-        { PublicKeyBase58Check: PublicKeyBase58Check, Username: Username },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Cookie:
-              "__cfduid=d948f4d42aa8cf1c00b7f93ba8951d45b1619496624; INGRESSCOOKIE=c7d7d1526f37eb58ae5a7a5f87b91d24",
-          },
-        }
-      )
-      .then((response) => {
-        let resJSON = response.data;
-        if (resJSON.error) {
-          res.status(400).send(resJSON.error);
-        } else if (resJSON.Profile) {
-          res.json(resJSON.Profile);
-        } else {
-          res.sendStatus(405);
-        }
-      })
-      .catch((error) => {
-        console.log(error);
-        res.status(500).send(error);
-      });
+    try {
+      let userProfile = await getSingleProfile(PublicKeyBase58Check, Username);
+      if (userProfile.data.error) {
+        res.status(400).send(userProfile.data.error);
+      } else if (userProfile.data.Profile) {
+        res.json(userProfile.data.Profile);
+      } else {
+        res.status(405).send(userProfile.data);
+      }
+    } catch (e) {
+      res.status(500).send(e);
+    }
   } else {
     console.log("user not in whitelist");
     res.status(401).send("User not in whitelist");

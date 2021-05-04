@@ -1,3 +1,5 @@
+import e from "express";
+
 const logger = require("./logger");
 const config = require("./config");
 const jwt = require("jsonwebtoken");
@@ -12,14 +14,18 @@ var bruteforce_model = mongoose.model(
 );
 var store = new MongooseStore(bruteforce_model);
 export var bruteforce = new ExpressBrute(store, {
-  freeRetries: 5
+  freeRetries: 5,
 });
 
 export const requestLogger = (request, response, next) => {
   logger.info("Method:", request.method);
   logger.info("Path:  ", request.path);
   logger.info("Header:  ", request.header);
-  logger.info("Body:  ", request.body);
+  if (request.path === "/auth/login" || request.path === "/auth/register") {
+    logger.info("Body Filtered");
+  } else {
+    logger.info("Body:  ", request.body);
+  }
   logger.info("---");
   next();
 };
