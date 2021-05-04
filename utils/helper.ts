@@ -80,7 +80,17 @@ export const getFulfillmentLogs: (
     headers: { "server-signature": generateHMAC(body) },
   });
 };
-
+export const newPool: (body: {
+  num: number;
+  rank: number;
+}) => Promise<AxiosResponse> = async function (body: {
+  num: number;
+  rank: number;
+}): Promise<AxiosResponse<any>> {
+  return await axios.post(`${config.FULFILLMENT_API}/core/initAccounts`, body, {
+    headers: { "server-signature": generateHMAC(body) },
+  });
+};
 export const manualFulfillment: (body: {
   listing_id: string;
 }) => Promise<AxiosResponse> = async function (body: {

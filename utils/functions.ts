@@ -1,7 +1,62 @@
 import { createHmac, randomBytes } from "crypto";
 import { UserDoc } from "../models/user";
+import { poolDoc } from "../models/pool";
+import Pool from "../models/pool";
+import { listingDoc } from "../models/listing";
+
+import crypto from "crypto";
+import * as config from "./config";
 const jwt = require("jsonwebtoken");
-const config = require("./config");
+
+const algorithm = "aes-256-cbc";
+export const buyListingExecute = async (
+  pool: poolDoc,
+  buyer: UserDoc,
+  listing: listingDoc,
+  usdrate: number
+) => {
+  pool.active = true;
+  pool.listing = listing._id;
+  listing.etheramount = listing.usdamount / usdrate;
+  listing.pool = pool._id;
+  buyer.buystate = true;
+  buyer.buys.push(listing._id);
+  try {
+    await listing.save();
+    await listing.save();
+    await buyer.save();
+    return 200;
+  } catch (e) {
+    throw 500;
+  }
+};
+export const encryptAddress = (address: string) => {
+  let salt = crypto.randomBytes(16);
+  let cipher = crypto.createCipheriv(
+    algorithm,
+    Buffer.from(config.ADDRESS_ENCRYPT_PRIVATEKEY),
+    salt
+  );
+  let encrypted = cipher.update(address);
+  encrypted = Buffer.concat([encrypted, cipher.final()]);
+  return {
+    salt: salt.toString("hex"),
+    encryptedKey: encrypted.toString("hex"),
+  };
+};
+
+export const decryptAddress = (keyObject: poolDoc["privateKey"]) => {
+  let salt = Buffer.from(keyObject.salt, "hex");
+  let encryptedAddress = Buffer.from(keyObject.encryptedKey, "hex");
+  let decipher = crypto.createDecipheriv(
+    algorithm,
+    Buffer.from(config.ADDRESS_ENCRYPT_PRIVATEKEY),
+    salt
+  );
+  let decrypted = decipher.update(encryptedAddress);
+  decrypted = Buffer.concat([decrypted, decipher.final()]);
+  return decrypted.toString();
+};
 
 export const generateCode = (len: number) =>
   [...Array(len)]
