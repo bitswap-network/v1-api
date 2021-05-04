@@ -232,14 +232,21 @@ listingRouter.get("/listings", async (req, res) => {
   const maxVolume = req.query.maxVolume;
   const resultsCount = req.query.count;
 
+  let sortOptions = {};
+
+  if (sortArr.includes(dateSort)) {
+    sortOptions["created"] = dateSort;
+  }
+
+  if (sortArr.includes(volumeSort)) {
+    sortOptions["bitcloutnanos"] = volumeSort;
+  }
+
   let listings = await Listing.find({
     ongoing: false,
     "completed.status": false,
   })
-    .sort({
-      bitcloutnanos: sortArr.includes(volumeSort) ? volumeSort : 0,
-      created: sortArr.includes(dateSort) ? dateSort : 0,
-    })
+    .sort(sortOptions)
     .limit(resultsCount)
     .populate("buyer")
     .populate("seller").exec();
