@@ -103,7 +103,8 @@ listingRouter.post("/buy", tokenAuthenticator, async (req, res) => {
               rank: 1,
             };
             const initPool = await newPool(body);
-            const pool = await Pool.findById(initPool[0]._id).exec();
+            console.log(initPool);
+            const pool = await Pool.findById(initPool.data[0]._id).exec();
             if (pool)
               try {
                 let code = await buyListingExecute(
