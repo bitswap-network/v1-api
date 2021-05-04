@@ -202,6 +202,7 @@ listingRouter.post("/delete", tokenAuthenticator, async (req, res) => {
           try {
             await Listing.deleteOne({ _id: listing._id }).exec();
             await seller!.save();
+            res.sendStatus(200);
           } catch (e) {
             res.status(500).send(e);
           }
