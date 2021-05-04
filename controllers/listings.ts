@@ -1,9 +1,13 @@
 const listingRouter = require("express").Router();
 import Listing from "../models/listing";
 import User from "../models/user";
-import { getEthUsdCC } from "../utils/helper";
+import Pool, { poolDoc } from "../models/pool";
+import { getEthUsdCC, newPool } from "../utils/helper";
 import sendMail from "../utils/mailer";
-import { transactionNotificationEmail } from "../utils/functions";
+import {
+  transactionNotificationEmail,
+  buyListingExecute,
+} from "../utils/functions";
 const { tokenAuthenticator } = require("../utils/middleware");
 
 listingRouter.post("/create", tokenAuthenticator, async (req, res) => {
@@ -70,39 +74,62 @@ listingRouter.post("/buy", tokenAuthenticator, async (req, res) => {
     ) {
       listing.buyer = buyer._id;
       listing.ongoing = true;
+      listing.buy_time = new Date();
+      const pool = await Pool.findOne({ active: false }).exec();
 
-      await getEthUsdCC()
-        .then((response) => {
-          listing.etheramount = listing.usdamount / response.data.USD;
-          listing.save((err: any) => {
-            if (err) {
-              res.status(500).send("error saving listing");
-            } else {
-              buyer.buystate = true;
-              buyer.buys.push(listing._id);
-              buyer.save((err: any) => {
-                if (err) {
-                  res.status(500).send("error saving user");
-                } else {
-                  try {
-                    let mailBody = transactionNotificationEmail(
-                      buyer.username,
-                      listing._id
-                    );
-                    sendMail(seller.email, mailBody.header, mailBody.body);
-                    res.sendStatus(200);
-                  } catch (err) {
-                    res.status(500).send(err);
-                  }
-                }
-              });
-            }
-          });
-        })
-        .catch((error) => {
-          console.log(error);
-          res.status(500).send(error);
-        });
+      try {
+        const exRate = await getEthUsdCC();
+        if (pool) {
+          try {
+            let code = await buyListingExecute(
+              pool,
+              buyer,
+              listing,
+              exRate.data.USD
+            );
+            let mailBody = transactionNotificationEmail(
+              buyer.username,
+              listing._id
+            );
+            sendMail(seller.email, mailBody.header, mailBody.body);
+            res.sendStatus(code);
+          } catch (e) {
+            res.sendStatus(e);
+          }
+        } else {
+          try {
+            let body = {
+              num: 1,
+              rank: 1,
+            };
+            const initPool = await newPool(body);
+            console.log(initPool);
+            const pool = await Pool.findById(initPool.data[0]._id).exec();
+            if (pool)
+              try {
+                let code = await buyListingExecute(
+                  pool,
+                  buyer,
+                  listing,
+                  exRate.data.USD
+                );
+                let mailBody = transactionNotificationEmail(
+                  buyer.username,
+                  listing._id
+                );
+                sendMail(seller.email, mailBody.header, mailBody.body);
+                res.sendStatus(code);
+              } catch (e) {
+                res.sendStatus(e);
+              }
+          } catch (e) {
+            console.log(e);
+            res.status(500).send(e);
+          }
+        }
+      } catch (e) {
+        res.status(500).send(e);
+      }
     } else {
       res.status(400).send("user cannot have multiple ongoing buys");
     }
@@ -113,35 +140,39 @@ listingRouter.post("/buy", tokenAuthenticator, async (req, res) => {
 listingRouter.post("/cancel", tokenAuthenticator, async (req, res) => {
   const { id } = req.body;
   const listing = await Listing.findById(id).exec();
-  const buyer = await User.findOne({ username: req.user.username });
+  const user = await User.findOne({ username: req.user.username });
 
-  if (listing && buyer) {
+  if (listing && user) {
     if (listing.ongoing) {
-      if (listing.escrow.balance > 0 || listing.escrow.full) {
-        res
-          .status(400)
-          .send("cannot cancel as escrow funds have been deposited");
-      } else {
-        listing.ongoing = false;
-        listing.buyer = null;
-        buyer.buystate = false;
-        await User.findOneAndUpdate(
-          { username: req.user.username },
-          { $pull: { buys: listing._id } }
-        ).exec();
-        listing.save((err: any) => {
-          if (err) {
-            res.status(500).send("could not save listing");
-          } else {
-            buyer.save((err: any) => {
-              if (err) {
-                res.status(500).send("could not save user");
-              } else {
-                res.sendStatus(200);
-              }
-            });
+      const buyer = await User.findById(listing.buyer).exec();
+      const seller = await User.findById(listing.seller).exec();
+      const pool = await Pool.findById(listing.pool).exec();
+      if (user._id === buyer?._id || user._id === seller?.id || user.admin) {
+        if (listing.escrow.balance > 0 || listing.escrow.full) {
+          res
+            .status(400)
+            .send("cannot cancel as escrow funds have been deposited");
+        } else {
+          listing.ongoing = false;
+          listing.buyer = null;
+          listing.buy_time = null;
+          listing.pool = null;
+          pool!.active = false;
+          pool!.listing = null;
+          buyer!.buystate = false;
+          try {
+            await User.findOneAndUpdate(
+              { username: buyer!.username },
+              { $pull: { buys: listing._id } }
+            ).exec();
+            await listing.save();
+            await buyer?.save();
+            await pool?.save();
+            res.sendStatus(200);
+          } catch (e) {
+            res.status(500).send(e);
           }
-        });
+        }
       }
     } else {
       res.status(400).send("listing is not active");
@@ -156,36 +187,32 @@ listingRouter.post("/delete", tokenAuthenticator, async (req, res) => {
   const user = await User.findOne({ username: req.user.username });
 
   if (listing && user) {
-    if (
-      user.buystate ||
-      !listing.ongoing ||
-      !listing.bitcloutsent ||
-      !listing.completed.status
-    ) {
-      if (listing.escrow.balance > 0 || listing.escrow.full) {
-        res.status(400).send("cannot delete a listing that is in progress");
-      } else {
-        await User.findOneAndUpdate(
-          { username: req.user.username },
-          { $pull: { listings: listing._id } }
-        ).exec();
-        user.buystate = false;
-        user.bitswapbalance += listing.bitcloutnanos / 1e9;
-        await Listing.deleteOne({ _id: listing._id });
-        user.save((err: any) => {
-          if (err) {
-            res.status(500).send("could not save user");
-          } else {
-            res.sendStatus(200);
+    const seller = await User.findById(listing.seller).exec();
+    if (user._id === seller?.id || user.admin) {
+      if (!listing.ongoing || !listing.completed.status) {
+        if (listing.escrow.balance > 0 || listing.escrow.full) {
+          res.status(400).send("cannot delete a listing that is in progress");
+        } else {
+          await User.findOneAndUpdate(
+            { username: seller!.username },
+            { $pull: { listings: listing._id } }
+          ).exec();
+          seller!.buystate = false;
+          seller!.bitswapbalance += listing.bitcloutnanos / 1e9;
+          try {
+            await Listing.deleteOne({ _id: listing._id }).exec();
+            await seller!.save();
+          } catch (e) {
+            res.status(500).send(e);
           }
-        });
+        }
+      } else {
+        res
+          .status(400)
+          .send(
+            "user is not currently processing a transaction or listing is not active"
+          );
       }
-    } else {
-      res
-        .status(400)
-        .send(
-          "user is not currently processing a transaction or listing is not active"
-        );
     }
   } else {
     res.status(400).send("user or listing not found");
@@ -319,6 +346,7 @@ listingRouter.get("/listing/:id", tokenAuthenticator, async (req, res) => {
         let popListing = await Listing.findOne({ _id: req.params.id })
           .populate("buyer")
           .populate("seller")
+          .populate("pool", "address active listing")
           .exec();
         res.json(popListing);
       } else {
