@@ -237,8 +237,8 @@ listingRouter.get("/listings", async (req, res) => {
     "completed.status": false,
   })
     .sort({
-      bitcloutnanos: sortArr.includes(volumeSort) ? volumeSort : null,
-      created: sortArr.includes(dateSort) ? dateSort : -1,
+      bitcloutnanos: sortArr.includes(volumeSort) ? volumeSort : 0,
+      created: sortArr.includes(dateSort) ? dateSort : 0,
     })
     .limit(resultsCount)
     .populate("buyer")
