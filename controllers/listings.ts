@@ -223,7 +223,7 @@ listingRouter.get("/listings", async (req, res) => {
   let sortArr = ["asc", "desc", "descending", "ascending", -1, 1];
   // /listings?date=desc?volume=desc?
   const dateSort = req.query.dateSort;
-  const volumeSort = req.query.volume;
+  const volumeSort = req.query.volumeSort;
   const priceSort = req.query.priceSort;
 
   const minPrice = req.query.minPrice;
@@ -232,24 +232,23 @@ listingRouter.get("/listings", async (req, res) => {
   const maxVolume = req.query.maxVolume;
   const resultsCount = req.query.count;
 
-  // console.log(dateSort, volumeSort);
-
   let listings = await Listing.find({
     ongoing: false,
     "completed.status": false,
   })
     .sort({
+      bitcloutnanos: sortArr.includes(volumeSort) ? volumeSort : null,
       created: sortArr.includes(dateSort) ? dateSort : -1,
-      bitcloutnanos: sortArr.includes(volumeSort) ? volumeSort : 1,
     })
     .limit(resultsCount)
     .populate("buyer")
-    .populate("seller");
-  if (listings) {
-    if (minPrice && maxPrice) {
+    .populate("seller").exec();
+
+  if (listings.length > 0) {
+    if (minPrice && maxPrice && minPrice !== "undefined" && maxPrice !== "undefined") {
       listings = listings.filter(listing => listing.usdamount / (listing.bitcloutnanos / 1e9) <= maxPrice && listing.usdamount / (listing.bitcloutnanos / 1e9) >= minPrice)
     }
-    if (minVolume && maxVolume) {
+    if (minVolume && maxVolume && minVolume !== "undefined" && maxVolume !== "undefined") {
       listings = listings.filter(listing => listing.bitcloutnanos/1e9 <= maxVolume && listing.bitcloutnanos/1e9 >= minVolume)
     }
     if (sortArr.includes(priceSort)) {
@@ -262,7 +261,7 @@ listingRouter.get("/listings", async (req, res) => {
     }
     res.json(listings);
   } else {
-    res.status(400).send("listings not found");
+    res.status(400).send("no listings found");
   }
 });
 
