@@ -187,32 +187,33 @@ listingRouter.post("/delete", tokenAuthenticator, async (req, res) => {
   const user = await User.findOne({ username: req.user.username });
 
   if (listing && user) {
+    console.log(user?.username, listing._id);
     const seller = await User.findById(listing.seller).exec();
-    if (user._id === seller?._id || user.admin) {
-      if (!listing.ongoing || !listing.completed.status) {
-        if (listing.escrow.balance > 0 || listing.escrow.full) {
-          res.status(400).send("cannot delete a listing that is in progress");
-        } else {
-          await User.findOneAndUpdate(
-            { username: seller!.username },
-            { $pull: { listings: listing._id } }
-          ).exec();
-          seller!.buystate = false;
-          seller!.bitswapbalance += listing.bitcloutnanos / 1e9;
+    if (seller) {
+      console.log(seller.username);
+      if (user.username === seller.username || user.admin) {
+        if (!listing.ongoing && !listing.completed.status) {
+          console.log("pulling");
+          seller.bitswapbalance += listing.bitcloutnanos / 1e9;
           try {
+            console.log("deleting");
+            await User.findOneAndUpdate(
+              { username: seller.username },
+              { $pull: { listings: listing._id } }
+            ).exec();
             await Listing.deleteOne({ _id: listing._id }).exec();
             await seller!.save();
             res.sendStatus(200);
           } catch (e) {
             res.status(500).send(e);
           }
+        } else {
+          res
+            .status(400)
+            .send(
+              "user is currently processing a transaction or listing is hot"
+            );
         }
-      } else {
-        res
-          .status(400)
-          .send(
-            "user is not currently processing a transaction or listing is not active"
-          );
       }
     }
   } else {

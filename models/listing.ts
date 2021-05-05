@@ -1,6 +1,7 @@
 import { model, Schema, Document } from "mongoose";
+import { UserDoc } from "./user";
 export interface listingDoc extends Document {
-  seller: Schema.Types.ObjectId;
+  seller: Schema.Types.ObjectId | UserDoc;
   buyer: Schema.Types.ObjectId | null;
   currencysaletype: string;
   bitcloutnanos: number;
