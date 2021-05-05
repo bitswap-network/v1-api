@@ -188,7 +188,7 @@ listingRouter.post("/delete", tokenAuthenticator, async (req, res) => {
 
   if (listing && user) {
     const seller = await User.findById(listing.seller).exec();
-    if (user._id === seller?.id || user.admin) {
+    if (user._id === seller?._id || user.admin) {
       if (!listing.ongoing || !listing.completed.status) {
         if (listing.escrow.balance > 0 || listing.escrow.full) {
           res.status(400).send("cannot delete a listing that is in progress");
@@ -313,9 +313,13 @@ listingRouter.get("/pastlistings", async (req, res) => {
   let listings = await Listing.find({
     ongoing: false,
     "completed.status": true,
-  }).sort({
-    created: -1
-  }).populate("buyer").populate("seller").exec()
+  })
+    .sort({
+      created: -1,
+    })
+    .populate("buyer")
+    .populate("seller")
+    .exec();
 
   if (listings.length > 0) {
     res.json(listings);
