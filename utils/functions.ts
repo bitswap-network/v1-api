@@ -7,8 +7,14 @@ import { listingDoc } from "../models/listing";
 import crypto from "crypto";
 import * as config from "./config";
 const jwt = require("jsonwebtoken");
-
+const Web3 = require("web3");
+const web3 = new Web3(new Web3.providers.HttpProvider(config.HttpProvider));
 const algorithm = "aes-256-cbc";
+
+export const checkEthAddr = (address: string) => {
+  return web3.utils.isAddress(address);
+};
+
 export const buyListingExecute = async (
   pool: poolDoc,
   buyer: UserDoc,

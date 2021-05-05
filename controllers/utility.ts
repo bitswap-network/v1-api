@@ -102,7 +102,7 @@ utilRouter.get("/totalcompleted", async (req, res) => {
 });
 
 utilRouter.get("/avgprice", async (req, res) => {
-  const limit = !isNaN(Number(req.query.limit)) ? Number(req.query.limit) : 50;
+  const limit = !isNaN(Number(req.query.limit)) ? Number(req.query.limit) : 10;
   const listings = await Listing.find({
     "completed.status": true,
   })

@@ -15,6 +15,7 @@ import {
   generateCode,
   passwordResetEmail,
   verifyPasswordHTML,
+  checkEthAddr,
 } from "../utils/functions";
 import * as config from "../utils/config";
 
@@ -59,7 +60,9 @@ userRouter.put("/updateProfile", tokenAuthenticator, async (req, res) => {
   if (user) {
     user.email = email.toLowerCase();
     let LCmap = ethereumaddress.map((_: string) => _.toLowerCase());
-    user.ethereumaddress = LCmap;
+    let validatedAddr = LCmap.filter((addr) => checkEthAddr(addr));
+
+    user.ethereumaddress = validatedAddr;
 
     user.save((err: any, doc: any) => {
       if (err) {

@@ -4,7 +4,7 @@ import sendMail from "../utils/mailer";
 import { bruteforce, tokenAuthenticator } from "../utils/middleware";
 import whitelist from "../whitelist.json";
 import { getSingleProfile } from "../utils/helper";
-import { safeUserObject, emailVerify } from "../utils/functions";
+import { safeUserObject, emailVerify, checkEthAddr } from "../utils/functions";
 
 const authRouter = require("express").Router();
 
@@ -39,31 +39,36 @@ authRouter.post("/register", async (req, res) => {
           .status(409)
           .send({ message: "There is already a user with that information" });
       } else {
-        const newUser = new User({
-          username: username,
-          email: email,
-          bitcloutpubkey: bitcloutpubkey,
-          ethereumaddress: [ethereumaddress.toLowerCase()],
-          bitcloutverified: bitcloutverified,
-        });
-        newUser.password = newUser.generateHash(password);
-        const email_code = generateCode(8);
-        const bitclout_code = generateCode(16);
-        newUser.emailverification = email_code;
-        newUser.bitcloutverification = bitclout_code;
-        newUser.save((err: any) => {
-          if (err) {
-            res.status(500).send(err);
-          } else {
-            try {
-              let mailBody = emailVerify(username, email_code, bitclout_code);
-              sendMail(email, mailBody.header, mailBody.body);
-              res.status(201).send("Registration successful");
-            } catch (err) {
+        let addrCheck = await checkEthAddr(ethereumaddress);
+        if (addrCheck) {
+          const newUser = new User({
+            username: username,
+            email: email,
+            bitcloutpubkey: bitcloutpubkey,
+            ethereumaddress: [ethereumaddress.toLowerCase()],
+            bitcloutverified: bitcloutverified,
+          });
+          newUser.password = newUser.generateHash(password);
+          const email_code = generateCode(8);
+          const bitclout_code = generateCode(16);
+          newUser.emailverification = email_code;
+          newUser.bitcloutverification = bitclout_code;
+          newUser.save((err: any) => {
+            if (err) {
               res.status(500).send(err);
+            } else {
+              try {
+                let mailBody = emailVerify(username, email_code, bitclout_code);
+                sendMail(email, mailBody.header, mailBody.body);
+                res.status(201).send("Registration successful");
+              } catch (err) {
+                res.status(500).send(err);
+              }
             }
-          }
-        });
+          });
+        } else {
+          res.status(400).send("invalid eth address");
+        }
       }
     } else {
       res.status(401).send("User not in whitelist");
