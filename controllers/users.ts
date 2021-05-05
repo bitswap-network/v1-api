@@ -56,7 +56,6 @@ userRouter.get("/profile/:username", async (req, res) => {
 userRouter.put("/updateProfile", tokenAuthenticator, async (req, res) => {
   const { email, ethereumaddress } = req.body;
   const user = await User.findOne({ username: req.user.username });
-  console.log(typeof ethereumaddress, ethereumaddress);
   if (user) {
     user.email = email.toLowerCase();
     let LCmap = ethereumaddress.map((_: string) => _.toLowerCase());
