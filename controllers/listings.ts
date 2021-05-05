@@ -309,6 +309,21 @@ listingRouter.get("/listings", async (req, res) => {
   }
 });
 
+listingRouter.get("/pastlistings", async (req, res) => {
+  let listings = await Listing.find({
+    ongoing: false,
+    "completed.status": true,
+  }).sort({
+    created: -1
+  }).populate("buyer").populate("seller").exec()
+
+  if (listings.length > 0) {
+    res.json(listings);
+  } else {
+    res.status(404).send("no listings found");
+  }
+});
+
 listingRouter.get("/mylistings", tokenAuthenticator, async (req, res) => {
   //return all user's listings
   const user = await User.findOne({ username: req.user.username }).populate({
