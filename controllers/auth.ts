@@ -3,7 +3,9 @@ import User from "../models/user";
 import sendMail from "../utils/mailer";
 import { bruteforce, tokenAuthenticator } from "../utils/middleware";
 import { getSingleProfile } from "../utils/helper";
-import { safeUserObject, emailVerify, checkEthAddr } from "../utils/functions";
+import { safeUserObject } from "../utils/functions";
+import { emailVerify } from "../utils/mailBody";
+import { checkEthAddr } from "../helpers/web3";
 
 const authRouter = require("express").Router();
 
@@ -13,10 +15,9 @@ authRouter.post("/register", async (req, res) => {
     email,
     password,
     bitcloutpubkey,
-    ethereumaddress,
     bitcloutverified,
   } = req.body;
-  if (!username || !email || !password || !bitcloutpubkey || !ethereumaddress) {
+  if (!username || !email || !password || !bitcloutpubkey) {
     res.status(400).send({ message: "Missing fields in request body" });
   } else if (password.length < 8) {
     res.status(400).send({ message: "Password formatting error" });
@@ -25,8 +26,7 @@ authRouter.post("/register", async (req, res) => {
       $or: [
         { username: username },
         { email: username },
-        { bitcloutpubkey: bitcloutpubkey },
-        { ethereumaddress: { $in: [ethereumaddress.toLowerCase()] } },
+        { "bitclout.publickey": bitcloutpubkey },
       ],
     }).exec();
     if (user) {
@@ -34,36 +34,29 @@ authRouter.post("/register", async (req, res) => {
         .status(409)
         .send({ message: "There is already a user with that information" });
     } else {
-      let addrCheck = await checkEthAddr(ethereumaddress);
-      if (addrCheck) {
-        const newUser = new User({
-          username: username,
-          email: email,
-          bitcloutpubkey: bitcloutpubkey,
-          ethereumaddress: [ethereumaddress.toLowerCase()],
-          bitcloutverified: bitcloutverified,
-        });
-        newUser.password = newUser.generateHash(password);
-        const email_code = generateCode(8);
-        const bitclout_code = generateCode(16);
-        newUser.emailverification = email_code;
-        newUser.bitcloutverification = bitclout_code;
-        newUser.save((err: any) => {
-          if (err) {
+      const newUser = new User({
+        username: username,
+        email: email,
+        bitclout: { publickey: bitcloutpubkey, verified: bitcloutverified },
+      });
+      newUser.password = newUser.generateHash(password);
+      const email_code = generateCode(8);
+      const bitclout_code = generateCode(16);
+      newUser.verification.emailString = email_code;
+      newUser.verification.bitcloutString = bitclout_code;
+      newUser.save((err: any) => {
+        if (err) {
+          res.status(500).send(err);
+        } else {
+          try {
+            let mailBody = emailVerify(username, email_code, bitclout_code);
+            sendMail(email, mailBody.header, mailBody.body);
+            res.status(201).send("Registration successful");
+          } catch (err) {
             res.status(500).send(err);
-          } else {
-            try {
-              let mailBody = emailVerify(username, email_code, bitclout_code);
-              sendMail(email, mailBody.header, mailBody.body);
-              res.status(201).send("Registration successful");
-            } catch (err) {
-              res.status(500).send(err);
-            }
           }
-        });
-      } else {
-        res.status(400).send("invalid eth address");
-      }
+        }
+      });
     }
   }
 });
@@ -81,14 +74,14 @@ authRouter.post("/login", bruteforce.prevent, async (req, res) => {
   if (user && user.validPassword(password)) {
     const token = generateAccessToken({ username: user.username });
     let error;
-    if (!user.emailverified) {
+    if (!user.verification.email) {
       res.status(403).send({ error: "Email not verified" });
     } else {
       try {
-        const userProfile = await getSingleProfile(user.bitcloutpubkey);
+        const userProfile = await getSingleProfile(user.bitclout.publicKey);
         if (userProfile.status === 200 && userProfile.data.Profile) {
-          user.profilepicture = userProfile.data.Profile.ProfilePic;
-          user.description = userProfile.data.Profile.Description;
+          user.bitclout.profilePicture = userProfile.data.Profile.ProfilePic;
+          user.bitclout.bio = userProfile.data.Profile.Description;
           user.save();
         }
         if (userProfile.data.error) {

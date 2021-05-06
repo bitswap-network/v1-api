@@ -6,12 +6,12 @@ import {
   PostsAPIInterface,
   txnPreflightInterface,
   TransactionAPIInterface,
-} from "./interfaces";
+} from "../interfaces/bitclout";
 import { generateHMAC } from "./functions";
 const cfIngressCookie = {
   Cookie: `__cfduid=${config.cfuid}; INGRESSCOOKIE=${config.ingressCookie}`,
 };
-const bitcloutCfHeader = {
+export const bitcloutCfHeader = {
   headers: {
     ...cfIngressCookie,
     "Content-Type": "application/json",
@@ -80,17 +80,7 @@ export const getFulfillmentLogs: (
     headers: { "server-signature": generateHMAC(body) },
   });
 };
-export const newPool: (body: {
-  num: number;
-  rank: number;
-}) => Promise<AxiosResponse> = async function (body: {
-  num: number;
-  rank: number;
-}): Promise<AxiosResponse<any>> {
-  return await axios.post(`${config.FULFILLMENT_API}/core/initAccounts`, body, {
-    headers: { "server-signature": generateHMAC(body) },
-  });
-};
+
 export const manualFulfillment: (body: {
   listing_id: string;
 }) => Promise<AxiosResponse> = async function (body: {
@@ -111,23 +101,4 @@ export const handleWithdraw: (body: {
   return await axios.post(`${config.FULFILLMENT_API}/core/withdraw`, body, {
     headers: { "server-signature": generateHMAC(body) },
   });
-};
-
-export const getGasEtherscan: () => Promise<AxiosResponse> = async function (): Promise<
-  AxiosResponse<any>
-> {
-  return await axios.get(
-    `https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=${config.ETHERSCAN_KEY}`
-  );
-};
-
-export const getEthUsdCC: () => Promise<AxiosResponse> = async function (): Promise<
-  AxiosResponse<any>
-> {
-  return await axios.get(
-    `https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=USD`,
-    {
-      headers: { Authorization: `Apikey ${config.CRYPTOCOMPARE_KEY}` },
-    }
-  );
 };

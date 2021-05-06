@@ -1,22 +1,15 @@
 import User from "../models/user";
-import {
-  getProfilePosts,
-  handleWithdraw,
-  preFlightSendBitclout,
-} from "../utils/helper";
+import { getProfilePosts, preFlightSendBitclout } from "../utils/helper";
 import { tokenAuthenticator } from "../utils/middleware";
-import sendMail, {
+import sendMail from "../utils/mailer";
+import {
   emailverified,
   invalidlink,
   servererror,
-} from "../utils/mailer";
-import Transaction from "../models/transaction";
-import {
-  generateCode,
   passwordResetEmail,
   verifyPasswordHTML,
-  checkEthAddr,
-} from "../utils/functions";
+} from "../utils/mailBody";
+import { generateCode } from "../utils/functions";
 import * as config from "../utils/config";
 
 const userRouter = require("express").Router();
@@ -54,15 +47,10 @@ userRouter.get("/profile/:username", async (req, res) => {
 });
 
 userRouter.put("/updateProfile", tokenAuthenticator, async (req, res) => {
-  const { email, ethereumaddress } = req.body;
+  const { email } = req.body;
   const user = await User.findOne({ username: req.user.username });
   if (user) {
     user.email = email.toLowerCase();
-    let LCmap = ethereumaddress.map((_: string) => _.toLowerCase());
-    let validatedAddr = LCmap.filter((addr) => checkEthAddr(addr));
-
-    user.ethereumaddress = validatedAddr;
-
     user.save((err: any, doc: any) => {
       if (err) {
         res.status(500).send(err);
@@ -101,7 +89,7 @@ userRouter.post("/forgotpassword", async (req, res) => {
   const user = await User.findOne({ email: email }).exec();
   if (user) {
     const code = generateCode(8);
-    user.passwordverification = code;
+    user.verification.passwordString = code;
     user
       .save()
       .then(() => {
@@ -123,8 +111,8 @@ userRouter.get("/verifyemail/:code", async (req, res) => {
   const code = req.params.code;
   const user = await User.findOne({ emailverification: code }).exec();
   if (user) {
-    user.emailverified = true;
-    user.emailverification = "";
+    user.verification.email = true;
+    user.verification.emailString = "";
     user
       .save()
       .then(() => {
@@ -144,7 +132,7 @@ userRouter.get("/verifypassword/:code", async (req, res) => {
   if (user) {
     const password = generateCode(8);
     user.password = user.generateHash(password);
-    user.passwordverification = "";
+    user.verification.passwordString = "";
     user
       .save()
       .then(() => {
@@ -158,105 +146,16 @@ userRouter.get("/verifypassword/:code", async (req, res) => {
   }
 });
 
-userRouter.post("/deposit", tokenAuthenticator, async (req, res) => {
-  const { bitcloutvalue } = req.body;
-  const user = await User.findOne({ username: req.user.username }).exec();
-  if (user && user.verified === "verified") {
-    const txns = await Transaction.find({
-      bitcloutpubkey: user.bitcloutpubkey,
-      transactiontype: "deposit",
-      status: "pending",
-    }).exec();
-    if (txns.length === 0) {
-      const transaction = new Transaction({
-        username: req.user.username,
-        bitcloutpubkey: user.bitcloutpubkey,
-        transactiontype: "deposit",
-        status: "pending",
-        bitcloutnanos: bitcloutvalue * 1e9,
-      });
-      transaction.save((err: any) => {
-        if (err) {
-          res.status(500).send(err);
-        } else {
-          user.transactions.push(transaction._id);
-          user.save((err: any) => {
-            if (err) {
-              res.status(500).send(err);
-            } else {
-              res.status(201).send(transaction);
-            }
-          });
-        }
-      });
-    } else {
-      res
-        .status(409)
-        .send(
-          "cannot have multiple ongoing deposits. please wait for previous deposit to complete."
-        );
-    }
-  } else {
-    res.status(400).send("user not found");
-  }
-});
-
-userRouter.post("/withdraw", tokenAuthenticator, async (req, res) => {
-  const { bitcloutvalue, fees } = req.body;
-  const user = await User.findOne({ username: req.user.username }).exec();
-  if (user && user.verified === "verified") {
-    if (bitcloutvalue <= user.bitswapbalance) {
-      const transaction = new Transaction({
-        username: req.user.username,
-        bitcloutpubkey: user.bitcloutpubkey,
-        transactiontype: "withdraw",
-        status: "pending",
-        bitcloutnanos: bitcloutvalue * 1e9,
-        fees: fees,
-      });
-      transaction.save((err: any) => {
-        if (err) {
-          console.log(err);
-          res.status(500).send("error saving transaction");
-        } else {
-          user.transactions.push(transaction._id);
-          user.save((err: any) => {
-            if (err) {
-              console.log(err);
-              res.status(500).send("error saving user");
-            } else {
-              let body = {
-                username: req.user.username,
-                txn_id: transaction._id,
-              };
-              handleWithdraw(body)
-                .then((response) => {
-                  res.status(response.status).send(response.statusText);
-                })
-                .catch((err) => {
-                  res.status(500).send(err);
-                });
-            }
-          });
-        }
-      });
-    } else {
-      res.status(400).send("insufficient balance");
-    }
-  } else {
-    res.status(400).send("user not found");
-  }
-});
 userRouter.post("/preFlightTxn", tokenAuthenticator, async (req, res) => {
   const { bitcloutvalue } = req.body;
   const user = await User.findOne({ username: req.user.username }).exec();
-  if (user && user.verified === "verified") {
+  if (user && user.verification.status === "verified") {
     if (bitcloutvalue) {
       try {
         let preflight = await preFlightSendBitclout({
           AmountNanos: bitcloutvalue * 1e9,
           MinFeeRateNanosPerKB: 1000,
-          RecipientPublicKeyOrUsername: user.bitcloutpubkey,
+          RecipientPublicKeyOrUsername: user.bitclout.publicKey,
           SenderPublicKeyBase58Check: config.PUBLIC_KEY_BITCLOUT,
         });
         if (preflight.data.error) {
@@ -283,7 +182,7 @@ userRouter.post("/verifyBitclout", tokenAuthenticator, async (req, res) => {
     try {
       const response = await getProfilePosts(
         20,
-        user.bitcloutpubkey,
+        user.bitclout.publicKey,
         user.username
       );
       let error = response.data.error;
@@ -294,7 +193,7 @@ userRouter.post("/verifyBitclout", tokenAuthenticator, async (req, res) => {
         console.log(posts);
         let i = 0;
         let found = false;
-        let key = user.bitcloutverification;
+        let key = user.verification.bitcloutString;
         for (const post of posts) {
           i += 1;
           let body = post.Body.toLowerCase();
@@ -303,11 +202,11 @@ userRouter.post("/verifyBitclout", tokenAuthenticator, async (req, res) => {
           }
           if (i === posts.length) {
             if (found) {
-              user.verified = "verified";
+              user.verification.status = "verified";
               user.save();
               res.status(200).send(post);
             } else {
-              user.verified = "pending";
+              user.verification.status = "pending";
               user.save();
               res.status(400).send("unable to find profile verification post");
             }

@@ -6,7 +6,7 @@ const mongoose = require("mongoose");
 
 // Routers
 import userRouter from "./controllers/users";
-import listingRouter from "./controllers/listings";
+import gatewayRouter from "./controllers/gateway";
 import authRouter from "./controllers/auth";
 import utilRouter from "./controllers/utility";
 // import webhookRouter from "./controllers/webhook";
@@ -42,7 +42,7 @@ app.get("/", (req: express.Request, res: express.Response) => {
 });
 
 app.use("/user", userRouter);
-app.use("/listing", listingRouter);
+app.use("/gateway", gatewayRouter);
 app.use("/auth", authRouter);
 app.use("/utility", utilRouter);
 // app.use("/webhook", webhookRouter);

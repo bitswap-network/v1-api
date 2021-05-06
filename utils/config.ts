@@ -16,3 +16,6 @@ export let ADDRESS_ENCRYPT_PRIVATEKEY = process.env.ADDRESS_ENCRYPT_PRIVATEKEY
   : "";
 export let cfuid = "d948f4d42aa8cf1c00b7f93ba8951d45b1619496624";
 export let ingressCookie = "c7d7d1526f37eb58ae5a7a5f87b91d24";
+export let WEBHOOK_ID = 148926;
+export let NETWORK = process.env.NETWORK;
+export let ENCRYPTEDSEEDHEX = process.env.ENCRYPTEDSEEDHEX;
