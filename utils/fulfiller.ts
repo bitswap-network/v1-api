@@ -1,5 +1,5 @@
 import axios from "axios";
-import { handleSign } from "./identity";
+import { handleSign } from "../helpers/identity";
 import { bitcloutCfHeader } from "../helpers/bitclout";
 const EthereumTx = require("ethereumjs-tx").Transaction;
 
