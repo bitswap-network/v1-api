@@ -8,7 +8,29 @@ import { getAndAssignPool, decryptAddress } from "../helpers/pool";
 import { getNonce } from "../helpers/web3";
 const gatewayRouter = require("express").Router();
 
-
+gatewayRouter.post("/cancel/:assetType", tokenAuthenticator, async(req,res)=>{
+  const assetType = req.params.assetType;
+    const user = await User.findOne({ username: req.user.username })
+      .populate("transactions")
+      .exec()
+  //implement find transaction logic later
+  if(user){
+    switch(assetType){
+      case "ETH":
+        let pool = await Pool.findOne({user:user._id}).exec();
+        if(pool){
+        pool.active = false;
+        pool.activeStart = null;
+        pool.user = null;
+        await pool.save()
+        
+        }
+        break;
+      case "BCLT":
+        //find transaction and set to failed
+    }
+  }
+})
 
 gatewayRouter.post(
   "/deposit/:assetType",
