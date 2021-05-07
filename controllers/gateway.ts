@@ -44,10 +44,7 @@ gatewayRouter.post(
     const user = await User.findOne({ username: req.user.username })
       .populate("transactions")
       .exec(); //use populated transaction tree to check if an ongoing deposit is occuring
-    const poolCheck = await Pool.findOne({
-      user: user?._id
-    }).exec();
-    if (user && user.verification.status === "verified" && !poolCheck) {
+    if (user && user.verification.status === "verified" && !user.onGoingDeposit) {
       //not sure if using switch properly
       switch (assetType) {
         case "ETH":
@@ -60,6 +57,7 @@ gatewayRouter.post(
               pool: pool_id
             });
             user.transactions.push(txn._id);
+            user.onGoingDeposit = txn._id;
             await user.save();
             await txn.save();
             res.sendStatus(200);
@@ -75,6 +73,7 @@ gatewayRouter.post(
               assetType: "BCLT",
               value: parseInt(bclt_nanos)
             });
+            user.onGoingDeposit = txn._id;
             user.transactions.push(txn._id);
             await user.save();
             await txn.save();

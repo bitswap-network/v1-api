@@ -31,6 +31,7 @@ export const processDeposit: (
     transaction!.completionDate = new Date();
     transaction!.txnHash = hash;
     user.balance.ether += value;
+    user.onGoingDeposit = null;
     pool.active = false;
     pool.activeStart = null;
     pool.user = null;
