@@ -1,4 +1,5 @@
 import { model, Schema, Document } from "mongoose";
+import { transactionDoc } from "./transaction";
 const bcrypt = require("bcrypt");
 
 export interface UserDoc extends Document {
@@ -11,7 +12,7 @@ export interface UserDoc extends Document {
     bitclout: number;
     ether: number;
   };
-  onGoingDeposit:Schema.Types.ObjectId|null;
+  onGoingDeposit: transactionDoc | null;
   transactions: Schema.Types.ObjectId[];
   verification: {
     email: boolean;
@@ -38,7 +39,11 @@ const userSchema = new Schema<UserDoc>({
     bitclout: { type: Number, default: 0, required: true },
     ether: { type: Number, default: 0, required: true }
   },
-  onGoingDeposit: { type: Schema.Types.ObjectId, ref: "Transaction", default:null },
+  onGoingDeposit: {
+    type: Schema.Types.ObjectId,
+    ref: "Transaction",
+    default: null
+  },
   transactions: [{ type: Schema.Types.ObjectId, ref: "Transaction" }],
   verification: {
     email: { type: Boolean, default: false },

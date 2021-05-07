@@ -103,19 +103,23 @@ authRouter.post("/login", bruteforce.prevent, async (req, res) => {
   }
 });
 
-authRouter.post("/getbitcloutprofile", async (req, res) => {
-  const { PublicKeyBase58Check, Username } = req.body;
-  try {
-    let userProfile = await getSingleProfile(PublicKeyBase58Check, Username);
-    if (userProfile.data.error) {
-      res.status(400).send(userProfile.data.error);
-    } else if (userProfile.data.Profile) {
-      res.json(userProfile.data.Profile);
-    } else {
-      res.status(405).send(userProfile.data);
+authRouter.get("/fetchProfile/:username", async (req, res) => {
+  if (!req.params.username) {
+    res.status(400).send("Username must be part of request params");
+  } else {
+    try {
+      const Username = req.params.username;
+      let userProfile = await getSingleProfile("", Username);
+      if (userProfile.data.error) {
+        res.status(400).send(userProfile.data.error);
+      } else if (userProfile.data.Profile) {
+        res.json(userProfile.data.Profile);
+      } else {
+        res.status(405).send(userProfile.data);
+      }
+    } catch (e) {
+      res.status(500).send(e);
     }
-  } catch (e) {
-    res.status(500).send(e);
   }
 });
 

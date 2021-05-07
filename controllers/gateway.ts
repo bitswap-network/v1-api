@@ -8,32 +8,35 @@ import { getAndAssignPool, decryptAddress } from "../helpers/pool";
 import { getNonce } from "../helpers/web3";
 const gatewayRouter = require("express").Router();
 
-gatewayRouter.post(
-  "/cancel/:assetType",
-  tokenAuthenticator,
-  async (req, res) => {
-    const assetType = req.params.assetType;
-    const user = await User.findOne({ username: req.user.username })
-      .populate("transactions")
-      .exec();
-    //implement find transaction logic later
-    if (user) {
-      switch (assetType) {
-        case "ETH":
-          const pool = await Pool.findOne({ user: user._id }).exec();
-          if (pool) {
-            pool.active = false;
-            pool.activeStart = null;
-            pool.user = null;
-            await pool.save();
-          }
-          break;
-        case "BCLT":
-        //find transaction and set to failed
-      }
+gatewayRouter.post("/cancel", tokenAuthenticator, async (req, res) => {
+  const user = await User.findOne({ username: req.user.username })
+    .populate("onGoingDeposit")
+    .exec();
+  //implement find transaction logic later
+  if (user?.onGoingDeposit) {
+    const transaction = await Transaction.findById(user.onGoingDeposit._id);
+    const pool = await Pool.findOne({ user: user._id }).exec();
+    if (pool) {
+      pool.active = false;
+      pool.activeStart = null;
+      pool.user = null;
+      await pool.save();
     }
+    if (transaction) {
+      transaction!.completed = true;
+      transaction!.completionDate = new Date();
+      transaction!.state = "failed";
+      transaction!.error = "Deposit Cancelled";
+      await transaction.save();
+    }
+    user.onGoingDeposit = null;
+    await user.save();
+    res.sendStatus(200);
+    //find transaction and set to failed
+  } else {
+    res.status(409).send("No deposit to cancel.");
   }
-);
+});
 
 gatewayRouter.post(
   "/deposit/:assetType",
@@ -44,7 +47,11 @@ gatewayRouter.post(
     const user = await User.findOne({ username: req.user.username })
       .populate("transactions")
       .exec(); //use populated transaction tree to check if an ongoing deposit is occuring
-    if (user && user.verification.status === "verified" && !user.onGoingDeposit) {
+    if (
+      user &&
+      user.verification.status === "verified" &&
+      !user.onGoingDeposit
+    ) {
       //not sure if using switch properly
       switch (assetType) {
         case "ETH":
@@ -101,7 +108,7 @@ gatewayRouter.post(
     if (user && user.verification.status === "verified") {
       switch (assetType) {
         case "ETH":
-          if (user.balance >= value && pool) {
+          if (user.balance.ether >= value && pool) {
             try {
               const gas = await getGasEtherscan(); // get gas
               const key = decryptAddress(pool.privateKey); // decrypt pool key
@@ -137,25 +144,29 @@ gatewayRouter.post(
           }
           break;
         case "BCLT":
-          try {
-            const txnHash = await sendAndSubmitBitclout(
-              user.bitclout.publicKey,
-              value
-            );
-            const txn = new Transaction({
-              user: user._id,
-              transactionType: "withdraw",
-              assetType: "BCLT",
-              completed: true,
-              value: parseInt(value),
-              txnHash: txnHash
-            });
-            user.transactions.push(txn._id);
-            await user.save();
-            await txn.save();
-            res.sendStatus(200);
-          } catch (e) {
-            res.status(500).send(e);
+          if (user.balance.bitclout >= value) {
+            try {
+              const txnHash = await sendAndSubmitBitclout(
+                user.bitclout.publicKey,
+                value
+              );
+              const txn = new Transaction({
+                user: user._id,
+                transactionType: "withdraw",
+                assetType: "BCLT",
+                completed: true,
+                value: parseInt(value),
+                txnHash: txnHash
+              });
+              user.transactions.push(txn._id);
+              await user.save();
+              await txn.save();
+              res.sendStatus(200);
+            } catch (e) {
+              res.status(500).send(e);
+            }
+          } else {
+            res.status(409).send("insufficient balance");
           }
           break;
       }
