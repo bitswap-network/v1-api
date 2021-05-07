@@ -34,12 +34,11 @@ export const requestLogger = (request, response, next) => {
 }
 
 export const unknownEndpoint = (request, response) => {
-  rollbar.error(request)
   response.status(404).send({ error: "unknown endpoint" })
 }
 
 export const errorHandler = (error, request, response, next) => {
-  logger.error(error)
+  console.error(error)
 
   if (error.name === "CastError" && error.kind === "ObjectId") {
     return response.status(400).send({ error: "malformatted id" })
