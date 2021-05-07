@@ -1,28 +1,28 @@
-const nodemailer = require("nodemailer");
-const config = require("./config");
+const nodemailer = require("nodemailer")
+const config = require("./config")
 
 const mail = nodemailer.createTransport({
   service: "gmail",
   auth: {
     user: "support@bitswap.network",
-    pass: config.MAIL
-  }
-});
+    pass: config.MAIL,
+  },
+})
 
 function sendMail(toEmail, subject, html) {
   const mailOptions = {
     from: "support@bitswap.network",
     to: toEmail,
     subject: subject,
-    html: html
-  };
+    html: html,
+  }
   mail.sendMail(mailOptions, function (error, info) {
     if (error) {
-      throw error;
+      throw error
     } else {
-      return info.response;
+      return info.response
     }
-  });
+  })
 }
 
-export default sendMail;
+export default sendMail
