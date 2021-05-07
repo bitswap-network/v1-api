@@ -7,7 +7,7 @@ import {
   invalidlink,
   servererror,
   passwordResetEmail,
-  verifyPasswordHTML,
+  verifyPasswordHTML
 } from "../utils/mailBody";
 import { generateCode } from "../utils/functions";
 import * as config from "../utils/config";
@@ -16,15 +16,15 @@ const userRouter = require("express").Router();
 
 userRouter.get("/data", tokenAuthenticator, async (req, res) => {
   const user = await User.findOne({
-    username: req.user.username,
+    username: req.user.username
   })
     .populate({
       path: "listings",
-      populate: { path: "buyer seller" },
+      populate: { path: "buyer seller" }
     })
     .populate({
       path: "buys",
-      populate: { path: "buyer seller" },
+      populate: { path: "buyer seller" }
     })
     .populate("transactions")
     .exec();
@@ -37,7 +37,7 @@ userRouter.get("/data", tokenAuthenticator, async (req, res) => {
 
 userRouter.get("/profile/:username", async (req, res) => {
   const user = await User.findOne({
-    username: req.params.username,
+    username: req.params.username
   }).exec();
   if (user) {
     res.status(200).json(user);
@@ -51,7 +51,7 @@ userRouter.put("/updateProfile", tokenAuthenticator, async (req, res) => {
   const user = await User.findOne({ username: req.user.username });
   if (user) {
     user.email = email.toLowerCase();
-    user.save((err: any, doc: any) => {
+    user.save((err: any) => {
       if (err) {
         res.status(500).send(err);
       } else {
@@ -93,7 +93,7 @@ userRouter.post("/forgotpassword", async (req, res) => {
     user
       .save()
       .then(() => {
-        let mailBody = passwordResetEmail(code);
+        const mailBody = passwordResetEmail(code);
         sendMail(email, mailBody.header, mailBody.body);
       })
       .then(() => {
@@ -152,11 +152,11 @@ userRouter.post("/preFlightTxn", tokenAuthenticator, async (req, res) => {
   if (user && user.verification.status === "verified") {
     if (bitcloutvalue) {
       try {
-        let preflight = await preFlightSendBitclout({
+        const preflight = await preFlightSendBitclout({
           AmountNanos: bitcloutvalue * 1e9,
           MinFeeRateNanosPerKB: 1000,
           RecipientPublicKeyOrUsername: user.bitclout.publicKey,
-          SenderPublicKeyBase58Check: config.PUBLIC_KEY_BITCLOUT,
+          SenderPublicKeyBase58Check: config.PUBLIC_KEY_BITCLOUT
         });
         if (preflight.data.error) {
           res.status(500).send(preflight.data);
@@ -185,18 +185,18 @@ userRouter.post("/verifyBitclout", tokenAuthenticator, async (req, res) => {
         user.bitclout.publicKey,
         user.username
       );
-      let error = response.data.error;
-      let posts = response.data.Posts;
+      const error = response.data.error;
+      const posts = response.data.Posts;
       if (error) {
         res.status(500).send(error);
       } else if (posts) {
         console.log(posts);
         let i = 0;
         let found = false;
-        let key = user.verification.bitcloutString;
+        const key = user.verification.bitcloutString;
         for (const post of posts) {
           i += 1;
-          let body = post.Body.toLowerCase();
+          const body = post.Body.toLowerCase();
           if (body.includes(key.toLowerCase())) {
             found = true;
           }

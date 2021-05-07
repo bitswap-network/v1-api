@@ -26,7 +26,7 @@ export const validateJwt = (bitCloutPublicKey: string, jwtToken: string) => {
   );
 
   const result = jwt.verify(jwtToken, rawPublicKeyEncoded, {
-    algorithms: ["ES256"],
+    algorithms: ["ES256"]
   });
   return result;
 };
@@ -61,19 +61,17 @@ export const handleSign = (data: any) => {
     // Once we have frontend transaction construction we won't need to do this.
     transactionBytes.slice(0, -1),
     signatureLength,
-    signatureBytes,
+    signatureBytes
   ]);
 
   return {
     signature,
-    signedTransactionHex: signedTransactionBytes.toString("hex"),
+    signedTransactionHex: signedTransactionBytes.toString("hex")
   };
 };
 const uintToBuf = (uint: number) => {
   let result: number[] = [];
-  // var length = Math.ceil((Math.log(uint)/Math.log(2))/8);
   while (uint > 0x80) {
-    // var temp = uint % 2;
     result.push((uint & 0xff) | 0x80);
     uint >>>= 7;
   }

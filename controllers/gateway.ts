@@ -8,29 +8,32 @@ import { getAndAssignPool, decryptAddress } from "../helpers/pool";
 import { getNonce } from "../helpers/web3";
 const gatewayRouter = require("express").Router();
 
-gatewayRouter.post("/cancel/:assetType", tokenAuthenticator, async(req,res)=>{
-  const assetType = req.params.assetType;
+gatewayRouter.post(
+  "/cancel/:assetType",
+  tokenAuthenticator,
+  async (req, res) => {
+    const assetType = req.params.assetType;
     const user = await User.findOne({ username: req.user.username })
       .populate("transactions")
-      .exec()
-  //implement find transaction logic later
-  if(user){
-    switch(assetType){
-      case "ETH":
-        let pool = await Pool.findOne({user:user._id}).exec();
-        if(pool){
-        pool.active = false;
-        pool.activeStart = null;
-        pool.user = null;
-        await pool.save()
-        
-        }
-        break;
-      case "BCLT":
+      .exec();
+    //implement find transaction logic later
+    if (user) {
+      switch (assetType) {
+        case "ETH":
+          const pool = await Pool.findOne({ user: user._id }).exec();
+          if (pool) {
+            pool.active = false;
+            pool.activeStart = null;
+            pool.user = null;
+            await pool.save();
+          }
+          break;
+        case "BCLT":
         //find transaction and set to failed
+      }
     }
   }
-})
+);
 
 gatewayRouter.post(
   "/deposit/:assetType",
@@ -42,10 +45,10 @@ gatewayRouter.post(
       .populate("transactions")
       .exec(); //use populated transaction tree to check if an ongoing deposit is occuring
     const poolCheck = await Pool.findOne({
-      user: user?._id,
+      user: user?._id
     }).exec();
     if (user && user.verification.status === "verified" && !poolCheck) {
-      //not sure if using switch properly 
+      //not sure if using switch properly
       switch (assetType) {
         case "ETH":
           try {
@@ -54,7 +57,7 @@ gatewayRouter.post(
               user: user._id,
               transactionType: "deposit",
               assetType: "ETH",
-              pool: pool_id,
+              pool: pool_id
             });
             user.transactions.push(txn._id);
             await user.save();
@@ -70,7 +73,7 @@ gatewayRouter.post(
               user: user._id,
               transactionType: "deposit",
               assetType: "BCLT",
-              value: parseInt(bclt_nanos),
+              value: parseInt(bclt_nanos)
             });
             user.transactions.push(txn._id);
             await user.save();
@@ -94,16 +97,16 @@ gatewayRouter.post(
     const { value, withdrawAddress } = req.body;
     const assetType = req.pararms.assetType;
     const user = await User.findOne({ username: req.user.username }).exec();
-    let pool = await Pool.findOne({ balance: { $gt: value } }).exec();
+    const pool = await Pool.findOne({ balance: { $gt: value } }).exec();
     //should validate gas price on front end
     if (user && user.verification.status === "verified") {
       switch (assetType) {
         case "ETH":
           if (user.balance >= value && pool) {
             try {
-              let gas = await getGasEtherscan(); // get gas
-              let key = decryptAddress(pool.privateKey); // decrypt pool key
-              let nonce = await getNonce(pool.address); // get nonce
+              const gas = await getGasEtherscan(); // get gas
+              const key = decryptAddress(pool.privateKey); // decrypt pool key
+              const nonce = await getNonce(pool.address); // get nonce
 
               user.balance.ether -= value; //deduct balance
               const receipt = await sendEth(
@@ -121,7 +124,7 @@ gatewayRouter.post(
                 completed: true, //set completed to true after transaction goes through?
                 txnHash: receipt.transactionHash,
                 gasDeducted:
-                  parseInt(gas.data.result.FastGasPrice.toString()) / 1e9,
+                  parseInt(gas.data.result.FastGasPrice.toString()) / 1e9
               }); //create withdraw txn object
               user.transactions.push(txn._id); // push txn
               await user.save();
@@ -133,7 +136,7 @@ gatewayRouter.post(
           } else {
             res.status(409).send("insufficient balance");
           }
-
+          break;
         case "BCLT":
           try {
             const txnHash = await sendAndSubmitBitclout(
@@ -146,7 +149,7 @@ gatewayRouter.post(
               assetType: "BCLT",
               completed: true,
               value: parseInt(value),
-              txnHash: txnHash,
+              txnHash: txnHash
             });
             user.transactions.push(txn._id);
             await user.save();
@@ -155,6 +158,7 @@ gatewayRouter.post(
           } catch (e) {
             res.status(500).send(e);
           }
+          break;
       }
     } else {
       res.status(400).send("user not found");

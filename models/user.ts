@@ -35,7 +35,7 @@ const userSchema = new Schema<UserDoc>({
   password: { type: String, required: true },
   balance: {
     bitclout: { type: Number, default: 0, required: true },
-    ether: { type: Number, default: 0, required: true },
+    ether: { type: Number, default: 0, required: true }
   },
   transactions: [{ type: Schema.Types.ObjectId, ref: "Transaction" }],
   verification: {
@@ -45,21 +45,21 @@ const userSchema = new Schema<UserDoc>({
     status: {
       type: String,
       default: "unverified",
-      enum: ["unverified", "pending", "verified"],
+      enum: ["unverified", "pending", "verified"]
     },
-    bitcloutString: { type: String },
+    bitcloutString: { type: String }
   },
   bitclout: {
     publicKey: { type: String, unique: true },
     bio: { type: String },
     verified: { type: Boolean, default: false },
-    profilePicture: { type: String },
+    profilePicture: { type: String }
   },
   created: {
     type: Date,
-    default: Date.now,
+    default: Date.now
   },
-  admin: { type: Boolean, default: false },
+  admin: { type: Boolean, default: false }
 });
 
 userSchema.methods.generateHash = function (password: String) {

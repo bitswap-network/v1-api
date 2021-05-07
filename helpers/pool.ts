@@ -2,10 +2,7 @@ import crypto from "crypto";
 import * as config from "./config";
 import Pool, { poolDoc } from "../models/pool";
 import User from "../models/user";
-
 import { genWallet, addAddressWebhook } from "../helpers/web3";
-import { generateHMAC } from "../utils/functions";
-import axios, { AxiosResponse } from "axios";
 import Transaction from "../models/transaction";
 const algorithm = "aes-256-cbc";
 
@@ -23,26 +20,23 @@ export const processDeposit: (
   const pool = await Pool.findById(pool_id).exec();
   const user = await User.findById(pool!.user).exec();
   if (pool && user) {
-    switch (asset) {
-      case "ETH":
-        const transaction = await Transaction.findOne({
-          user: user._id,
-          assetType: asset,
-          transactionType: "deposit",
-          completed: false,
-        });
-        transaction!.value = value;
-        transaction!.completed = true;
-        transaction!.completionDate = new Date();
-        transaction!.txnHash = hash;
-        user.balance.ether += value;
-        pool.active = false;
-        pool.activeStart = null;
-        pool.user = null;
-        await transaction!.save();
-        await pool.save();
-        await user.save();
-    }
+    const transaction = await Transaction.findOne({
+      user: user._id,
+      assetType: asset,
+      transactionType: "deposit",
+      completed: false
+    });
+    transaction!.value = value;
+    transaction!.completed = true;
+    transaction!.completionDate = new Date();
+    transaction!.txnHash = hash;
+    user.balance.ether += value;
+    pool.active = false;
+    pool.activeStart = null;
+    pool.user = null;
+    await transaction!.save();
+    await pool.save();
+    await user.save();
   }
 };
 
@@ -60,8 +54,8 @@ export const getAndAssignPool: (
       pool.user = user._id;
       return pool._id;
     } else {
-      let wallet = await genWallet();
-      let pool = new Pool({
+      const wallet = await genWallet();
+      const pool = new Pool({
         address: wallet.address.toLowerCase(),
         privateKey: encryptAddress(wallet.privateKey),
         user: user._id,
@@ -82,8 +76,8 @@ export const getAndAssignPool: (
 };
 
 export const encryptAddress = (address: string) => {
-  let salt = crypto.randomBytes(16);
-  let cipher = crypto.createCipheriv(
+  const salt = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv(
     algorithm,
     Buffer.from(config.ADDRESS_ENCRYPT_PRIVATEKEY),
     salt
@@ -92,7 +86,7 @@ export const encryptAddress = (address: string) => {
   encrypted = Buffer.concat([encrypted, cipher.final()]);
   return {
     salt: salt.toString("hex"),
-    encryptedKey: encrypted.toString("hex"),
+    encryptedKey: encrypted.toString("hex")
   };
 };
 

@@ -3,8 +3,8 @@ export const completeEmail = (id: string) => {
     header: "BitSwap exchange completed",
     body: {
       seller: `<!DOCTYPE html><html><body><p>One of your swaps has been fulfilled, you can check the details on the <a href="https://app.bitswap.network/listing/${id}">listing page</a>.</p></body></html>`,
-      buyer: `<!DOCTYPE html><html><body><p>One of your buys has been fulfilled, you can check the details on the <a href="https://app.bitswap.network/listing/${id}">listing page</a>.</p></body></html>`,
-    },
+      buyer: `<!DOCTYPE html><html><body><p>One of your buys has been fulfilled, you can check the details on the <a href="https://app.bitswap.network/listing/${id}">listing page</a>.</p></body></html>`
+    }
   };
 };
 
@@ -14,7 +14,7 @@ export const passwordResetEmail = (code: string) => {
     body:
       `<!DOCTYPE html><html><head><title>BitSwap Password Reset</title><body>` +
       `<p>Click <a href="https://api.bitswap.network/user/verifypassword/${code}">here</a> to reset your password. If you didn't request a password change, simply ignore this email.` +
-      `</body></html>`,
+      `</body></html>`
   };
 };
 
@@ -29,7 +29,7 @@ export const transactionNotificationEmail = (username: string, id: string) => {
       `<!DOCTYPE html><html><head><title>Transaction Notification Alert</title><body>` +
       `<p>@${username} has started a transaction with your listing.` +
       `<p>Click <a href="https://app.bitswap.network/listing/${id}">here</a> to view.</p>` +
-      `</body></html>`,
+      `</body></html>`
   };
 };
 
@@ -44,7 +44,7 @@ export const emailVerify = (
       `<!DOCTYPE html><html><head><title>BitSwap Email Verification</title><body>` +
       `<p>Click <a href="https://bitswap-api.herokuapp.com/user/verifyemail/${email_code}">here</a> to verify your email. If this wasn't you, simply ignore this email.` +
       `<p>Make a post on your $${username} BitClout profile saying: "Verifying my @BitSwap account. ${bitclout_code}" (make sure you tag us) to verify that you own this BitClout account.</p>` +
-      `</body></html>`,
+      `</body></html>`
   };
 };
 

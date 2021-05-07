@@ -14,7 +14,7 @@ authRouter.post("/register", async (req, res) => {
     email,
     password,
     bitcloutpubkey,
-    bitcloutverified,
+    bitcloutverified
   } = req.body;
   if (!username || !email || !password || !bitcloutpubkey) {
     res.status(400).send({ message: "Missing fields in request body" });
@@ -25,8 +25,8 @@ authRouter.post("/register", async (req, res) => {
       $or: [
         { username: username },
         { email: username },
-        { "bitclout.publickey": bitcloutpubkey },
-      ],
+        { "bitclout.publickey": bitcloutpubkey }
+      ]
     }).exec();
     if (user) {
       res
@@ -36,7 +36,7 @@ authRouter.post("/register", async (req, res) => {
       const newUser = new User({
         username: username,
         email: email,
-        bitclout: { publickey: bitcloutpubkey, verified: bitcloutverified },
+        bitclout: { publickey: bitcloutpubkey, verified: bitcloutverified }
       });
       newUser.password = newUser.generateHash(password);
       const email_code = generateCode(8);
@@ -48,7 +48,7 @@ authRouter.post("/register", async (req, res) => {
           res.status(500).send(err);
         } else {
           try {
-            let mailBody = emailVerify(username, email_code, bitclout_code);
+            const mailBody = emailVerify(username, email_code, bitclout_code);
             sendMail(email, mailBody.header, mailBody.body);
             res.status(201).send("Registration successful");
           } catch (err) {
@@ -66,13 +66,13 @@ authRouter.post("/login", bruteforce.prevent, async (req, res) => {
   const user = await User.findOne({
     $or: [
       { username: { $regex: new RegExp(`^${username}$`, "i") } },
-      { email: { $regex: new RegExp(`^${username}$`, "i") } },
-    ],
+      { email: { $regex: new RegExp(`^${username}$`, "i") } }
+    ]
   }).exec();
 
   if (user && user.validPassword(password)) {
     const token = generateAccessToken({ username: user.username });
-    let error;
+    let flowError;
     if (!user.verification.email) {
       res.status(403).send({ error: "Email not verified" });
     } else {
@@ -84,16 +84,16 @@ authRouter.post("/login", bruteforce.prevent, async (req, res) => {
           user.save();
         }
         if (userProfile.data.error) {
-          console.log(error);
+          console.log(userProfile.data.error);
         }
       } catch (error) {
         console.log(error);
-        error = error;
+        flowError = error;
       }
       res.json({
         ...safeUserObject(user),
         token: token,
-        error: error,
+        error: flowError
       });
     }
   } else {

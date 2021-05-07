@@ -3,13 +3,9 @@ import { handleSign } from "../helpers/identity";
 import { bitcloutCfHeader } from "../helpers/bitclout";
 const EthereumTx = require("ethereumjs-tx").Transaction;
 
-const logger = require("./logger");
 import * as config from "./config";
 const Web3 = require("web3");
 const web3 = new Web3(new Web3.providers.HttpProvider(config.HttpProvider));
-const swapfee = 0.02;
-
-console.log(config);
 
 const sendEth = async (
   priv_key: string,
@@ -27,11 +23,11 @@ const sendEth = async (
     ),
     gasLimit: web3.utils.toHex(21000),
     gasPrice: web3.utils.toHex(web3.utils.toWei(gasprice.toString(), "gwei")),
-    nonce: web3.utils.toHex(nonce),
+    nonce: web3.utils.toHex(nonce)
   };
   console.log(rawTx, gasprice, nonce);
   const transaction = new EthereumTx(rawTx, {
-    chain: config.NETWORK,
+    chain: config.NETWORK
   });
   transaction.sign(web3.utils.hexToBytes(priv_key));
   const serializedTransaction = transaction.serialize();
@@ -50,7 +46,7 @@ const sendBitclout = (bitcloutpubkey: string, amountnanos: number) => {
       AmountNanos: parseInt(amountnanos.toString()),
       MinFeeRateNanosPerKB: 1000,
       RecipientPublicKeyOrUsername: bitcloutpubkey,
-      SenderPublicKeyBase58Check: config.PUBLIC_KEY_BITCLOUT,
+      SenderPublicKeyBase58Check: config.PUBLIC_KEY_BITCLOUT
     }),
     bitcloutCfHeader
   );
@@ -58,14 +54,14 @@ const sendBitclout = (bitcloutpubkey: string, amountnanos: number) => {
 const submitTransaction = async (txnhex: string) => {
   const signedTxn = handleSign({
     encryptedSeedHex: config.ENCRYPTEDSEEDHEX,
-    transactionHex: txnhex,
+    transactionHex: txnhex
   });
 
   console.log("submitting txn");
   return axios.post(
     "https://api.bitclout.com/submit-transaction",
     JSON.stringify({
-      TransactionHex: signedTxn.signedTransactionHex,
+      TransactionHex: signedTxn.signedTransactionHex
     }),
     bitcloutCfHeader
   );

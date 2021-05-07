@@ -49,7 +49,7 @@ export const getEthUsdCC: () => Promise<AxiosResponse> = async function (): Prom
   return await axios.get(
     `https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=USD`,
     {
-      headers: { Authorization: `Apikey ${config.CRYPTOCOMPARE_KEY}` },
+      headers: { Authorization: `Apikey ${config.CRYPTOCOMPARE_KEY}` }
     }
   );
 };
@@ -83,6 +83,6 @@ export const safeUserObject = (user: UserDoc) => {
     email: user.email,
     transactions: user.transactions,
     username: user.username,
-    verification: user.verification,
+    verification: user.verification
   };
 };

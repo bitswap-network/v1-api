@@ -1,20 +1,18 @@
-import e from "express";
-
 const logger = require("./logger");
 const config = require("./config");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
-var ExpressBrute = require("express-brute");
-var MongooseStore = require("express-brute-mongoose");
-var BruteForceSchema = require("express-brute-mongoose/dist/schema");
+const ExpressBrute = require("express-brute");
+const MongooseStore = require("express-brute-mongoose");
+const BruteForceSchema = require("express-brute-mongoose/dist/schema");
 
-var bruteforce_model = mongoose.model(
+const bruteforce_model = mongoose.model(
   "bruteforce",
   new mongoose.Schema(BruteForceSchema)
 );
-var store = new MongooseStore(bruteforce_model);
-export var bruteforce = new ExpressBrute(store, {
-  freeRetries: 5,
+const store = new MongooseStore(bruteforce_model);
+export const bruteforce = new ExpressBrute(store, {
+  freeRetries: 5
 });
 
 export const requestLogger = (request, response, next) => {

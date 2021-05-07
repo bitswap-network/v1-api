@@ -15,21 +15,17 @@ export const addAddressWebhook: (
 ) => Promise<AxiosResponse> = async function (
   address: string[]
 ): Promise<AxiosResponse<any>> {
-  try {
-    return await axios.patch(
-      "https://dashboard.alchemyapi.io/api/update-webhook-addresses",
-      {
-        webhook_id: config.WEBHOOK_ID,
-        addresses_to_add: address,
-        addresses_to_remove: [],
-      },
-      {
-        headers: { "X-Alchemy-Token": config.XAlchemyToken },
-      }
-    );
-  } catch (e) {
-    throw e;
-  }
+  return await axios.patch(
+    "https://dashboard.alchemyapi.io/api/update-webhook-addresses",
+    {
+      webhook_id: config.WEBHOOK_ID,
+      addresses_to_add: address,
+      addresses_to_remove: []
+    },
+    {
+      headers: { "X-Alchemy-Token": config.XAlchemyToken }
+    }
+  );
 };
 
 export const getNonce = async (address: string) => {

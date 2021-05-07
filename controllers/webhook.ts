@@ -1,9 +1,6 @@
-import * as config from "../utils/config";
 import Pool from "../models/pool";
-import { verifyAlchemySignature, verifySignature } from "../utils/functions";
+import { verifyAlchemySignature } from "../utils/functions";
 import { processDeposit } from "../helpers/pool";
-const Web3 = require("web3");
-const web3 = new Web3(new Web3.providers.HttpProvider(config.HttpProvider));
 
 const webhookRouter = require("express").Router();
 
@@ -15,9 +12,9 @@ webhookRouter.post("/escrow", async (req, res) => {
     // Transaction is sent to the wallet
     try {
       const pool = await Pool.findOne({
-        address: toAddress.toLowerCase(),
+        address: toAddress.toLowerCase()
       }).exec();
-      
+
       if (pool) {
         pool.balance += value;
         await pool.save();

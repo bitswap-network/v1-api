@@ -13,8 +13,8 @@ import utilRouter from "./controllers/utility";
 
 // Middleware
 import * as middleware from "./utils/middleware";
-const logger = require("./utils/logger");
-const config = require("./utils/config");
+import * as logger from "./utils/logger";
+import * as config from "./utils/config";
 
 const app: express.Application = express();
 
@@ -23,7 +23,7 @@ mongoose
     useUnifiedTopology: true,
     useNewUrlParser: true,
     useCreateIndex: true,
-    useFindAndModify: false,
+    useFindAndModify: false
   })
   .then(() => {
     logger.info("Connected to MongoDB");

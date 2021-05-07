@@ -1,5 +1,5 @@
 import { model, Schema, Document } from "mongoose";
-import User, { UserDoc } from "./user";
+import { UserDoc } from "./user";
 export interface transactionDoc extends Document {
   user: UserDoc;
   transactionType: string;
@@ -8,8 +8,8 @@ export interface transactionDoc extends Document {
   created: Date;
   completed: boolean;
   completionDate: Date | undefined;
-  state:string;
-  error:string|null;
+  state: string;
+  error: string | null;
   gasDeducted: number | undefined;
   txnHash: string | undefined;
 }
@@ -19,17 +19,22 @@ const transactionSchema = new Schema<transactionDoc>({
   transactionType: {
     type: String,
     required: true,
-    enum: ["withdraw", "deposit"],
+    enum: ["withdraw", "deposit"]
   },
   assetType: { type: String, required: true, enum: ["ETH", "BCLT"] },
   value: { type: Number, required: true },
   created: { type: Date, default: Date.now },
   completed: { type: Boolean, required: true, default: false },
   completionDate: { type: Date },
-  state: { type:String, required:true, default: "pending", enum:["pending","done","failed"]},
-  error:{type:String, default:null},
+  state: {
+    type: String,
+    required: true,
+    default: "pending",
+    enum: ["pending", "done", "failed"]
+  },
+  error: { type: String, default: null },
   gasDeducted: { type: Number },
-  txnHash: { type: String },
+  txnHash: { type: String }
 });
 
 const Transaction = model<transactionDoc>("Transaction", transactionSchema);

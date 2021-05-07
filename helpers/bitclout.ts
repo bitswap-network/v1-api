@@ -5,17 +5,17 @@ import {
   ProfileAPIInterface,
   PostsAPIInterface,
   txnPreflightInterface,
-  TransactionAPIInterface,
+  TransactionAPIInterface
 } from "../interfaces/bitclout";
 import { generateHMAC } from "../utils/functions";
 const cfIngressCookie = {
-  Cookie: `__cfduid=${config.cfuid}; INGRESSCOOKIE=${config.ingressCookie}`,
+  Cookie: `__cfduid=${config.cfuid}; INGRESSCOOKIE=${config.ingressCookie}`
 };
 export const bitcloutCfHeader = {
   headers: {
     ...cfIngressCookie,
-    "Content-Type": "application/json",
-  },
+    "Content-Type": "application/json"
+  }
 };
 
 export const preFlightSendBitclout: (
@@ -41,7 +41,7 @@ export const getSingleProfile: (
     "https://api.bitclout.com/get-single-profile",
     JSON.stringify({
       PublicKeyBase58Check: PublicKeyBase58Check,
-      Username: Username,
+      Username: Username
     }),
     bitcloutCfHeader
   );
@@ -63,7 +63,7 @@ export const getProfilePosts: (
       NumToFetch: numToFetch,
       PublicKeyBase58Check: PublicKeyBase58Check,
       ReaderPublicKeyBase58Check: config.PUBLIC_KEY_BITCLOUT,
-      Username: Username,
+      Username: Username
     }),
     bitcloutCfHeader
   );
@@ -77,7 +77,7 @@ export const getFulfillmentLogs: (
   body: { id: string }
 ): Promise<AxiosResponse<any>> {
   return await axios.post(`${config.FULFILLMENT_API}/logs/${type}`, body, {
-    headers: { "server-signature": generateHMAC(body) },
+    headers: { "server-signature": generateHMAC(body) }
   });
 };
 
@@ -87,7 +87,7 @@ export const manualFulfillment: (body: {
   listing_id: string;
 }): Promise<AxiosResponse<any>> {
   return await axios.post(`${config.FULFILLMENT_API}/webhook/retry`, body, {
-    headers: { "server-signature": generateHMAC(body) },
+    headers: { "server-signature": generateHMAC(body) }
   });
 };
 
@@ -99,6 +99,6 @@ export const handleWithdraw: (body: {
   txn_id: string;
 }): Promise<AxiosResponse<any>> {
   return await axios.post(`${config.FULFILLMENT_API}/core/withdraw`, body, {
-    headers: { "server-signature": generateHMAC(body) },
+    headers: { "server-signature": generateHMAC(body) }
   });
 };
