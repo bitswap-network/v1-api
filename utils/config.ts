@@ -20,4 +20,4 @@ export const ingressCookie = "c7d7d1526f37eb58ae5a7a5f87b91d24"
 export const WEBHOOK_ID = 148926
 export const NETWORK = "kovan"
 export const FULFILLMENT_API = process.env.FULFILLMENT_API
-export const ROLLBAR = process.env.ROLLBAR;
+export const ROLLBAR = process.env.ROLLBAR

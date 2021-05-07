@@ -1,11 +1,11 @@
 import * as config from "./config"
-const Rollbar = require("rollbar");
-Rollbar.configure({logLevel: 'info'});
+const Rollbar = require("rollbar")
+Rollbar.configure({ logLevel: "info" })
 const rollbar = new Rollbar({
   accessToken: config.ROLLBAR,
   captureUncaught: true,
-  captureUnhandledRejections: true
-});
+  captureUnhandledRejections: true,
+})
 export const critical = (...params) => {
   rollbar.critical(...params)
   console.error(...params)

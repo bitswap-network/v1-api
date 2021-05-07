@@ -12,13 +12,12 @@ export const bruteforce = new ExpressBrute(store, {
   freeRetries: 5,
 })
 
-const Rollbar = require("rollbar");
+const Rollbar = require("rollbar")
 const rollbar = new Rollbar({
   accessToken: config.ROLLBAR,
   captureUncaught: true,
   captureUnhandledRejections: true,
-});
-
+})
 
 export const requestLogger = (request, response, next) => {
   rollbar.info(request)

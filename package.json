@@ -60,8 +60,12 @@
     }
   },
   "lint-staged": {
-    "*.{js,jsx,ts,tsx}": "eslint --cache --fix"
-  },
+  "*.{ts,json,js}": [
+    "prettier --config .prettierrc './**/*.{ts,json}' --write",
+    "eslint --fix",
+    "git add"
+  ]
+},
   "engines": {
     "node": "14.x"
   },
