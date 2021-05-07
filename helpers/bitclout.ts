@@ -1,13 +1,13 @@
 import axios from "axios";
 import { AxiosResponse } from "axios";
-import * as config from "./config";
+import * as config from "../utils/config";
 import {
   ProfileAPIInterface,
   PostsAPIInterface,
   txnPreflightInterface,
   TransactionAPIInterface,
 } from "../interfaces/bitclout";
-import { generateHMAC } from "./functions";
+import { generateHMAC } from "../utils/functions";
 const cfIngressCookie = {
   Cookie: `__cfduid=${config.cfuid}; INGRESSCOOKIE=${config.ingressCookie}`,
 };

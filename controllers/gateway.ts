@@ -23,9 +23,9 @@ gatewayRouter.post(
       user: user?._id,
     }).exec();
     if (user && user.verification.status === "verified" && !poolCheck) {
+      //not sure if using switch properly 
       switch (assetType) {
         case "ETH":
-        case "eth":
           try {
             const pool_id = await getAndAssignPool(user._id.toString());
             const txn = new Transaction({
@@ -43,7 +43,6 @@ gatewayRouter.post(
           }
           break;
         case "BCLT":
-        case "bclt":
           try {
             const txn = new Transaction({
               user: user._id,
