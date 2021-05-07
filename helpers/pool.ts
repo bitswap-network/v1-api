@@ -37,6 +37,7 @@ export const processDeposit: (
         transaction!.txnHash = hash;
         user.balance.ether += value;
         pool.active = false;
+        pool.activeStart = null;
         pool.user = null;
         await transaction!.save();
         await pool.save();
@@ -55,6 +56,7 @@ export const getAndAssignPool: (
   if (user) {
     if (pool) {
       pool.active = true;
+      pool.activeStart = Date.now();
       pool.user = user._id;
       return pool._id;
     } else {
@@ -64,6 +66,7 @@ export const getAndAssignPool: (
         privateKey: encryptAddress(wallet.privateKey),
         user: user._id,
         active: true,
+        activeStart: Date.now()
       });
       try {
         await addAddressWebhook([wallet.address]);

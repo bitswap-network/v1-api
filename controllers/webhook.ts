@@ -17,6 +17,7 @@ webhookRouter.post("/escrow", async (req, res) => {
       const pool = await Pool.findOne({
         address: toAddress.toLowerCase(),
       }).exec();
+      
       if (pool) {
         pool.balance += value;
         await pool.save();

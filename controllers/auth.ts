@@ -5,7 +5,6 @@ import { bruteforce, tokenAuthenticator } from "../utils/middleware";
 import { getSingleProfile } from "../utils/helper";
 import { safeUserObject } from "../utils/functions";
 import { emailVerify } from "../utils/mailBody";
-import { checkEthAddr } from "../helpers/web3";
 
 const authRouter = require("express").Router();
 
