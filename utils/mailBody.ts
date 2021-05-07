@@ -5,8 +5,8 @@ export const completeEmail = (id: string) => {
       seller: `<!DOCTYPE html><html><body><p>One of your swaps has been fulfilled, you can check the details on the <a href="https://app.bitswap.network/listing/${id}">listing page</a>.</p></body></html>`,
       buyer: `<!DOCTYPE html><html><body><p>One of your buys has been fulfilled, you can check the details on the <a href="https://app.bitswap.network/listing/${id}">listing page</a>.</p></body></html>`,
     },
-  };
-};
+  }
+}
 
 export const passwordResetEmail = (code: string) => {
   return {
@@ -15,12 +15,12 @@ export const passwordResetEmail = (code: string) => {
       `<!DOCTYPE html><html><head><title>BitSwap Password Reset</title><body>` +
       `<p>Click <a href="https://api.bitswap.network/user/verifypassword/${code}">here</a> to reset your password. If you didn't request a password change, simply ignore this email.` +
       `</body></html>`,
-  };
-};
+  }
+}
 
 export const verifyPasswordHTML = (password: string) => {
-  return `<!DOCTYPE html><html><body><p>Your password has been reset. Your temporary password is "${password}" (no quotation marks). Please change your password once you sign in.</p><br /><a href="https://app.bitswap.network">Go to BitSwap homepage.</a></body></html>`;
-};
+  return `<!DOCTYPE html><html><body><p>Your password has been reset. Your temporary password is "${password}" (no quotation marks). Please change your password once you sign in.</p><br /><a href="https://app.bitswap.network">Go to BitSwap homepage.</a></body></html>`
+}
 
 export const transactionNotificationEmail = (username: string, id: string) => {
   return {
@@ -30,14 +30,10 @@ export const transactionNotificationEmail = (username: string, id: string) => {
       `<p>@${username} has started a transaction with your listing.` +
       `<p>Click <a href="https://app.bitswap.network/listing/${id}">here</a> to view.</p>` +
       `</body></html>`,
-  };
-};
+  }
+}
 
-export const emailVerify = (
-  username: string,
-  email_code: string,
-  bitclout_code: string
-) => {
+export const emailVerify = (username: string, email_code: string, bitclout_code: string) => {
   return {
     header: "Verify your BitSwap email",
     body:
@@ -45,12 +41,12 @@ export const emailVerify = (
       `<p>Click <a href="https://bitswap-api.herokuapp.com/user/verifyemail/${email_code}">here</a> to verify your email. If this wasn't you, simply ignore this email.` +
       `<p>Make a post on your $${username} BitClout profile saying: "Verifying my @BitSwap account. ${bitclout_code}" (make sure you tag us) to verify that you own this BitClout account.</p>` +
       `</body></html>`,
-  };
-};
+  }
+}
 
 export const emailverified =
-  '<!DOCTYPE html><html><body><p>Your email has been successfully verified.</p><br /><a href="https://app.bitswap.network">Go to BitSwap homepage.</a></body></html>';
+  '<!DOCTYPE html><html><body><p>Your email has been successfully verified.</p><br /><a href="https://app.bitswap.network">Go to BitSwap homepage.</a></body></html>'
 export const invalidlink =
-  '<!DOCTYPE html><html><body><p>The link is invalid.</p><br /><a href="https://app.bitswap.network">Go to BitSwap homepage.</a></body></html>';
+  '<!DOCTYPE html><html><body><p>The link is invalid.</p><br /><a href="https://app.bitswap.network">Go to BitSwap homepage.</a></body></html>'
 export const servererror =
-  '<!DOCTYPE html><html><body><p>An error has occurred.</p><br /><a href="https://app.bitswap.network">Go to BitSwap homepage.</a></body></html>';
+  '<!DOCTYPE html><html><body><p>An error has occurred.</p><br /><a href="https://app.bitswap.network">Go to BitSwap homepage.</a></body></html>'

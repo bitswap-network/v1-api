@@ -1,127 +1,116 @@
-import { generateAccessToken, generateCode } from "../utils/functions";
-import User from "../models/user";
-import sendMail from "../utils/mailer";
-import { bruteforce, tokenAuthenticator } from "../utils/middleware";
-import { getSingleProfile } from "../utils/helper";
-import { safeUserObject } from "../utils/functions";
-import { emailVerify } from "../utils/mailBody";
-import { checkEthAddr } from "../helpers/web3";
+import { generateAccessToken, generateCode } from "../utils/functions"
+import User from "../models/user"
+import sendMail from "../utils/mailer"
+import { bruteforce, tokenAuthenticator } from "../utils/middleware"
+import { getSingleProfile } from "../helpers/bitclout"
+import { safeUserObject } from "../utils/functions"
+import { emailVerify } from "../utils/mailBody"
 
-const authRouter = require("express").Router();
+const authRouter = require("express").Router()
 
 authRouter.post("/register", async (req, res) => {
-  const {
-    username,
-    email,
-    password,
-    bitcloutpubkey,
-    bitcloutverified,
-  } = req.body;
+  const { username, email, password, bitcloutpubkey, bitcloutverified } = req.body
   if (!username || !email || !password || !bitcloutpubkey) {
-    res.status(400).send({ message: "Missing fields in request body" });
+    res.status(400).send({ message: "Missing fields in request body" })
   } else if (password.length < 8) {
-    res.status(400).send({ message: "Password formatting error" });
+    res.status(400).send({ message: "Password formatting error" })
   } else {
     const user = await User.findOne({
-      $or: [
-        { username: username },
-        { email: username },
-        { "bitclout.publickey": bitcloutpubkey },
-      ],
-    }).exec();
+      $or: [{ username: username }, { email: username }, { "bitclout.publickey": bitcloutpubkey }],
+    }).exec()
     if (user) {
-      res
-        .status(409)
-        .send({ message: "There is already a user with that information" });
+      res.status(409).send({ message: "There is already a user with that information" })
     } else {
       const newUser = new User({
         username: username,
         email: email,
         bitclout: { publickey: bitcloutpubkey, verified: bitcloutverified },
-      });
-      newUser.password = newUser.generateHash(password);
-      const email_code = generateCode(8);
-      const bitclout_code = generateCode(16);
-      newUser.verification.emailString = email_code;
-      newUser.verification.bitcloutString = bitclout_code;
+      })
+      newUser.password = newUser.generateHash(password)
+      const email_code = generateCode(8)
+      const bitclout_code = generateCode(16)
+      newUser.verification.emailString = email_code
+      newUser.verification.bitcloutString = bitclout_code
       newUser.save((err: any) => {
         if (err) {
-          res.status(500).send(err);
+          res.status(500).send(err)
         } else {
           try {
-            let mailBody = emailVerify(username, email_code, bitclout_code);
-            sendMail(email, mailBody.header, mailBody.body);
-            res.status(201).send("Registration successful");
+            const mailBody = emailVerify(username, email_code, bitclout_code)
+            sendMail(email, mailBody.header, mailBody.body)
+            res.status(201).send("Registration successful")
           } catch (err) {
-            res.status(500).send(err);
+            res.status(500).send(err)
           }
         }
-      });
+      })
     }
   }
-});
+})
 
 authRouter.post("/login", bruteforce.prevent, async (req, res) => {
-  const { username, password } = req.body;
+  const { username, password } = req.body
 
   const user = await User.findOne({
     $or: [
       { username: { $regex: new RegExp(`^${username}$`, "i") } },
       { email: { $regex: new RegExp(`^${username}$`, "i") } },
     ],
-  }).exec();
+  }).exec()
 
   if (user && user.validPassword(password)) {
-    const token = generateAccessToken({ username: user.username });
-    let error;
+    const token = generateAccessToken({ username: user.username })
+    let flowError
     if (!user.verification.email) {
-      res.status(403).send({ error: "Email not verified" });
+      res.status(403).send({ error: "Email not verified" })
     } else {
       try {
-        const userProfile = await getSingleProfile(user.bitclout.publicKey);
+        const userProfile = await getSingleProfile(user.bitclout.publicKey)
         if (userProfile.status === 200 && userProfile.data.Profile) {
-          user.bitclout.profilePicture = userProfile.data.Profile.ProfilePic;
-          user.bitclout.bio = userProfile.data.Profile.Description;
-          user.save();
+          user.bitclout.profilePicture = userProfile.data.Profile.ProfilePic
+          user.bitclout.bio = userProfile.data.Profile.Description
+          user.save()
         }
         if (userProfile.data.error) {
-          console.log(error);
+          console.log(userProfile.data.error)
         }
       } catch (error) {
-        console.log(error);
-        error = error;
+        console.log(error)
+        flowError = error
       }
       res.json({
         ...safeUserObject(user),
         token: token,
-        error: error,
-      });
+        error: flowError,
+      })
     }
   } else {
-    res
-      .status(404)
-      .send({ error: "A user with those credentials does not exist" });
+    res.status(404).send({ error: "A user with those credentials does not exist" })
   }
-});
+})
 
-authRouter.post("/getbitcloutprofile", async (req, res) => {
-  const { PublicKeyBase58Check, Username } = req.body;
-  try {
-    let userProfile = await getSingleProfile(PublicKeyBase58Check, Username);
-    if (userProfile.data.error) {
-      res.status(400).send(userProfile.data.error);
-    } else if (userProfile.data.Profile) {
-      res.json(userProfile.data.Profile);
-    } else {
-      res.status(405).send(userProfile.data);
+authRouter.get("/fetchProfile/:username", async (req, res) => {
+  if (!req.params.username) {
+    res.status(400).send("Username must be part of request params")
+  } else {
+    try {
+      const Username = req.params.username
+      const userProfile = await getSingleProfile("", Username)
+      if (userProfile.data.error) {
+        res.status(400).send(userProfile.data.error)
+      } else if (userProfile.data.Profile) {
+        res.json(userProfile.data.Profile)
+      } else {
+        res.status(405).send(userProfile.data)
+      }
+    } catch (e) {
+      res.status(500).send(e)
     }
-  } catch (e) {
-    res.status(500).send(e);
   }
-});
+})
 
 authRouter.get("/verifytoken", tokenAuthenticator, (req, res) => {
-  res.sendStatus(204);
-});
+  res.sendStatus(204)
+})
 
-export default authRouter;
+export default authRouter
