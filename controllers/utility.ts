@@ -2,7 +2,6 @@ import { tokenAuthenticator } from "../utils/middleware";
 import { genString } from "../utils/functions";
 import { completeEmail } from "../utils/mailBody";
 import User from "../models/user";
-import Listing from "../models/listing";
 import Transaction from "../models/transaction";
 import sendMail from "../utils/mailer";
 import { getGasEtherscan, getEthUsdCC } from "../utils/functions";

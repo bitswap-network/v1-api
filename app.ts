@@ -9,7 +9,7 @@ import userRouter from "./controllers/users";
 import gatewayRouter from "./controllers/gateway";
 import authRouter from "./controllers/auth";
 import utilRouter from "./controllers/utility";
-// import webhookRouter from "./controllers/webhook";
+import webhookRouter from "./controllers/webhook";
 
 // Middleware
 import * as middleware from "./utils/middleware";
@@ -45,7 +45,7 @@ app.use("/user", userRouter);
 app.use("/gateway", gatewayRouter);
 app.use("/auth", authRouter);
 app.use("/utility", utilRouter);
-// app.use("/webhook", webhookRouter);
+app.use("/webhook", webhookRouter);
 
 app.use(middleware.unknownEndpoint);
 app.use(middleware.errorHandler);

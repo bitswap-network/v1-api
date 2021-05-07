@@ -1,4 +1,4 @@
-import * as config from "./config";
+import * as config from "../utils/config";
 import { createDecipher } from "crypto";
 import { ec as EC } from "elliptic";
 import * as sha256 from "sha256";

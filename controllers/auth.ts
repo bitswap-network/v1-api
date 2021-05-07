@@ -2,7 +2,7 @@ import { generateAccessToken, generateCode } from "../utils/functions";
 import User from "../models/user";
 import sendMail from "../utils/mailer";
 import { bruteforce, tokenAuthenticator } from "../utils/middleware";
-import { getSingleProfile } from "../utils/helper";
+import { getSingleProfile } from "../helpers/bitclout";
 import { safeUserObject } from "../utils/functions";
 import { emailVerify } from "../utils/mailBody";
 

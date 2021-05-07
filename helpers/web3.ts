@@ -1,4 +1,4 @@
-import * as config from "./config";
+import * as config from "../utils/config";
 import axios, { AxiosResponse } from "axios";
 const Web3 = require("web3");
 const web3 = new Web3(new Web3.providers.HttpProvider(config.HttpProvider));

@@ -1,5 +1,5 @@
 import User from "../models/user";
-import { getProfilePosts, preFlightSendBitclout } from "../utils/helper";
+import { getProfilePosts, preFlightSendBitclout } from "../helpers/bitclout";
 import { tokenAuthenticator } from "../utils/middleware";
 import sendMail from "../utils/mailer";
 import {
