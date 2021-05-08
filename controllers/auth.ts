@@ -3,13 +3,14 @@ import User from "../models/user"
 import sendMail from "../utils/mailer"
 import { bruteforce, tokenAuthenticator } from "../utils/middleware"
 import { getSingleProfile } from "../helpers/bitclout"
+import { validateJwt } from "../helpers/identity"
 import { safeUserObject } from "../utils/functions"
 import { emailVerify } from "../utils/mailBody"
 
 const authRouter = require("express").Router()
 
 authRouter.post("/register", async (req, res) => {
-  const { username, email, password, bitcloutpubkey, bitcloutverified } = req.body
+  const { username, email, password, bitcloutpubkey } = req.body
   if (!username || !email || !password || !bitcloutpubkey) {
     res.status(400).send({ message: "Missing fields in request body" })
   } else if (password.length < 8) {
@@ -24,7 +25,7 @@ authRouter.post("/register", async (req, res) => {
       const newUser = new User({
         username: username,
         email: email,
-        bitclout: { publickey: bitcloutpubkey, verified: bitcloutverified },
+        bitclout: { publickey: bitcloutpubkey },
       })
       newUser.password = newUser.generateHash(password)
       const email_code = generateCode(8)
@@ -89,13 +90,54 @@ authRouter.post("/login", bruteforce.prevent, async (req, res) => {
   }
 })
 
-authRouter.get("/fetchProfile/:username", async (req, res) => {
-  if (!req.params.username) {
-    res.status(400).send("Username must be part of request params")
+authRouter.post("/identity-login", async (req, res) => {
+  const { PublicKeyBase58Check, identityJWT } = req.body
+  if (!PublicKeyBase58Check || !identityJWT) {
+    res.status(400).send("invalid login params")
+  } else {
+    const user = await User.findOne({
+      "bitclout.publicKey": PublicKeyBase58Check,
+    }).exec()
+    if (user && validateJwt(PublicKeyBase58Check, identityJWT)) {
+      const token = generateAccessToken({ username: user.username })
+      let flowError
+      if (!user.verification.email) {
+        res.status(403).send({ error: "Email not verified" })
+      } else {
+        try {
+          const userProfile = await getSingleProfile(user.bitclout.publicKey)
+          if (userProfile.status === 200 && userProfile.data.Profile) {
+            user.bitclout.profilePicture = userProfile.data.Profile.ProfilePic
+            user.bitclout.bio = userProfile.data.Profile.Description
+            user.save()
+          }
+          if (userProfile.data.error) {
+            console.log(userProfile.data.error)
+          }
+        } catch (error) {
+          console.log(error)
+          flowError = error
+        }
+        res.json({
+          ...safeUserObject(user),
+          token: token,
+          error: flowError,
+        })
+      }
+    } else {
+      res.status(300).send({ error: "Public key does not exist within database." })
+    }
+  }
+})
+
+authRouter.get("/fetchProfile", async (req, res) => {
+  if (!req.query.username && !req.query.publickey) {
+    res.status(400).send("Username or public key must be part of request query params")
   } else {
     try {
-      const Username = req.params.username
-      const userProfile = await getSingleProfile("", Username)
+      const Username = req.query.username ? req.query.username : ""
+      const PublicKeyBase58Check = req.query.publickey ? req.query.publickey : ""
+      const userProfile = await getSingleProfile(PublicKeyBase58Check, Username)
       if (userProfile.data.error) {
         res.status(400).send(userProfile.data.error)
       } else if (userProfile.data.Profile) {

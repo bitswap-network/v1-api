@@ -20,6 +20,5 @@ export const warning = (...params) => {
   console.error(...params)
 }
 export const info = (...params) => {
-  rollbar.log(...params)
   console.log(...params)
 }
