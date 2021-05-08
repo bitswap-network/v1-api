@@ -11,17 +11,7 @@ const userRouter = require("express").Router()
 userRouter.get("/data", tokenAuthenticator, async (req, res) => {
   const user = await User.findOne({
     username: req.user.username,
-  })
-    .populate({
-      path: "listings",
-      populate: { path: "buyer seller" },
-    })
-    .populate({
-      path: "buys",
-      populate: { path: "buyer seller" },
-    })
-    .populate("transactions")
-    .exec()
+  }).exec()
   if (user) {
     res.json(user)
   } else {
