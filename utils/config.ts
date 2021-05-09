@@ -19,5 +19,5 @@ export const cfuid = "d948f4d42aa8cf1c00b7f93ba8951d45b1619496624"
 export const ingressCookie = "c7d7d1526f37eb58ae5a7a5f87b91d24"
 export const WEBHOOK_ID = 148926
 export const NETWORK = "kovan"
-export const FULFILLMENT_API = process.env.FULFILLMENT_API
+export const EXCHANGE_API = "http://localhost:5050"
 export const ROLLBAR = process.env.ROLLBAR

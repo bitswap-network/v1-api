@@ -5,26 +5,10 @@ import User from "../models/user"
 import Transaction from "../models/transaction"
 import sendMail from "../utils/mailer"
 import { getGasEtherscan, getEthUsdCC, generateHMAC } from "../utils/functions"
-import { getFulfillmentLogs } from "../helpers/bitclout"
+// import { getFulfillmentLogs } from "../helpers/bitclout"
 import axios from "axios"
 
 const utilRouter = require("express").Router()
-
-utilRouter.get("/", async (req, res) => {
-  try {
-    let body = {
-      poo: "nani",
-    }
-    const resp = await axios.post("http://localhost:5050/", body, {
-      headers: { "server-signature": generateHMAC(body) },
-    })
-    console.log(resp)
-    res.sendStatus(200)
-  } catch (e) {
-    console.log(e)
-    res.sendStatus(500)
-  }
-})
 
 utilRouter.get("/getGas", async (req, res) => {
   try {
@@ -68,32 +52,32 @@ utilRouter.get("/getEthUSD", async (req, res) => {
   }
 })
 
-utilRouter.get("/logging/:type", tokenAuthenticator, async (req, res) => {
-  const types = ["combined", "out", "error"]
-  const user = await User.findOne({ username: req.user.username }).exec()
-  if (user) {
-    if (user.admin) {
-      if (types.includes(req.params.type)) {
-        try {
-          const body = { id: genString(32) }
-          const response = await getFulfillmentLogs(req.params.type, body)
-          if (response.status === 200) {
-            res.send(response.data)
-          }
-        } catch (error) {
-          console.log(error.data)
-          res.status(500).send(error.data)
-        }
-      } else {
-        res.status(400).send(`Request param must be one of: ${types.join(", ")}`)
-      }
-    } else {
-      res.status(403).send("unauthorized: user must be admin")
-    }
-  } else {
-    res.status(400).send("user not found")
-  }
-})
+// utilRouter.get("/logging/:type", tokenAuthenticator, async (req, res) => {
+//   const types = ["combined", "out", "error"]
+//   const user = await User.findOne({ username: req.user.username }).exec()
+//   if (user) {
+//     if (user.admin) {
+//       if (types.includes(req.params.type)) {
+//         try {
+//           const body = { id: genString(32) }
+//           const response = await getFulfillmentLogs(req.params.type, body)
+//           if (response.status === 200) {
+//             res.send(response.data)
+//           }
+//         } catch (error) {
+//           console.log(error.data)
+//           res.status(500).send(error.data)
+//         }
+//       } else {
+//         res.status(400).send(`Request param must be one of: ${types.join(", ")}`)
+//       }
+//     } else {
+//       res.status(403).send("unauthorized: user must be admin")
+//     }
+//   } else {
+//     res.status(400).send("user not found")
+//   }
+// })
 
 utilRouter.post("/adminpasswordreset", tokenAuthenticator, async (req, res) => {
   const { username, password } = req.body
