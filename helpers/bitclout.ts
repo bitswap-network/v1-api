@@ -65,31 +65,31 @@ export const getProfilePosts: (
   )
 }
 
-export const getFulfillmentLogs: (type: string, body: { id: string }) => Promise<AxiosResponse> = async function (
-  type: string,
-  body: { id: string }
-): Promise<AxiosResponse<any>> {
-  return await axios.post(`${config.FULFILLMENT_API}/logs/${type}`, body, {
-    headers: { "server-signature": generateHMAC(body) },
-  })
-}
+// export const getFulfillmentLogs: (type: string, body: { id: string }) => Promise<AxiosResponse> = async function (
+//   type: string,
+//   body: { id: string }
+// ): Promise<AxiosResponse<any>> {
+//   return await axios.post(`${config.FULFILLMENT_API}/logs/${type}`, body, {
+//     headers: { "server-signature": generateHMAC(body) },
+//   })
+// }
 
-export const manualFulfillment: (body: { listing_id: string }) => Promise<AxiosResponse> = async function (body: {
-  listing_id: string
-}): Promise<AxiosResponse<any>> {
-  return await axios.post(`${config.FULFILLMENT_API}/webhook/retry`, body, {
-    headers: { "server-signature": generateHMAC(body) },
-  })
-}
+// export const manualFulfillment: (body: { listing_id: string }) => Promise<AxiosResponse> = async function (body: {
+//   listing_id: string
+// }): Promise<AxiosResponse<any>> {
+//   return await axios.post(`${config.FULFILLMENT_API}/webhook/retry`, body, {
+//     headers: { "server-signature": generateHMAC(body) },
+//   })
+// }
 
-export const handleWithdraw: (body: {
-  username: string
-  txn_id: string
-}) => Promise<AxiosResponse> = async function (body: {
-  username: string
-  txn_id: string
-}): Promise<AxiosResponse<any>> {
-  return await axios.post(`${config.FULFILLMENT_API}/core/withdraw`, body, {
-    headers: { "server-signature": generateHMAC(body) },
-  })
-}
+// export const handleWithdraw: (body: {
+//   username: string
+//   txn_id: string
+// }) => Promise<AxiosResponse> = async function (body: {
+//   username: string
+//   txn_id: string
+// }): Promise<AxiosResponse<any>> {
+//   return await axios.post(`${config.FULFILLMENT_API}/core/withdraw`, body, {
+//     headers: { "server-signature": generateHMAC(body) },
+//   })
+// }

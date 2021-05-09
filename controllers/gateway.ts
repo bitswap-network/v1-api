@@ -2,10 +2,12 @@ import User from "../models/user"
 import { tokenAuthenticator } from "../utils/middleware"
 import Transaction from "../models/transaction"
 import Pool from "../models/pool"
-import { getGasEtherscan } from "../utils/functions"
+import { getGasEtherscan, generateHMAC } from "../utils/functions"
 import { sendAndSubmitBitclout, sendEth } from "../utils/fulfiller"
 import { getAndAssignPool, decryptAddress } from "../helpers/pool"
 import { getNonce } from "../helpers/web3"
+import * as config from "../utils/config"
+import axios from "axios"
 const gatewayRouter = require("express").Router()
 
 gatewayRouter.post("/cancel", tokenAuthenticator, async (req, res) => {
@@ -86,7 +88,7 @@ gatewayRouter.post("/deposit/:assetType", tokenAuthenticator, async (req, res) =
 
 gatewayRouter.post("/withdraw/:assetType", tokenAuthenticator, async (req, res) => {
   const { value, withdrawAddress } = req.body
-  const assetType = req.pararms.assetType
+  const assetType = req.params.assetType
   const user = await User.findOne({ username: req.user.username }).exec()
   const pool = await Pool.findOne({ balance: { $gt: value } }).exec()
   //should validate gas price on front end
@@ -153,6 +155,59 @@ gatewayRouter.post("/withdraw/:assetType", tokenAuthenticator, async (req, res) 
     }
   } else {
     res.status(400).send("user not found")
+  }
+})
+
+gatewayRouter.post("/limit", tokenAuthenticator, async (req, res) => {
+  const { orderQuantity, orderPrice, orderSide } = req.body()
+  //add verification to check user's balance
+  let body = {
+    username: req.params.username,
+    orderSide: orderSide,
+    orderQuantity: orderQuantity,
+    orderPrice: orderPrice,
+  }
+  try {
+    const response = await axios.post(`${config.EXCHANGE_API}/exchange/limit`, body, {
+      headers: { "server-signature": generateHMAC(body) },
+    })
+    res.status(response.status).send(response.data)
+  } catch (e) {
+    res.status(500).send(e)
+  }
+})
+
+gatewayRouter.post("/market", tokenAuthenticator, async (req, res) => {
+  const { orderQuantity, orderSide } = req.body()
+  //add verification to check user's balance
+  let body = {
+    username: req.params.username,
+    orderSide: orderSide,
+    orderQuantity: orderQuantity,
+  }
+  try {
+    const response = await axios.post(`${config.EXCHANGE_API}/exchange/market`, body, {
+      headers: { "server-signature": generateHMAC(body) },
+    })
+    res.status(response.status).send(response.data)
+  } catch (e) {
+    res.status(500).send(e)
+  }
+})
+
+gatewayRouter.post("/cancel", tokenAuthenticator, async (req, res) => {
+  const { orderID } = req.body()
+  //add verification to check user's balance
+  let body = {
+    orderID: orderID,
+  }
+  try {
+    const response = await axios.post(`${config.EXCHANGE_API}/exchange/cancel`, body, {
+      headers: { "server-signature": generateHMAC(body) },
+    })
+    res.status(response.status).send(response.data)
+  } catch (e) {
+    res.status(500).send(e)
   }
 })
 
