@@ -4,10 +4,27 @@ import { completeEmail } from "../utils/mailBody"
 import User from "../models/user"
 import Transaction from "../models/transaction"
 import sendMail from "../utils/mailer"
-import { getGasEtherscan, getEthUsdCC } from "../utils/functions"
-import { getFulfillmentLogs, manualFulfillment } from "../helpers/bitclout"
+import { getGasEtherscan, getEthUsdCC, generateHMAC } from "../utils/functions"
+import { getFulfillmentLogs } from "../helpers/bitclout"
+import axios from "axios"
 
 const utilRouter = require("express").Router()
+
+utilRouter.get("/", async (req, res) => {
+  try {
+    let body = {
+      poo: "nani",
+    }
+    const resp = await axios.post("http://localhost:5050/", body, {
+      headers: { "server-signature": generateHMAC(body) },
+    })
+    console.log(resp)
+    res.sendStatus(200)
+  } catch (e) {
+    console.log(e)
+    res.sendStatus(500)
+  }
+})
 
 utilRouter.get("/getGas", async (req, res) => {
   try {

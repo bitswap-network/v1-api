@@ -17,13 +17,13 @@ import * as logger from "./utils/logger"
 import * as config from "./utils/config"
 
 //Rollbar logging
-const Rollbar = require("rollbar")
-Rollbar.configure({ logLevel: "info" })
-const rollbar = new Rollbar({
-  accessToken: config.ROLLBAR,
-  captureUncaught: true,
-  captureUnhandledRejections: true,
-})
+// const Rollbar = require("rollbar")
+// Rollbar.configure({ logLevel: "info" })
+// const rollbar = new Rollbar({
+//   accessToken: config.ROLLBAR,
+//   captureUncaught: true,
+//   captureUnhandledRejections: true,
+// })
 
 const app: express.Application = express()
 
@@ -45,7 +45,7 @@ app.use(cors())
 app.use(helmet())
 app.use(express.json())
 app.use(middleware.requestLogger)
-app.use(rollbar.errorHandler())
+// app.use(rollbar.errorHandler())
 
 app.get("/", (req: express.Request, res: express.Response) => {
   res.status(200).send(`BitSwap API`)
