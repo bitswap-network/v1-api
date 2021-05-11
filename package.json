@@ -30,7 +30,7 @@
     "install": "^0.13.0",
     "jsonwebtoken": "^8.5.1",
     "key-encoder": "^2.0.3",
-    "mongoose": "^5.12.3",
+    "mongoose": "^5.12.8",
     "nodemailer": "^6.5.0",
     "npm": "^7.9.0",
     "rollbar": "^2.21.1",
