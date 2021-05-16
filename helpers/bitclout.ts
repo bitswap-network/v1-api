@@ -1,6 +1,6 @@
-import axios from "axios"
-import { AxiosResponse } from "axios"
-import * as config from "../utils/config"
+import axios from "axios";
+import { AxiosResponse } from "axios";
+import * as config from "../utils/config";
 import {
   ProfileAPIInterface,
   PostsAPIInterface,
@@ -8,33 +8,42 @@ import {
   TransactionAPIInterface,
   submitTransactionInterface,
   SubmitTransactionAPIInterface,
-} from "../interfaces/bitclout"
-import { generateHMAC } from "../utils/functions"
+} from "../interfaces/bitclout";
+import { generateHMAC } from "../utils/functions";
+
 const cfIngressCookie = {
   Cookie: `__cfduid=${config.cfuid}; INGRESSCOOKIE=${config.ingressCookie}`,
-}
+};
 export const bitcloutCfHeader = {
   headers: {
     ...cfIngressCookie,
     "Content-Type": "application/json",
   },
-}
+};
 
-export const preFlightSendBitclout: (
+export const preFlightDeposit: (
   transaction: txnPreflightInterface
 ) => Promise<TransactionAPIInterface> = async function (
   transaction: txnPreflightInterface
 ): Promise<TransactionAPIInterface> {
-  return await axios.post("https://api.bitclout.com/send-bitclout", JSON.stringify(transaction), bitcloutCfHeader)
-}
+  return await axios.post(
+    "https://api.bitclout.com/send-bitclout",
+    JSON.stringify(transaction),
+    bitcloutCfHeader
+  );
+};
 
 export const submitTransaction: (
   transaction: submitTransactionInterface
 ) => Promise<SubmitTransactionAPIInterface> = async function (
   transaction: submitTransactionInterface
 ): Promise<SubmitTransactionAPIInterface> {
-  return await axios.post("https://api.bitclout.com/submit-transaction", JSON.stringify(transaction), bitcloutCfHeader)
-}
+  return await axios.post(
+    "https://api.bitclout.com/submit-transaction",
+    JSON.stringify(transaction),
+    bitcloutCfHeader
+  );
+};
 
 export const getSingleProfile: (
   PublicKeyBase58Check: string,
@@ -50,8 +59,8 @@ export const getSingleProfile: (
       Username: Username,
     }),
     bitcloutCfHeader
-  )
-}
+  );
+};
 
 export const getProfilePosts: (
   numToFetch: number,
@@ -72,5 +81,5 @@ export const getProfilePosts: (
       Username: Username,
     }),
     bitcloutCfHeader
-  )
-}
+  );
+};

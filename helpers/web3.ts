@@ -1,16 +1,18 @@
-import * as config from "../utils/config"
-import axios, { AxiosResponse } from "axios"
-const Web3 = require("web3")
-const web3 = new Web3(new Web3.providers.HttpProvider(config.HttpProvider))
+import * as config from "../utils/config";
+import axios, { AxiosResponse } from "axios";
+const Web3 = require("web3");
+const web3 = new Web3(new Web3.providers.HttpProvider(config.HttpProvider));
 
 export const checkEthAddr = async (address: string) => {
-  return web3.utils.isAddress(address)
-}
+  return web3.utils.isAddress(address);
+};
 
 export const genWallet = async () => {
-  return web3.eth.accounts.create()
-}
-export const addAddressWebhook: (address: string[]) => Promise<AxiosResponse> = async function (
+  return web3.eth.accounts.create();
+};
+export const addAddressWebhook: (
+  address: string[]
+) => Promise<AxiosResponse> = async function (
   address: string[]
 ): Promise<AxiosResponse<any>> {
   return await axios.patch(
@@ -23,9 +25,9 @@ export const addAddressWebhook: (address: string[]) => Promise<AxiosResponse> = 
     {
       headers: { "X-Alchemy-Token": config.XAlchemyToken },
     }
-  )
-}
+  );
+};
 
 export const getNonce = async (address: string) => {
-  return web3.eth.getTransactionCount(address, "pending")
-}
+  return web3.eth.getTransactionCount(address, "pending");
+};

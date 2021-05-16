@@ -7,10 +7,10 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "tsc && node ./build/index.js",
     "tslint": "tslint --project tsconfig.json",
-    "prettier:base": "prettier --parser typescript --double-quote",
+    "prettier:base": "prettier --config .prettierrc.json",
     "prettier:check": "npm run prettier:base -- --list-different \"./**/*.{ts,json}\"",
     "prettier:write": "npm run prettier:base -- --write \"./**/*.{ts,json}\"",
-    "prettier-format": "prettier --config .prettierrc './**/*.{ts,json}' --write",
+    "prettier-format": "prettier --config .prettierrc.json './**/*.{ts,json}' --write",
     "lint": "eslint . --ext .ts",
     "lint:fix": "npm run lint -- --fix"
   },
@@ -61,7 +61,7 @@
   },
   "lint-staged": {
     "*.{ts,json,js}": [
-      "prettier --config .prettierrc './**/*.{ts,json}' --write",
+      "prettier --config .prettierrc.json './**/*.{ts,json}' --write",
       "eslint --fix",
       "git add"
     ]
