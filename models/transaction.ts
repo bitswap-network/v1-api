@@ -1,17 +1,17 @@
-import { model, Schema, Document } from "mongoose"
-import { UserDoc } from "./user"
+import { model, Schema, Document } from "mongoose";
+import { UserDoc } from "./user";
 export interface transactionDoc extends Document {
-  user: UserDoc
-  transactionType: string
-  assetType: string
-  value: number
-  created: Date
-  completed: boolean
-  completionDate: Date | undefined
-  state: string
-  error: string | null
-  gasDeducted: number | undefined
-  txnHash: string | undefined
+  user: UserDoc;
+  transactionType: string;
+  assetType: string;
+  value: number;
+  created: Date;
+  completed: boolean;
+  completionDate: Date | undefined;
+  state: string;
+  error: string | null;
+  gasPrice: number | undefined;
+  txnHash: string | undefined;
 }
 
 const transactionSchema = new Schema<transactionDoc>({
@@ -23,7 +23,7 @@ const transactionSchema = new Schema<transactionDoc>({
   },
   assetType: { type: String, required: true, enum: ["ETH", "BCLT"] },
   value: { type: Number, required: true },
-  created: { type: Date, default: Date.now },
+  created: { type: Date, default: new Date() },
   completed: { type: Boolean, required: true, default: false },
   completionDate: { type: Date },
   state: {
@@ -33,10 +33,10 @@ const transactionSchema = new Schema<transactionDoc>({
     enum: ["pending", "done", "failed"],
   },
   error: { type: String, default: null },
-  gasDeducted: { type: Number },
+  gasPrice: { type: Number },
   txnHash: { type: String },
-})
+});
 
-const Transaction = model<transactionDoc>("Transaction", transactionSchema)
+const Transaction = model<transactionDoc>("Transaction", transactionSchema);
 
-export default Transaction
+export default Transaction;

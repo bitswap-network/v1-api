@@ -1,35 +1,38 @@
-import axios from "axios"
-import { AxiosResponse } from "axios"
-import * as config from "../utils/config"
+import axios from "axios";
+import { AxiosResponse } from "axios";
+import * as config from "../utils/config";
 import {
   ProfileAPIInterface,
   PostsAPIInterface,
   txnPreflightInterface,
   TransactionAPIInterface,
-} from "../interfaces/bitclout"
-import { generateHMAC } from "../utils/functions"
+  submitTransactionInterface,
+  SubmitTransactionAPIInterface,
+} from "../interfaces/bitclout";
+
 const cfIngressCookie = {
   Cookie: `__cfduid=${config.cfuid}; INGRESSCOOKIE=${config.ingressCookie}`,
-}
+};
 export const bitcloutCfHeader = {
   headers: {
     ...cfIngressCookie,
     "Content-Type": "application/json",
   },
-}
+};
 
-export const preFlightSendBitclout: (
-  transaction: txnPreflightInterface
-) => Promise<TransactionAPIInterface> = async function (
+export const preflightTransaction: (transaction: txnPreflightInterface) => Promise<TransactionAPIInterface> = async function (
   transaction: txnPreflightInterface
 ): Promise<TransactionAPIInterface> {
-  return await axios.post("https://api.bitclout.com/send-bitclout", JSON.stringify({ transaction }), bitcloutCfHeader)
-}
+  return await axios.post("https://api.bitclout.com/send-bitclout", JSON.stringify(transaction), bitcloutCfHeader);
+};
 
-export const getSingleProfile: (
-  PublicKeyBase58Check: string,
-  Username?: string
-) => Promise<ProfileAPIInterface> = async function (
+export const submitTransaction: (transaction: submitTransactionInterface) => Promise<SubmitTransactionAPIInterface> = async function (
+  transaction: submitTransactionInterface
+): Promise<SubmitTransactionAPIInterface> {
+  return await axios.post("https://api.bitclout.com/submit-transaction", JSON.stringify(transaction), bitcloutCfHeader);
+};
+
+export const getSingleProfile: (PublicKeyBase58Check: string, Username?: string) => Promise<ProfileAPIInterface> = async function (
   PublicKeyBase58Check: string,
   Username?: string
 ): Promise<ProfileAPIInterface> {
@@ -40,8 +43,8 @@ export const getSingleProfile: (
       Username: Username,
     }),
     bitcloutCfHeader
-  )
-}
+  );
+};
 
 export const getProfilePosts: (
   numToFetch: number,
@@ -62,34 +65,5 @@ export const getProfilePosts: (
       Username: Username,
     }),
     bitcloutCfHeader
-  )
-}
-
-// export const getFulfillmentLogs: (type: string, body: { id: string }) => Promise<AxiosResponse> = async function (
-//   type: string,
-//   body: { id: string }
-// ): Promise<AxiosResponse<any>> {
-//   return await axios.post(`${config.FULFILLMENT_API}/logs/${type}`, body, {
-//     headers: { "server-signature": generateHMAC(body) },
-//   })
-// }
-
-// export const manualFulfillment: (body: { listing_id: string }) => Promise<AxiosResponse> = async function (body: {
-//   listing_id: string
-// }): Promise<AxiosResponse<any>> {
-//   return await axios.post(`${config.FULFILLMENT_API}/webhook/retry`, body, {
-//     headers: { "server-signature": generateHMAC(body) },
-//   })
-// }
-
-// export const handleWithdraw: (body: {
-//   username: string
-//   txn_id: string
-// }) => Promise<AxiosResponse> = async function (body: {
-//   username: string
-//   txn_id: string
-// }): Promise<AxiosResponse<any>> {
-//   return await axios.post(`${config.FULFILLMENT_API}/core/withdraw`, body, {
-//     headers: { "server-signature": generateHMAC(body) },
-//   })
-// }
+  );
+};
