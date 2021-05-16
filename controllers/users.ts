@@ -28,10 +28,14 @@ userRouter.get("/profile/:username", async (req, res) => {
 });
 
 userRouter.put("/update-profile", tokenAuthenticator, async (req, res) => {
-  const { email } = req.body;
-  const user = await User.findOne({ username: req.user.username });
-  if (user) {
+  const { email, name } = req.body;
+  const emailCheck = await User.findOne({
+    email: email,
+  }).exec();
+  const user = await User.findOne({ "bitclout.publicKey": req.key });
+  if (user && !emailCheck) {
     user.email = email.toLowerCase();
+    user.name = name;
     user.save((err: any) => {
       if (err) {
         res.status(500).send(err);
@@ -60,32 +64,6 @@ userRouter.get("/verify-email/:code", async (req, res) => {
       });
   } else {
     res.status(404).send(invalidlink);
-  }
-});
-
-userRouter.post("/submit-deposit", tokenAuthenticator, async (req, res) => {
-  const { TransactionHex } = req.body;
-  const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
-  if (user && user.verification.status === "verified") {
-    if (TransactionHex) {
-      try {
-        const txnResp = await submitTransaction({
-          TransactionHex: TransactionHex,
-        });
-        if (txnResp.data.error) {
-          res.status(500).send(txnResp.data);
-        } else {
-          res.send(txnResp.data);
-        }
-      } catch (error) {
-        console.log(error);
-        res.status(error.response.status).send(error.response.data);
-      }
-    } else {
-      res.status(400).send("invalid request");
-    }
-  } else {
-    res.status(400).send("User not found");
   }
 });
 

@@ -3,9 +3,9 @@ import { tokenAuthenticator } from "../utils/middleware";
 import Transaction from "../models/transaction";
 import Pool from "../models/pool";
 import { getGasEtherscan, generateHMAC, toNanos } from "../utils/functions";
-import { sendAndSubmitBitclout, sendEth } from "../utils/fulfiller";
+import { sendEth } from "../utils/fulfiller";
 import { getAndAssignPool, decryptAddress } from "../helpers/pool";
-import { getNonce } from "../helpers/web3";
+import { getNonce, checkEthAddr } from "../helpers/web3";
 import * as config from "../utils/config";
 import { preflightTransaction, submitTransaction } from "../helpers/bitclout";
 import { handleSign } from "../helpers/identity";
@@ -206,7 +206,7 @@ gatewayRouter.post("/withdraw/eth", tokenAuthenticator, async (req, res) => {
     if (user.verification.status !== "verified") {
       res.status(400).send("User not verified.");
     } else {
-      if (isNaN(value) && user.balance.ether >= value) {
+      if (isNaN(value) && user.balance.ether >= value && checkEthAddr(withdrawAddress)) {
         try {
           const gas = await getGasEtherscan(); // get gas
           const key = decryptAddress(pool.privateKey); // decrypt pool key

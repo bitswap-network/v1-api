@@ -40,30 +40,30 @@ const sendBitclout = (bitcloutpubkey: string, amountnanos: number) => {
     bitcloutCfHeader
   );
 };
-const submitTransaction = async (txnhex: string) => {
-  const signedTxn = handleSign({
-    encryptedSeedHex: config.ENCRYPTEDSEEDHEX,
-    transactionHex: txnhex,
-  });
+// const submitTransaction = async (txnhex: string) => {
+//   const signedTxn = handleSign({
+//     encryptedSeedHex: config.ENCRYPTEDSEEDHEX,
+//     transactionHex: txnhex,
+//   });
 
-  console.log("submitting txn");
-  return axios.post(
-    "https://api.bitclout.com/submit-transaction",
-    JSON.stringify({
-      TransactionHex: signedTxn.signedTransactionHex,
-    }),
-    bitcloutCfHeader
-  );
-};
+//   console.log("submitting txn");
+//   return axios.post(
+//     "https://api.bitclout.com/submit-transaction",
+//     JSON.stringify({
+//       TransactionHex: signedTxn.signedTransactionHex,
+//     }),
+//     bitcloutCfHeader
+//   );
+// };
 
-const sendAndSubmitBitclout = async (bitcloutpubkey: string, amountnanos: number) => {
-  try {
-    const txnPreFlight = await sendBitclout(bitcloutpubkey, amountnanos);
-    await submitTransaction(txnPreFlight.data.TransactionHex);
-    return txnPreFlight.data.TransactionIDBase58Check;
-  } catch (e) {
-    throw new Error(e);
-  }
-};
+// const sendAndSubmitBitclout = async (bitcloutpubkey: string, amountnanos: number) => {
+//   try {
+//     const txnPreFlight = await sendBitclout(bitcloutpubkey, amountnanos);
+//     await submitTransaction(txnPreFlight.data.TransactionHex);
+//     return txnPreFlight.data.TransactionIDBase58Check;
+//   } catch (e) {
+//     throw new Error(e);
+//   }
+// };
 
-export { sendBitclout, sendEth, submitTransaction, sendAndSubmitBitclout };
+export { sendBitclout, sendEth };

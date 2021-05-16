@@ -39,10 +39,8 @@ export const getGasEtherscan: () => Promise<AxiosResponse> = async function (): 
   return await axios.get(`https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=${config.ETHERSCAN_KEY}`);
 };
 
-export const getEthUsdCC: () => Promise<AxiosResponse> = async function (): Promise<AxiosResponse<any>> {
-  return await axios.get(`https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=USD`, {
-    headers: { Authorization: `Apikey ${config.CRYPTOCOMPARE_KEY}` },
-  });
+export const getEthUsd: () => Promise<AxiosResponse> = async function (): Promise<AxiosResponse<any>> {
+  return await axios.get(`${config.EXCHANGE_API}/ethusd`);
 };
 
 export const generateCode = (len: number) => [...Array(len)].map(() => Math.floor(Math.random() * 16).toString(16)).join("");
