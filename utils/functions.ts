@@ -50,8 +50,8 @@ export const getEthUsdCC: () => Promise<AxiosResponse> = async function (): Prom
 export const generateCode = (len: number) =>
   [...Array(len)].map(() => Math.floor(Math.random() * 16).toString(16)).join("")
 
-export const generateAccessToken = (username: any) => {
-  return jwt.sign(username, config.SECRET, { expiresIn: "18000s" })
+export const generateAccessToken = (PublicKeyBase58Check: any) => {
+  return jwt.sign(PublicKeyBase58Check, config.SECRET, { expiresIn: "18000s" })
 }
 
 export const generateHMAC = (body: any) => {

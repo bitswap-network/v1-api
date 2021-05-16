@@ -1,10 +1,23 @@
 import { AxiosResponse } from "axios"
 
+export interface submitTransactionInterface {
+  TransactionHex: string
+}
+
 export interface txnPreflightInterface {
   AmountNanos: number
   MinFeeRateNanosPerKB: number
-  RecipientPublicKeyOrUsername: string
+  RecipientPublicKeyOrUsername: string | any
   SenderPublicKeyBase58Check: string | any
+}
+
+export interface SubmitTransactionAPIInterface extends AxiosResponse {
+  data: {
+    PostEntryResponse: any
+    Transaction: any
+    TxnHashHex: string | undefined
+    error: string | undefined
+  }
 }
 
 export interface TransactionAPIInterface extends AxiosResponse {

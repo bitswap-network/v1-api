@@ -11,7 +11,7 @@ import axios from "axios"
 const gatewayRouter = require("express").Router()
 
 gatewayRouter.post("/deposit/cancel", tokenAuthenticator, async (req, res) => {
-  const user = await User.findOne({ username: req.user.username }).populate("onGoingDeposit").exec()
+  const user = await User.findOne({ "bitclout.publicKey": req.key }).populate("onGoingDeposit").exec()
   //implement find transaction logic later
   if (user?.onGoingDeposit) {
     const transaction = await Transaction.findById(user.onGoingDeposit._id)
@@ -41,7 +41,7 @@ gatewayRouter.post("/deposit/cancel", tokenAuthenticator, async (req, res) => {
 gatewayRouter.post("/deposit/:assetType", tokenAuthenticator, async (req, res) => {
   const { bclt_nanos } = req.body
   const assetType = req.params.assetType
-  const user = await User.findOne({ username: req.user.username }).populate("transactions").exec() //use populated transaction tree to check if an ongoing deposit is occuring
+  const user = await User.findOne({ "bitclout.publicKey": req.key }).populate("transactions").exec() //use populated transaction tree to check if an ongoing deposit is occuring
   if (user && user.verification.status === "verified" && !user.onGoingDeposit) {
     //not sure if using switch properly
     switch (assetType) {
@@ -89,7 +89,7 @@ gatewayRouter.post("/deposit/:assetType", tokenAuthenticator, async (req, res) =
 gatewayRouter.post("/withdraw/:assetType", tokenAuthenticator, async (req, res) => {
   const { value, withdrawAddress } = req.body
   const assetType = req.params.assetType
-  const user = await User.findOne({ username: req.user.username }).exec()
+  const user = await User.findOne({ "bitclout.publicKey": req.key }).exec()
   const pool = await Pool.findOne({ balance: { $gt: value } }).exec()
   //should validate gas price on front end
   if (user && user.verification.status === "verified") {

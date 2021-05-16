@@ -17,7 +17,7 @@ authRouter.post("/register", async (req, res) => {
     res.status(400).send({ message: "Password formatting error" })
   } else {
     const user = await User.findOne({
-      $or: [{ username: username }, { email: username }, { "bitclout.publickey": bitcloutpubkey }],
+      $or: [{ username: username }, { email: username }, { "bitclout.publicKey": bitcloutpubkey }],
     }).exec()
     if (user) {
       res.status(409).send({ message: "There is already a user with that information" })
@@ -25,7 +25,7 @@ authRouter.post("/register", async (req, res) => {
       const newUser = new User({
         username: username,
         email: email,
-        bitclout: { publickey: bitcloutpubkey },
+        bitclout: { publicKey: bitcloutpubkey },
       })
       newUser.password = newUser.generateHash(password)
       const email_code = generateCode(8)
@@ -54,13 +54,13 @@ authRouter.post("/login", bruteforce.prevent, async (req, res) => {
 
   const user = await User.findOne({
     $or: [
-      { username: { $regex: new RegExp(`^${username}$`, "i") } },
+      { "bitclout.username": { $regex: new RegExp(`^${username}$`, "i") } },
       { email: { $regex: new RegExp(`^${username}$`, "i") } },
     ],
   }).exec()
 
   if (user && user.validPassword(password)) {
-    const token = generateAccessToken({ username: user.username })
+    const token = generateAccessToken({ PublicKeyBase58Check: user.bitclout.publicKey })
     let flowError
     if (!user.verification.email) {
       res.status(403).send({ error: "Email not verified" })
@@ -99,7 +99,7 @@ authRouter.post("/identity-login", async (req, res) => {
       "bitclout.publicKey": PublicKeyBase58Check,
     }).exec()
     if (user && validateJwt(PublicKeyBase58Check, identityJWT)) {
-      const token = generateAccessToken({ username: user.username })
+      const token = generateAccessToken({ PublicKeyBase58Check: user.bitclout.publicKey })
       let flowError
       if (!user.verification.email) {
         res.status(403).send({ error: "Email not verified" })

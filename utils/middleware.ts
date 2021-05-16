@@ -47,10 +47,10 @@ export const tokenAuthenticator = (request, response, next) => {
 
   if (token == null) return response.status(401).send("Missing token")
 
-  jwt.verify(token, config.SECRET, (err, user) => {
+  jwt.verify(token, config.SECRET, (err, key) => {
     if (err) return response.status(403).send("Invalid token")
 
-    request.user = user
+    request.key = key.PublicKeyBase58Check
 
     next()
   })

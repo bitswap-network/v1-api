@@ -1,5 +1,5 @@
 import User from "../models/user"
-import { getProfilePosts, preFlightSendBitclout } from "../helpers/bitclout"
+import { getProfilePosts, preFlightSendBitclout, submitTransaction } from "../helpers/bitclout"
 import { tokenAuthenticator } from "../utils/middleware"
 import sendMail from "../utils/mailer"
 import { emailverified, invalidlink, servererror, passwordResetEmail, verifyPasswordHTML } from "../utils/mailBody"
@@ -10,7 +10,7 @@ const userRouter = require("express").Router()
 
 userRouter.get("/data", tokenAuthenticator, async (req, res) => {
   const user = await User.findOne({
-    username: req.user.username,
+    "bitclout.publicKey": req.key,
   }).exec()
   if (user) {
     res.json(user)
@@ -21,7 +21,7 @@ userRouter.get("/data", tokenAuthenticator, async (req, res) => {
 
 userRouter.get("/profile/:username", async (req, res) => {
   const user = await User.findOne({
-    username: req.params.username,
+    "bitclout.username": req.params.username,
   }).exec()
   if (user) {
     res.status(200).json(user)
@@ -132,20 +132,46 @@ userRouter.get("/verifypassword/:code", async (req, res) => {
 
 userRouter.post("/preFlightTxn", tokenAuthenticator, async (req, res) => {
   const { bitcloutvalue } = req.body
-  const user = await User.findOne({ username: req.user.username }).exec()
+  const user = await User.findOne({ "bitclout.publicKey": req.key }).exec()
   if (user && user.verification.status === "verified") {
     if (bitcloutvalue) {
       try {
         const preflight = await preFlightSendBitclout({
           AmountNanos: bitcloutvalue * 1e9,
           MinFeeRateNanosPerKB: 1000,
-          RecipientPublicKeyOrUsername: user.bitclout.publicKey,
-          SenderPublicKeyBase58Check: config.PUBLIC_KEY_BITCLOUT,
+          RecipientPublicKeyOrUsername: config.PUBLIC_KEY_BITCLOUT,
+          SenderPublicKeyBase58Check: user.bitclout.publicKey,
         })
         if (preflight.data.error) {
           res.status(500).send(preflight.data)
         } else {
           res.send(preflight.data)
+        }
+      } catch (error) {
+        console.log(error)
+        res.status(error.response.status).send(error.response.data)
+      }
+    } else {
+      res.status(400).send("invalid request")
+    }
+  } else {
+    res.status(400).send("User not found")
+  }
+})
+
+userRouter.post("/submit-deposit", tokenAuthenticator, async (req, res) => {
+  const { TransactionHex } = req.body
+  const user = await User.findOne({ "bitclout.publicKey": req.key }).exec()
+  if (user && user.verification.status === "verified") {
+    if (TransactionHex) {
+      try {
+        const txnResp = await submitTransaction({
+          TransactionHex: TransactionHex,
+        })
+        if (txnResp.data.error) {
+          res.status(500).send(txnResp.data)
+        } else {
+          res.send(txnResp.data)
         }
       } catch (error) {
         console.log(error)
@@ -202,7 +228,7 @@ userRouter.get("/verifyBitclout/:depth", tokenAuthenticator, async (req, res) =>
 })
 
 userRouter.get("/transactions", tokenAuthenticator, async (req, res) => {
-  const user = await User.findOne({ username: req.user.username }).populate("transactions").exec()
+  const user = await User.findOne({ "bitclout.publicKey": req.key }).populate("transactions").exec()
   if (user) {
     res.json(user.transactions)
   } else {
