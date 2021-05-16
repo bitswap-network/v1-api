@@ -10,9 +10,7 @@ export const checkEthAddr = async (address: string) => {
 export const genWallet = async () => {
   return web3.eth.accounts.create();
 };
-export const addAddressWebhook: (
-  address: string[]
-) => Promise<AxiosResponse> = async function (
+export const addAddressWebhook: (address: string[]) => Promise<AxiosResponse> = async function (
   address: string[]
 ): Promise<AxiosResponse<any>> {
   return await axios.patch(

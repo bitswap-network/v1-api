@@ -20,13 +20,9 @@ authRouter.post("/register", async (req, res) => {
       "bitclout.publicKey": PublicKeyBase58Check,
     }).exec();
     if (emailCheck) {
-      res
-        .status(409)
-        .send({ message: "There is already a user using this email." });
+      res.status(409).send({ message: "There is already a user using this email." });
     } else if (publicKeyCheck) {
-      res
-        .status(409)
-        .send({ message: "There is already a user using this public key." });
+      res.status(409).send({ message: "There is already a user using this public key." });
     } else {
       const newUser = new User({
         name: name,
@@ -63,9 +59,7 @@ authRouter.post("/login", bruteforce.prevent, async (req, res) => {
       "bitclout.publicKey": PublicKeyBase58Check,
     }).exec();
     if (!user) {
-      res
-        .status(300)
-        .send({ error: "Public key does not exist within database." });
+      res.status(300).send({ error: "Public key does not exist within database." });
     } else if (user && validateJwt(PublicKeyBase58Check, identityJWT)) {
       const token = generateAccessToken({
         PublicKeyBase58Check: user.bitclout.publicKey,
@@ -102,19 +96,12 @@ authRouter.post("/login", bruteforce.prevent, async (req, res) => {
 
 authRouter.get("/fetchProfile", async (req, res) => {
   if (!req.query.username && !req.query.publickey) {
-    res
-      .status(400)
-      .send("Username or public key must be part of request query params");
+    res.status(400).send("Username or public key must be part of request query params");
   } else {
     try {
       const Username = req.query.username ? req.query.username : "";
-      const PublicKeyBase58Check = req.query.publickey
-        ? req.query.publickey
-        : "";
-      const userProfile = await getSingleProfile(
-        PublicKeyBase58Check,
-        Username
-      );
+      const PublicKeyBase58Check = req.query.publickey ? req.query.publickey : "";
+      const userProfile = await getSingleProfile(PublicKeyBase58Check, Username);
       if (userProfile.data.error) {
         res.status(400).send(userProfile.data.error);
       } else if (userProfile.data.Profile) {

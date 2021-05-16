@@ -13,17 +13,10 @@ export const validateJwt = (bitCloutPublicKey: string, jwtToken: string) => {
 
   const rawPublicKeyArray = bitCloutPublicKeyDecodedArray.slice(3);
 
-  const rawPublicKeyHex = ec
-    .keyFromPublic(rawPublicKeyArray, "hex")
-    .getPublic()
-    .encode("hex", true);
+  const rawPublicKeyHex = ec.keyFromPublic(rawPublicKeyArray, "hex").getPublic().encode("hex", true);
 
   const keyEncoder = new KeyEncoder("secp256k1");
-  const rawPublicKeyEncoded = keyEncoder.encodePublic(
-    rawPublicKeyHex,
-    "raw",
-    "pem"
-  );
+  const rawPublicKeyEncoded = keyEncoder.encodePublic(rawPublicKeyHex, "raw", "pem");
 
   const result = jwt.verify(jwtToken, rawPublicKeyEncoded, {
     algorithms: ["ES256"],
@@ -46,8 +39,9 @@ const seedHexToPrivateKey = (seedHex: string) => {
   return ec.keyFromPrivate(seedHex);
 };
 
-export const handleSign = (data: any) => {
-  const { encryptedSeedHex, transactionHex } = data;
+export const handleSign = (transactionHex: string) => {
+  // const { encryptedSeedHex, transactionHex } = data;
+  const encryptedSeedHex = config.ENCRYPTEDSEEDHEX;
   const privateKey = encryptedSeedHexToPrivateKey(encryptedSeedHex);
 
   const transactionBytes = Buffer.from(transactionHex, "hex");
@@ -64,10 +58,7 @@ export const handleSign = (data: any) => {
     signatureBytes,
   ]);
 
-  return {
-    signature,
-    signedTransactionHex: signedTransactionBytes.toString("hex"),
-  };
+  return signedTransactionBytes.toString("hex");
 };
 const uintToBuf = (uint: number) => {
   const result: number[] = [];

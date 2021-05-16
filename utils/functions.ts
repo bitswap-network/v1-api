@@ -35,29 +35,17 @@ export const verifySignature = (request: any) => {
   }
 };
 
-export const getGasEtherscan: () => Promise<AxiosResponse> = async function (): Promise<
-  AxiosResponse<any>
-> {
-  return await axios.get(
-    `https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=${config.ETHERSCAN_KEY}`
-  );
+export const getGasEtherscan: () => Promise<AxiosResponse> = async function (): Promise<AxiosResponse<any>> {
+  return await axios.get(`https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=${config.ETHERSCAN_KEY}`);
 };
 
-export const getEthUsdCC: () => Promise<AxiosResponse> = async function (): Promise<
-  AxiosResponse<any>
-> {
-  return await axios.get(
-    `https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=USD`,
-    {
-      headers: { Authorization: `Apikey ${config.CRYPTOCOMPARE_KEY}` },
-    }
-  );
+export const getEthUsdCC: () => Promise<AxiosResponse> = async function (): Promise<AxiosResponse<any>> {
+  return await axios.get(`https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=USD`, {
+    headers: { Authorization: `Apikey ${config.CRYPTOCOMPARE_KEY}` },
+  });
 };
 
-export const generateCode = (len: number) =>
-  [...Array(len)]
-    .map(() => Math.floor(Math.random() * 16).toString(16))
-    .join("");
+export const generateCode = (len: number) => [...Array(len)].map(() => Math.floor(Math.random() * 16).toString(16)).join("");
 
 export const generateAccessToken = (PublicKeyBase58Check: any) => {
   return jwt.sign(PublicKeyBase58Check, config.SECRET, { expiresIn: "18000s" });

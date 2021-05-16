@@ -6,12 +6,7 @@ import { genWallet, addAddressWebhook } from "../helpers/web3";
 import Transaction from "../models/transaction";
 const algorithm = "aes-256-cbc";
 
-export const processDeposit: (
-  pool_id: string,
-  value: number,
-  asset: string,
-  hash: string
-) => void = async function (
+export const processDeposit: (pool_id: string, value: number, asset: string, hash: string) => void = async function (
   pool_id: string,
   value: number,
   asset: string,
@@ -41,11 +36,7 @@ export const processDeposit: (
   }
 };
 
-export const getAndAssignPool: (
-  user_id: string
-) => Promise<string> = async function (
-  user_id: string
-): Promise<string> | never {
+export const getAndAssignPool: (user_id: string) => Promise<string> = async function (user_id: string): Promise<string> | never {
   const pool = await Pool.findOne({ active: false }).exec();
   const user = await User.findById(user_id).exec();
   if (user) {
@@ -78,11 +69,7 @@ export const getAndAssignPool: (
 
 export const encryptAddress = (address: string) => {
   const salt = crypto.randomBytes(16);
-  const cipher = crypto.createCipheriv(
-    algorithm,
-    Buffer.from(config.ADDRESS_ENCRYPT_PRIVATEKEY),
-    salt
-  );
+  const cipher = crypto.createCipheriv(algorithm, Buffer.from(config.ADDRESS_ENCRYPT_PRIVATEKEY), salt);
   let encrypted = cipher.update(address);
   encrypted = Buffer.concat([encrypted, cipher.final()]);
   return {
@@ -94,11 +81,7 @@ export const encryptAddress = (address: string) => {
 export const decryptAddress = (keyObject: poolDoc["privateKey"]) => {
   const salt = Buffer.from(keyObject.salt, "hex");
   const encryptedAddress = Buffer.from(keyObject.encryptedKey, "hex");
-  const decipher = crypto.createDecipheriv(
-    algorithm,
-    Buffer.from(config.ADDRESS_ENCRYPT_PRIVATEKEY),
-    salt
-  );
+  const decipher = crypto.createDecipheriv(algorithm, Buffer.from(config.ADDRESS_ENCRYPT_PRIVATEKEY), salt);
   let decrypted = decipher.update(encryptedAddress);
   decrypted = Buffer.concat([decrypted, decipher.final()]);
   return decrypted.toString();

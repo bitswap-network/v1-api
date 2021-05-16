@@ -21,34 +21,19 @@ export const bitcloutCfHeader = {
   },
 };
 
-export const preFlightDeposit: (
-  transaction: txnPreflightInterface
-) => Promise<TransactionAPIInterface> = async function (
+export const preflightTransaction: (transaction: txnPreflightInterface) => Promise<TransactionAPIInterface> = async function (
   transaction: txnPreflightInterface
 ): Promise<TransactionAPIInterface> {
-  return await axios.post(
-    "https://api.bitclout.com/send-bitclout",
-    JSON.stringify(transaction),
-    bitcloutCfHeader
-  );
+  return await axios.post("https://api.bitclout.com/send-bitclout", JSON.stringify(transaction), bitcloutCfHeader);
 };
 
-export const submitTransaction: (
-  transaction: submitTransactionInterface
-) => Promise<SubmitTransactionAPIInterface> = async function (
+export const submitTransaction: (transaction: submitTransactionInterface) => Promise<SubmitTransactionAPIInterface> = async function (
   transaction: submitTransactionInterface
 ): Promise<SubmitTransactionAPIInterface> {
-  return await axios.post(
-    "https://api.bitclout.com/submit-transaction",
-    JSON.stringify(transaction),
-    bitcloutCfHeader
-  );
+  return await axios.post("https://api.bitclout.com/submit-transaction", JSON.stringify(transaction), bitcloutCfHeader);
 };
 
-export const getSingleProfile: (
-  PublicKeyBase58Check: string,
-  Username?: string
-) => Promise<ProfileAPIInterface> = async function (
+export const getSingleProfile: (PublicKeyBase58Check: string, Username?: string) => Promise<ProfileAPIInterface> = async function (
   PublicKeyBase58Check: string,
   Username?: string
 ): Promise<ProfileAPIInterface> {

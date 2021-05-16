@@ -38,7 +38,7 @@ export interface TransactionAPIInterface extends AxiosResponse {
           TxnTypeJSON: any;
         }
       | undefined;
-    TransactionHex: string | undefined;
+    TransactionHex: string;
     TxnHashHex: string | undefined;
     error: string | undefined;
   };

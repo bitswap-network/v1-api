@@ -6,10 +6,7 @@ const ExpressBrute = require("express-brute");
 const MongooseStore = require("express-brute-mongoose");
 const BruteForceSchema = require("express-brute-mongoose/dist/schema");
 
-const bruteforce_model = mongoose.model(
-  "bruteforce",
-  new mongoose.Schema(BruteForceSchema)
-);
+const bruteforce_model = mongoose.model("bruteforce", new mongoose.Schema(BruteForceSchema));
 const store = new MongooseStore(bruteforce_model);
 export const bruteforce = new ExpressBrute(store, {
   freeRetries: 5,

@@ -1,16 +1,7 @@
 import User from "../models/user";
 import { getProfilePosts, submitTransaction } from "../helpers/bitclout";
 import { tokenAuthenticator } from "../utils/middleware";
-import sendMail from "../utils/mailer";
-import {
-  emailverified,
-  invalidlink,
-  servererror,
-  passwordResetEmail,
-  verifyPasswordHTML,
-} from "../utils/mailBody";
-import { generateCode } from "../utils/functions";
-import * as config from "../utils/config";
+import { emailverified, invalidlink, servererror } from "../utils/mailBody";
 
 const userRouter = require("express").Router();
 
@@ -98,62 +89,50 @@ userRouter.post("/submit-deposit", tokenAuthenticator, async (req, res) => {
   }
 });
 
-userRouter.get(
-  "/verifyBitclout/:depth",
-  tokenAuthenticator,
-  async (req, res) => {
-    const user = await User.findOne({ username: req.user.username }).exec();
-    const numToFetch = req.params.depth ? req.params.depth : 20;
-    if (user) {
-      try {
-        const response = await getProfilePosts(
-          numToFetch,
-          user.bitclout.publicKey,
-          user.bitclout.username
-        );
-        const error = response.data.error;
-        const posts = response.data.Posts;
-        if (error) {
-          res.status(500).send(error);
-        } else if (posts) {
-          console.log(posts);
-          let i = 0;
-          let found = false;
-          const key = user.verification.bitcloutString;
-          for (const post of posts) {
-            i += 1;
-            const body = post.Body.toLowerCase();
-            if (body.includes(key.toLowerCase())) {
-              found = true;
-            }
-            if (i === posts.length) {
-              if (found) {
-                user.verification.status = "verified";
-                user.save();
-                res.status(200).send(post);
-              } else {
-                user.verification.status = "pending";
-                user.save();
-                res
-                  .status(400)
-                  .send("unable to find profile verification post");
-              }
+userRouter.get("/verify-bitclout/:depth", tokenAuthenticator, async (req, res) => {
+  const user = await User.findOne({ username: req.user.username }).exec();
+  const numToFetch = req.params.depth ? req.params.depth : 20;
+  if (user) {
+    try {
+      const response = await getProfilePosts(numToFetch, user.bitclout.publicKey, user.bitclout.username);
+      const error = response.data.error;
+      const posts = response.data.Posts;
+      if (error) {
+        res.status(500).send(error);
+      } else if (posts) {
+        console.log(posts);
+        let i = 0;
+        let found = false;
+        const key = user.verification.bitcloutString;
+        for (const post of posts) {
+          i += 1;
+          const body = post.Body.toLowerCase();
+          if (body.includes(key.toLowerCase())) {
+            found = true;
+          }
+          if (i === posts.length) {
+            if (found) {
+              user.verification.status = "verified";
+              user.save();
+              res.status(200).send(post);
+            } else {
+              user.verification.status = "pending";
+              user.save();
+              res.status(400).send("unable to find profile verification post");
             }
           }
         }
-      } catch (e) {
-        res.status(500).send(e);
       }
-    } else {
-      res.status(400).send("user not found");
+    } catch (e) {
+      res.status(500).send(e);
     }
+  } else {
+    res.status(400).send("user not found");
   }
-);
+});
 
 userRouter.get("/transactions", tokenAuthenticator, async (req, res) => {
-  const user = await User.findOne({ "bitclout.publicKey": req.key })
-    .populate("transactions")
-    .exec();
+  const user = await User.findOne({ "bitclout.publicKey": req.key }).populate("transactions").exec();
   if (user) {
     res.json(user.transactions);
   } else {
