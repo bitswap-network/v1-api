@@ -1,5 +1,5 @@
 import User from "../models/user";
-import { getProfilePosts, submitTransaction } from "../helpers/bitclout";
+import { getProfilePosts } from "../helpers/bitclout";
 import { tokenAuthenticator } from "../utils/middleware";
 import { emailverified, invalidlink, servererror } from "../utils/mailBody";
 

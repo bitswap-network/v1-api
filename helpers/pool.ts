@@ -26,7 +26,6 @@ export const processDeposit: (pool_id: string, value: number, asset: string, has
     transaction!.completionDate = new Date();
     transaction!.txnHash = hash;
     user.balance.ether += value;
-    user.onGoingDeposit = null;
     pool.active = false;
     pool.activeStart = null;
     pool.user = null;

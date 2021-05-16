@@ -12,11 +12,11 @@ import { handleSign } from "../helpers/identity";
 import axios from "axios";
 const gatewayRouter = require("express").Router();
 
-gatewayRouter.post("/deposit/cancel", tokenAuthenticator, async (req, res) => {
-  const user = await User.findOne({ "bitclout.publicKey": req.key }).populate("onGoingDeposit").exec();
+gatewayRouter.post("/deposit/cancel/:id", tokenAuthenticator, async (req, res) => {
+  const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
   //implement find transaction logic later
-  if (user?.onGoingDeposit) {
-    const transaction = await Transaction.findById(user.onGoingDeposit._id);
+  if (user && req.params.id) {
+    const transaction = await Transaction.findById(req.params.id).exec();
     const pool = await Pool.findOne({ user: user._id }).exec();
     if (pool) {
       pool.active = false;
@@ -31,12 +31,11 @@ gatewayRouter.post("/deposit/cancel", tokenAuthenticator, async (req, res) => {
       transaction!.error = "Deposit Cancelled";
       await transaction.save();
     }
-    user.onGoingDeposit = null;
     await user.save();
     res.sendStatus(200);
     //find transaction and set to failed
   } else {
-    res.status(409).send("No deposit to cancel.");
+    res.status(400).send("Invalid request.");
   }
 });
 
@@ -75,7 +74,7 @@ gatewayRouter.post("/deposit/bitclout-preflight", tokenAuthenticator, async (req
 
 gatewayRouter.post("/deposit/bitclout", tokenAuthenticator, async (req, res) => {
   const { transactionHex, transactionIDBase58Check, value } = req.body;
-  const user = await User.findOne({ "bitclout.publicKey": req.key }).populate("transactions").exec(); //use populated transaction tree to check if an ongoing deposit is occuring
+  const user = await User.findOne({ "bitclout.publicKey": req.key });
   if (user && user.bitclout.publicKey) {
     if (user.verification.status !== "verified") {
       res.status(400).send("User not verified.");
@@ -118,12 +117,18 @@ gatewayRouter.post("/deposit/bitclout", tokenAuthenticator, async (req, res) => 
 
 gatewayRouter.post("/deposit/eth", tokenAuthenticator, async (req, res) => {
   const { value } = req.body;
-  const user = await User.findOne({ "bitclout.publicKey": req.key }).populate("transactions").exec();
-  if (user && user.bitclout.publicKey) {
+  const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
+  const depositCheck = await Transaction.findOne({
+    user: user?._id,
+    transactionType: "deposit",
+    assetType: "ETH",
+    completed: false,
+  }).exec();
+  if (user && user.bitclout.publicKey && isNaN(value)) {
     if (user.verification.status !== "verified") {
       res.status(400).send("User not verified.");
     } else {
-      if (isNaN(value)) {
+      if (!depositCheck) {
         try {
           const poolAddr = await getAndAssignPool(user._id.toString());
           const txn = new Transaction({
@@ -132,7 +137,6 @@ gatewayRouter.post("/deposit/eth", tokenAuthenticator, async (req, res) => {
             assetType: "ETH",
           });
           user.transactions.push(txn._id);
-          user.onGoingDeposit = txn._id;
           await user.save();
           await txn.save();
           res.sendStatus(200);
@@ -140,17 +144,17 @@ gatewayRouter.post("/deposit/eth", tokenAuthenticator, async (req, res) => {
           res.status(500).send(e);
         }
       } else {
-        res.status(400).send("invalid request");
+        res.status(400).send("Deposit already ongoing");
       }
     }
   } else {
-    res.status(400).send("User not found");
+    res.status(400).send("Invalid request");
   }
 });
 
 gatewayRouter.post("/withdraw/bitclout", tokenAuthenticator, async (req, res) => {
   const { value } = req.body;
-  const user = await User.findOne({ "bitclout.publicKey": req.key }).populate("transactions").exec(); //use populated transaction tree to check if an ongoing deposit is occuring
+  const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
   if (user && user.bitclout.publicKey) {
     if (user.verification.status !== "verified") {
       res.status(400).send("User not verified.");
@@ -199,7 +203,7 @@ gatewayRouter.post("/withdraw/bitclout", tokenAuthenticator, async (req, res) =>
 
 gatewayRouter.post("/withdraw/eth", tokenAuthenticator, async (req, res) => {
   const { value, withdrawAddress } = req.body;
-  const user = await User.findOne({ "bitclout.publicKey": req.key }).populate("transactions").exec(); //use populated transaction tree to check if an ongoing deposit is occuring
+  const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
   const pool = await Pool.findOne({ balance: { $gt: value } }).exec();
   if (user && pool && user.bitclout.publicKey) {
     if (user.verification.status !== "verified") {
@@ -244,55 +248,70 @@ gatewayRouter.post("/withdraw/eth", tokenAuthenticator, async (req, res) => {
 });
 
 gatewayRouter.post("/limit", tokenAuthenticator, async (req, res) => {
-  const { orderQuantity, orderPrice, orderSide } = req.body();
+  const { orderQuantity, orderPrice, orderSide } = req.body;
+  const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
   //add verification to check user's balance
-  let body = {
-    username: req.params.username,
-    orderSide: orderSide,
-    orderQuantity: orderQuantity,
-    orderPrice: orderPrice,
-  };
-  try {
-    const response = await axios.post(`${config.EXCHANGE_API}/exchange/limit`, body, {
-      headers: { "server-signature": generateHMAC(body) },
-    });
-    res.status(response.status).send(response.data);
-  } catch (e) {
-    res.status(500).send(e);
+  if (user) {
+    let body = {
+      username: user.bitclout.publicKey,
+      orderSide: orderSide,
+      orderQuantity: orderQuantity,
+      orderPrice: orderPrice,
+    };
+    try {
+      const response = await axios.post(`${config.EXCHANGE_API}/exchange/limit`, body, {
+        headers: { "server-signature": generateHMAC(body) },
+      });
+      res.status(response.status).send(response.data);
+    } catch (e) {
+      res.status(500).send(e);
+    }
+  } else {
+    res.status(400).send("User not found");
   }
 });
 
 gatewayRouter.post("/market", tokenAuthenticator, async (req, res) => {
-  const { orderQuantity, orderSide } = req.body();
+  const { orderQuantity, orderSide } = req.body;
+  const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
   //add verification to check user's balance
-  let body = {
-    username: req.params.username,
-    orderSide: orderSide,
-    orderQuantity: orderQuantity,
-  };
-  try {
-    const response = await axios.post(`${config.EXCHANGE_API}/exchange/market`, body, {
-      headers: { "server-signature": generateHMAC(body) },
-    });
-    res.status(response.status).send(response.data);
-  } catch (e) {
-    res.status(500).send(e);
+  if (user) {
+    let body = {
+      username: user.bitclout.publicKey,
+      orderSide: orderSide,
+      orderQuantity: orderQuantity,
+    };
+    try {
+      const response = await axios.post(`${config.EXCHANGE_API}/exchange/market`, body, {
+        headers: { "server-signature": generateHMAC(body) },
+      });
+      res.status(response.status).send(response.data);
+    } catch (e) {
+      res.status(500).send(e);
+    }
+  } else {
+    res.status(400).send("User not found");
   }
 });
 
 gatewayRouter.post("/cancel", tokenAuthenticator, async (req, res) => {
   const { orderID } = req.body();
+  const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
   //add verification to check user's balance
-  let body = {
-    orderID: orderID,
-  };
-  try {
-    const response = await axios.post(`${config.EXCHANGE_API}/exchange/cancel`, body, {
-      headers: { "server-signature": generateHMAC(body) },
-    });
-    res.status(response.status).send(response.data);
-  } catch (e) {
-    res.status(500).send(e);
+  if (user) {
+    let body = {
+      orderID: orderID,
+    };
+    try {
+      const response = await axios.post(`${config.EXCHANGE_API}/exchange/cancel`, body, {
+        headers: { "server-signature": generateHMAC(body) },
+      });
+      res.status(response.status).send(response.data);
+    } catch (e) {
+      res.status(500).send(e);
+    }
+  } else {
+    res.status(400).send("User not found");
   }
 });
 
