@@ -9,7 +9,6 @@ import {
   submitTransactionInterface,
   SubmitTransactionAPIInterface,
 } from "../interfaces/bitclout";
-import { generateHMAC } from "../utils/functions";
 
 const cfIngressCookie = {
   Cookie: `__cfduid=${config.cfuid}; INGRESSCOOKIE=${config.ingressCookie}`,
