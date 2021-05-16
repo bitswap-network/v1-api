@@ -17,7 +17,9 @@ webhookRouter.post("/escrow", async (req, res, next) => {
 
       if (pool) {
         pool.balance += value;
-        pool.txnHashList.push(hash.toLowerCase());
+        let txnHashList = pool.txnHashList ? pool.txnHashList : [];
+        txnHashList.push(hash);
+        pool.txnHashList = txnHashList;
         await pool.save();
         if (pool.active) {
           processDeposit(pool._id, value, asset, hash);
