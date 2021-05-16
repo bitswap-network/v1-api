@@ -3,7 +3,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 const mongoose = require("mongoose");
-
+import morgan from "morgan";
 // Routers
 import userRouter from "./controllers/users";
 import gatewayRouter from "./controllers/gateway";
@@ -40,11 +40,10 @@ mongoose
   .catch(error => {
     logger.error("Error connecting to MongoDB:", error.message);
   });
-
+app.use(morgan("combined"));
 app.use(cors());
 app.use(helmet());
 app.use(express.json());
-app.use(middleware.requestLogger);
 // app.use(rollbar.errorHandler())
 
 app.get("/", (req: express.Request, res: express.Response) => {
