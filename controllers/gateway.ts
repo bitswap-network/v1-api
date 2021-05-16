@@ -1,5 +1,5 @@
 import User from "../models/user";
-import { tokenAuthenticator } from "../utils/middleware";
+import { tokenAuthenticator, depositBitcloutSchema, limitOrderSchema, marketOrderSchema } from "../utils/middleware";
 import Transaction from "../models/transaction";
 import Pool from "../models/pool";
 import { getGasEtherscan, generateHMAC, toNanos } from "../utils/functions";
@@ -10,43 +10,46 @@ import { preflightTransaction, submitTransaction } from "../helpers/bitclout";
 import { handleSign } from "../helpers/identity";
 
 import axios from "axios";
+const createError = require("http-errors");
 const gatewayRouter = require("express").Router();
 
-gatewayRouter.post("/deposit/cancel/:id", tokenAuthenticator, async (req, res) => {
+gatewayRouter.get("/deposit/cancel/:id", tokenAuthenticator, async (req, res, next) => {
   const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
   //implement find transaction logic later
   if (user && req.params.id) {
     const transaction = await Transaction.findById(req.params.id).exec();
     const pool = await Pool.findOne({ user: user._id }).exec();
-    if (pool) {
-      pool.active = false;
-      pool.activeStart = null;
-      pool.user = null;
-      await pool.save();
+    if (pool && transaction) {
+      try {
+        pool.active = false;
+        pool.activeStart = null;
+        pool.user = null;
+        transaction!.completed = true;
+        transaction!.completionDate = new Date();
+        transaction!.state = "failed";
+        transaction!.error = "Deposit Cancelled";
+        await transaction.save();
+        await pool.save();
+        res.sendStatus(200);
+      } catch (e) {
+        next(e);
+      }
+    } else {
+      next(createError(406, "Unable to find transaction by id."));
     }
-    if (transaction) {
-      transaction!.completed = true;
-      transaction!.completionDate = new Date();
-      transaction!.state = "failed";
-      transaction!.error = "Deposit Cancelled";
-      await transaction.save();
-    }
-    await user.save();
-    res.sendStatus(200);
-    //find transaction and set to failed
   } else {
-    res.status(400).send("Invalid request.");
+    next(createError(400, "Invalid Request."));
   }
 });
 
-gatewayRouter.post("/deposit/bitclout-preflight", tokenAuthenticator, async (req, res) => {
+gatewayRouter.post("/deposit/bitclout-preflight", tokenAuthenticator, async (req, res, next) => {
   const { value } = req.body;
   const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
-  if (user && user.bitclout.publicKey) {
+  if (user) {
     if (user.verification.status !== "verified") {
-      res.status(400).send("User not verified.");
+      next(createError(401, "User not verified."));
     } else {
-      if (isNaN(value)) {
+      if (!isNaN(value)) {
         try {
           const preflight = await preflightTransaction({
             AmountNanos: toNanos(value),
@@ -54,80 +57,74 @@ gatewayRouter.post("/deposit/bitclout-preflight", tokenAuthenticator, async (req
             RecipientPublicKeyOrUsername: config.PUBLIC_KEY_BITCLOUT,
             SenderPublicKeyBase58Check: user.bitclout.publicKey,
           });
-          if (preflight.data.error) {
-            res.status(500).send(preflight.data);
+
+          res.send({ data: preflight.data });
+        } catch (e) {
+          if (e.response.data.error) {
+            next(createError(e.response.status, e.response.data.error));
           } else {
-            res.send(preflight.data);
+            next(e);
           }
-        } catch (error) {
-          console.log(error);
-          res.status(error.response.status).send(error.response.data);
         }
       } else {
-        res.status(400).send("invalid request");
+        next(createError(400, "Invalid Request."));
       }
     }
   } else {
-    res.status(400).send("User not found");
+    next(createError(400, "Invalid Request."));
   }
 });
 
-gatewayRouter.post("/deposit/bitclout", tokenAuthenticator, async (req, res) => {
+gatewayRouter.post("/deposit/bitclout", tokenAuthenticator, depositBitcloutSchema, async (req, res, next) => {
   const { transactionHex, transactionIDBase58Check, value } = req.body;
   const user = await User.findOne({ "bitclout.publicKey": req.key });
   if (user && user.bitclout.publicKey) {
     if (user.verification.status !== "verified") {
-      res.status(400).send("User not verified.");
+      next(createError(401, "User not verified."));
     } else {
-      if (isNaN(value) && transactionHex && transactionIDBase58Check) {
-        try {
-          const depositRes = await submitTransaction({
-            TransactionHex: transactionHex,
-          });
-          if (depositRes.data.error) {
-            res.status(500).send(depositRes.data);
-          } else {
-            const txn = new Transaction({
-              user: user._id,
-              transactionType: "deposit",
-              assetType: "BCLT",
-              value: value,
-              completed: true,
-              completionDate: new Date(),
-              txnHash: transactionIDBase58Check,
-            });
-            user.transactions.push(txn._id);
-            user.balance.bitclout += value;
-            await user.save();
-            await txn.save();
-            res.send(txn);
-          }
-        } catch (error) {
-          console.log(error);
-          res.status(error.response.status).send(error.response.data);
+      try {
+        await submitTransaction({
+          TransactionHex: transactionHex,
+        });
+        const txn = new Transaction({
+          user: user._id,
+          transactionType: "deposit",
+          assetType: "BCLT",
+          value: value,
+          completed: true,
+          completionDate: new Date(),
+          txnHash: transactionIDBase58Check,
+        });
+        user.transactions.push(txn._id);
+        user.balance.bitclout += value;
+        await user.save();
+        await txn.save();
+        res.send({ data: txn });
+      } catch (e) {
+        if (e.response.data.error) {
+          next(createError(e.response.status, e.response.data.error));
+        } else {
+          next(e);
         }
-      } else {
-        res.status(400).send("invalid request");
       }
     }
   } else {
-    res.status(400).send("User not found");
+    next(createError(400, "Invalid Request."));
   }
 });
 
-gatewayRouter.post("/deposit/eth", tokenAuthenticator, async (req, res) => {
-  const { value } = req.body;
+gatewayRouter.post("/deposit/eth", tokenAuthenticator, async (req, res, next) => {
   const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
-  const depositCheck = await Transaction.findOne({
-    user: user?._id,
-    transactionType: "deposit",
-    assetType: "ETH",
-    completed: false,
-  }).exec();
-  if (user && user.bitclout.publicKey && isNaN(value)) {
+  if (user && user.bitclout.publicKey) {
     if (user.verification.status !== "verified") {
-      res.status(400).send("User not verified.");
+      next(createError(401, "User not verified."));
     } else {
+      const depositCheck = await Transaction.findOne({
+        user: user._id,
+        transactionType: "deposit",
+        assetType: "ETH",
+        completed: false,
+      }).exec();
       if (!depositCheck) {
         try {
           const poolAddr = await getAndAssignPool(user._id.toString());
@@ -139,25 +136,25 @@ gatewayRouter.post("/deposit/eth", tokenAuthenticator, async (req, res) => {
           user.transactions.push(txn._id);
           await user.save();
           await txn.save();
-          res.sendStatus(200);
+          res.status(200).send({ data: { address: poolAddr } });
         } catch (e) {
-          res.status(500).send(e);
+          next(e);
         }
       } else {
-        res.status(400).send("Deposit already ongoing");
+        next(createError(409, "Deposit already ongoing."));
       }
     }
   } else {
-    res.status(400).send("Invalid request");
+    next(createError(400, "Invalid Request."));
   }
 });
 
-gatewayRouter.post("/withdraw/bitclout", tokenAuthenticator, async (req, res) => {
+gatewayRouter.post("/withdraw/bitclout", tokenAuthenticator, async (req, res, next) => {
   const { value } = req.body;
   const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
   if (user && user.bitclout.publicKey) {
     if (user.verification.status !== "verified") {
-      res.status(400).send("User not verified.");
+      next(createError(401, "User not verified."));
     } else {
       if (isNaN(value) && user.balance.bitclout >= value) {
         try {
@@ -170,46 +167,45 @@ gatewayRouter.post("/withdraw/bitclout", tokenAuthenticator, async (req, res) =>
           const withdrawRes = await submitTransaction({
             TransactionHex: handleSign(preflight.data.TransactionHex),
           });
-          if (withdrawRes.data.error) {
-            res.status(500).send(withdrawRes.data);
+          const txn = new Transaction({
+            user: user._id,
+            transactionType: "withdraw",
+            assetType: "BCLT",
+            value: value,
+            completed: true,
+            completionDate: new Date(),
+            txnHash: preflight.data.TransactionIDBase58Check,
+          });
+          user.transactions.push(txn._id);
+          user.balance.bitclout -= value;
+          await user.save();
+          await txn.save();
+          res.send({ data: txn });
+        } catch (e) {
+          if (e.response.data.error) {
+            next(createError(e.response.status, e.response.data.error));
           } else {
-            const txn = new Transaction({
-              user: user._id,
-              transactionType: "withdraw",
-              assetType: "BCLT",
-              value: value,
-              completed: true,
-              completionDate: new Date(),
-              txnHash: preflight.data.TransactionIDBase58Check,
-            });
-            user.transactions.push(txn._id);
-            user.balance.bitclout -= value;
-            await user.save();
-            await txn.save();
-            res.send(txn);
+            next(e);
           }
-        } catch (error) {
-          console.log(error);
-          res.status(error.response.status).send(error.response.data);
         }
       } else {
-        res.status(409).send("insufficient funds");
+        next(createError(409, "Insufficient funds."));
       }
     }
   } else {
-    res.status(400).send("User not found");
+    next(createError(400, "Invalid Request."));
   }
 });
 
-gatewayRouter.post("/withdraw/eth", tokenAuthenticator, async (req, res) => {
+gatewayRouter.post("/withdraw/eth", tokenAuthenticator, async (req, res, next) => {
   const { value, withdrawAddress } = req.body;
   const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
   const pool = await Pool.findOne({ balance: { $gt: value } }).exec();
   if (user && pool && user.bitclout.publicKey) {
     if (user.verification.status !== "verified") {
-      res.status(400).send("User not verified.");
+      next(createError(401, "User not verified."));
     } else {
-      if (isNaN(value) && user.balance.ether >= value && checkEthAddr(withdrawAddress)) {
+      if (!isNaN(value) && user.balance.ether >= value && checkEthAddr(withdrawAddress)) {
         try {
           const gas = await getGasEtherscan(); // get gas
           const key = decryptAddress(pool.privateKey); // decrypt pool key
@@ -234,20 +230,20 @@ gatewayRouter.post("/withdraw/eth", tokenAuthenticator, async (req, res) => {
           user.transactions.push(txn._id); // push txn
           await user.save();
           await txn.save();
-          res.sendStatus(200);
+          res.status(200).send({ data: txn });
         } catch (e) {
-          res.status(500).send(e);
+          next(e);
         }
       } else {
-        res.status(409).send("insufficient funds");
+        next(createError(409, "Insufficient funds."));
       }
     }
   } else {
-    res.status(400).send("User not found");
+    next(createError(400, "Invalid Request."));
   }
 });
 
-gatewayRouter.post("/limit", tokenAuthenticator, async (req, res) => {
+gatewayRouter.post("/limit", tokenAuthenticator, limitOrderSchema, async (req, res, next) => {
   const { orderQuantity, orderPrice, orderSide } = req.body;
   const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
   //add verification to check user's balance
@@ -262,16 +258,16 @@ gatewayRouter.post("/limit", tokenAuthenticator, async (req, res) => {
       const response = await axios.post(`${config.EXCHANGE_API}/exchange/limit`, body, {
         headers: { "server-signature": generateHMAC(body) },
       });
-      res.status(response.status).send(response.data);
+      res.status(response.status).send({ data: response.data });
     } catch (e) {
-      res.status(500).send(e);
+      next(e);
     }
   } else {
-    res.status(400).send("User not found");
+    next(createError(400, "Invalid Request."));
   }
 });
 
-gatewayRouter.post("/market", tokenAuthenticator, async (req, res) => {
+gatewayRouter.post("/market", tokenAuthenticator, marketOrderSchema, async (req, res, next) => {
   const { orderQuantity, orderSide } = req.body;
   const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
   //add verification to check user's balance
@@ -285,17 +281,17 @@ gatewayRouter.post("/market", tokenAuthenticator, async (req, res) => {
       const response = await axios.post(`${config.EXCHANGE_API}/exchange/market`, body, {
         headers: { "server-signature": generateHMAC(body) },
       });
-      res.status(response.status).send(response.data);
+      res.status(response.status).send({ data: response.data });
     } catch (e) {
-      res.status(500).send(e);
+      next(e);
     }
   } else {
-    res.status(400).send("User not found");
+    next(createError(400, "Invalid Request."));
   }
 });
 
-gatewayRouter.post("/cancel", tokenAuthenticator, async (req, res) => {
-  const { orderID } = req.body();
+gatewayRouter.post("/cancel", tokenAuthenticator, async (req, res, next) => {
+  const { orderID } = req.body;
   const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
   //add verification to check user's balance
   if (user) {
@@ -308,10 +304,10 @@ gatewayRouter.post("/cancel", tokenAuthenticator, async (req, res) => {
       });
       res.status(response.status).send(response.data);
     } catch (e) {
-      res.status(500).send(e);
+      next(e);
     }
   } else {
-    res.status(400).send("User not found");
+    next(createError(400, "Invalid Request."));
   }
 });
 

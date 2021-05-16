@@ -1,7 +1,8 @@
-const logger = require("./logger");
-const config = require("./config");
+import Joi from "joi";
+import * as config from "./config";
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
+const createError = require("http-errors");
 const ExpressBrute = require("express-brute");
 const MongooseStore = require("express-brute-mongoose");
 const BruteForceSchema = require("express-brute-mongoose/dist/schema");
@@ -12,45 +13,121 @@ export const bruteforce = new ExpressBrute(store, {
   freeRetries: 5,
 });
 
-export const requestLogger = (request, response, next) => {
-  console.log("Method:", request.method);
-  console.log("Path:  ", request.path);
-  console.log("Header:  ", request.header);
-  if (request.path === "/auth/login" || request.path === "/auth/register") {
+export const marketOrderSchema = (req, res, next) => {
+  const schema = Joi.object({
+    orderQuantity: Joi.number().greater(0).required(),
+    orderSide: Joi.string().valid("buy", "sell").required(),
+  });
+  validateRequest(req, next, schema);
+};
+
+export const limitOrderSchema = (req, res, next) => {
+  const schema = Joi.object({
+    orderQuantity: Joi.number().greater(0).required(),
+    orderPrice: Joi.number().greater(0).required(),
+    orderSide: Joi.string().valid("buy", "sell").required(),
+  });
+  validateRequest(req, next, schema);
+};
+
+export const depositBitcloutSchema = (req, res, next) => {
+  const schema = Joi.object({
+    transactionHex: Joi.string().required(),
+    transactionIDBase58Check: Joi.string().length(54).required(),
+    value: Joi.number().greater(0).required(),
+  });
+  validateRequest(req, next, schema);
+};
+
+export const updateProfileSchema = (req, res, next) => {
+  const schema = Joi.object({
+    email: Joi.string().email(),
+    name: Joi.string(),
+  });
+  validateRequest(req, next, schema);
+};
+
+export const registerSchema = (req, res, next) => {
+  const schema = Joi.object({
+    publicKey: Joi.string().length(55).required(),
+    email: Joi.string().email(),
+    name: Joi.string(),
+  });
+  validateRequest(req, next, schema);
+};
+
+export const loginSchema = (req, res, next) => {
+  const schema = Joi.object({
+    publicKey: Joi.string().length(55).required(),
+    identityJWT: Joi.string(),
+  });
+  validateRequest(req, next, schema);
+};
+
+export const fetchProfileSchema = (req, res, next) => {
+  const schema = Joi.object({
+    publicKey: Joi.string().length(55).required(),
+    username: Joi.string().allow(""),
+  });
+  validateRequest(req, next, schema);
+};
+
+const validateRequest = (req, next, schema) => {
+  const options = {
+    abortEarly: false, // include all errors
+    allowUnknown: true, // ignore unknown props
+    stripUnknown: true, // remove unknown props
+  };
+  const { error, value } = schema.validate(req.body, options);
+  if (error) {
+    next(createError(400, `Validation Error: ${error.details.map(x => x.message).join(", ")}`));
+  } else {
+    req.body = value;
+    next();
+  }
+};
+
+export const requestLogger = (req, res, next) => {
+  console.log("Method:", req.method);
+  console.log("Path:  ", req.path);
+  console.log("Header:  ", req.header);
+  if (req.path === "/auth/login" || req.path === "/auth/register") {
     console.log("Body Filtered");
   } else {
-    console.log("Body:  ", request.body);
+    console.log("Body:  ", req.body);
   }
   console.log("---");
   next();
 };
 
-export const unknownEndpoint = (request, response) => {
-  response.status(404).send({ error: "unknown endpoint" });
+export const unknownEndpoint = (req, res) => {
+  res.status(404).send({ error: "unknown endpoint" });
 };
 
-export const errorHandler = (error, request, response, next) => {
+export const errorHandler = (error, req, res, next) => {
   console.error(error);
 
-  if (error.name === "CastError" && error.kind === "ObjectId") {
-    return response.status(400).send({ error: "malformatted id" });
-  } else if (error.name === "ValidationError") {
-    return response.status(400).json({ error: error.message });
+  if (res.headersSent) {
+    next(error);
   }
-
-  next(error);
+  res.status(error.status || 500);
+  res.json({
+    status: error.status,
+    message: error.message,
+    // stack: error.stack,
+  });
 };
 
-export const tokenAuthenticator = (request, response, next) => {
-  const authHeader = request.headers["authorization"];
+export const tokenAuthenticator = (req, res, next) => {
+  const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
 
-  if (token == null) return response.status(401).send("Missing token");
+  if (token == null) return res.status(401).send("Missing token");
 
   jwt.verify(token, config.SECRET, (err, key) => {
-    if (err) return response.status(403).send("Invalid token");
+    if (err) return res.status(403).send("Invalid token");
 
-    request.key = key.PublicKeyBase58Check;
+    req.key = key.PublicKeyBase58Check;
 
     next();
   });

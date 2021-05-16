@@ -4,7 +4,7 @@ import { processDeposit } from "../helpers/pool";
 
 const webhookRouter = require("express").Router();
 
-webhookRouter.post("/escrow", async (req, res) => {
+webhookRouter.post("/escrow", async (req, res, next) => {
   if (verifyAlchemySignature(req)) {
     const { fromAddress, toAddress, value, asset, hash } = req.body.activity[0];
     // If the transaction is successfully sent from the wallet
@@ -30,9 +30,9 @@ webhookRouter.post("/escrow", async (req, res) => {
         console.log(req.body.activity[0]);
         res.sendStatus(400);
       }
-    } catch (error) {
-      console.log(error);
-      res.sendStatus(error);
+    } catch (e) {
+      console.log(e);
+      next(e);
     }
   }
 });

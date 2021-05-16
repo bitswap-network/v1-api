@@ -2,27 +2,21 @@ import { getGasEtherscan, getEthUsd } from "../utils/functions";
 
 const utilRouter = require("express").Router();
 
-utilRouter.get("/eth-gasprice", async (req, res) => {
+utilRouter.get("/eth-gasprice", async (req, res, next) => {
   try {
     const response = await getGasEtherscan();
-    if (response.status === 200) {
-      res.send(response.data.result);
-    }
-  } catch (error) {
-    console.log(error);
-    res.status(500).send(error.data);
+    res.json({ data: response.data.result });
+  } catch (e) {
+    next(e);
   }
 });
 
-utilRouter.get("/eth-usd", async (req, res) => {
+utilRouter.get("/eth-usd", async (req, res, next) => {
   try {
     const response = await getEthUsd();
-    if (response.status === 200) {
-      res.send(response.data);
-    }
-  } catch (error) {
-    console.log(error);
-    res.status(500).send(error.data);
+    res.json({ data: response.data });
+  } catch (e) {
+    next(e);
   }
 });
 
