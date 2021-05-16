@@ -10,7 +10,7 @@ import * as config from "../utils/config"
 import axios from "axios"
 const gatewayRouter = require("express").Router()
 
-gatewayRouter.post("/cancel", tokenAuthenticator, async (req, res) => {
+gatewayRouter.post("/deposit/cancel", tokenAuthenticator, async (req, res) => {
   const user = await User.findOne({ username: req.user.username }).populate("onGoingDeposit").exec()
   //implement find transaction logic later
   if (user?.onGoingDeposit) {
