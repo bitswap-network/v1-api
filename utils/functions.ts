@@ -43,6 +43,10 @@ export const getEthUsd: () => Promise<AxiosResponse> = async function (): Promis
   return await axios.get(`${config.EXCHANGE_API}/ethusd`);
 };
 
+export const getMarketPrice: (side:string,quantity:number) => Promise<AxiosResponse> = async function (side:string,quantity:number): Promise<AxiosResponse<any>> {
+  return await axios.get(`${config.EXCHANGE_API}/market-price/`);
+};
+
 export const generateCode = (len: number) => [...Array(len)].map(() => Math.floor(Math.random() * 16).toString(16)).join("");
 
 export const generateAccessToken = (PublicKeyBase58Check: any) => {
@@ -62,4 +66,18 @@ export const genString = (size: number) => {
 
 export const toNanos = (value: number) => {
   return parseInt((value * 1e9).toString());
+};
+
+export const orderBalanceValidate = async (type:string,side: string, quantity: number, price?: number) => {
+  if(type==="market"){
+
+  }
+  if(side==="buy"){
+const ethPrice = await getEthUsd();
+const totalEth = quantity*
+  }else{
+ 
+  }
+   
+ 
 };
