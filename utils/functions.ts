@@ -86,3 +86,7 @@ export const orderBalanceValidate = async (user: UserDoc, type: string, side: st
     return quantity <= user.balance.bitclout;
   }
 };
+
+export const userVerifyCheck = (user: UserDoc) => {
+  return user.verification.status === "verified" && user.verification.email;
+};
