@@ -2,7 +2,7 @@ import User from "../models/user";
 import { tokenAuthenticator, depositBitcloutSchema, limitOrderSchema, marketOrderSchema } from "../utils/middleware";
 import Transaction from "../models/transaction";
 import Pool from "../models/pool";
-import { getGasEtherscan, generateHMAC, toNanos } from "../utils/functions";
+import { getGasEtherscan, generateHMAC, toNanos, orderBalanceValidate } from "../utils/functions";
 import { getAndAssignPool, decryptAddress } from "../helpers/pool";
 import { getNonce, checkEthAddr, sendEth } from "../helpers/web3";
 import * as config from "../utils/config";
@@ -247,7 +247,7 @@ gatewayRouter.post("/limit", tokenAuthenticator, limitOrderSchema, async (req, r
   const { orderQuantity, orderPrice, orderSide } = req.body;
   const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
   //add verification to check user's balance
-  if (user) {
+  if (user && orderBalanceValidate(user, "limit", orderSide, orderQuantity, orderPrice)) {
     let body = {
       username: user.bitclout.publicKey,
       orderSide: orderSide,
@@ -271,7 +271,7 @@ gatewayRouter.post("/market", tokenAuthenticator, marketOrderSchema, async (req,
   const { orderQuantity, orderSide } = req.body;
   const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
   //add verification to check user's balance
-  if (user) {
+  if (user && orderBalanceValidate(user, "market", orderSide, orderQuantity)) {
     let body = {
       username: user.bitclout.publicKey,
       orderSide: orderSide,
