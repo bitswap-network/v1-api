@@ -7,6 +7,7 @@ import morgan from "morgan";
 // Routers
 import userRouter from "./controllers/users";
 import gatewayRouter from "./controllers/gateway";
+import orderRouter from "./controllers/order";
 import authRouter from "./controllers/auth";
 import utilRouter from "./controllers/utility";
 import webhookRouter from "./controllers/webhook";
@@ -52,6 +53,7 @@ app.get("/", (req: express.Request, res: express.Response) => {
 
 app.use("/user", userRouter);
 app.use("/gateway", gatewayRouter);
+app.use("/order", orderRouter);
 app.use("/auth", authRouter);
 app.use("/utility", utilRouter);
 app.use("/webhook", webhookRouter);
