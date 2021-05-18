@@ -1,6 +1,4 @@
 import { model, Schema, Document } from "mongoose";
-import { transactionDoc } from "./transaction";
-
 export interface UserDoc extends Document {
   name: string;
   email: string;

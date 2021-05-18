@@ -71,6 +71,7 @@ userRouter.get("/verify-email/:code", async (req, res, next) => {
 userRouter.get("/verify-bitclout/:depth", tokenAuthenticator, async (req, res, next) => {
   const user = await User.findOne({ username: req.user.username }).exec();
   const numToFetch = Number(req.params.depth) ? Number(req.params.depth) : 10;
+
   if (user) {
     try {
       const response = await getProfilePosts(numToFetch, user.bitclout.publicKey, user.bitclout.username);

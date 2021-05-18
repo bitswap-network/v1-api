@@ -2,8 +2,10 @@ import { createHmac, randomBytes } from "crypto";
 import { UserDoc } from "../models/user";
 import { AxiosResponse } from "axios";
 import axios from "axios";
+import crypto from "crypto";
 import * as config from "./config";
 const jwt = require("jsonwebtoken");
+const algorithm = "aes-256-cbc";
 
 export const verifyAlchemySignature = (request: any) => {
   const token = config.XAlchemyToken;
@@ -61,6 +63,14 @@ export const generateHMAC = (body: any) => {
   const hmac = createHmac("sha256", token); // Create a HMAC SHA256 hash using the auth token
   hmac.update(JSON.stringify(body), "utf8");
   return hmac.digest("hex"); // If signature equals your computed hash, return true
+};
+
+export const generateHandshake = (timestamp: number) => {
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv(algorithm, Buffer.from(config.ServerAuth), iv);
+  let encrypted = cipher.update(timestamp.toString());
+  encrypted = Buffer.concat([encrypted, cipher.final()]);
+  return iv.toString("hex") + "-" + encrypted.toString("hex");
 };
 
 export const genString = (size: number) => {
