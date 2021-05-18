@@ -1,8 +1,8 @@
 import User from "../models/user";
-import { tokenAuthenticator, depositBitcloutSchema, limitOrderSchema, marketOrderSchema } from "../utils/middleware";
+import { tokenAuthenticator, depositBitcloutSchema } from "../utils/middleware";
 import Transaction from "../models/transaction";
 import Pool from "../models/pool";
-import { getGasEtherscan, generateHMAC, toNanos } from "../utils/functions";
+import { getGasEtherscan, toNanos, userVerifyCheck } from "../utils/functions";
 import { getAndAssignPool, decryptAddress } from "../helpers/pool";
 import { getNonce, checkEthAddr, sendEth } from "../helpers/web3";
 import * as config from "../utils/config";
@@ -46,7 +46,7 @@ gatewayRouter.post("/deposit/bitclout-preflight", tokenAuthenticator, async (req
   const { value } = req.body;
   const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
   if (user) {
-    if (user.verification.status !== "verified") {
+    if (!userVerifyCheck(user)) {
       next(createError(401, "User not verified."));
     } else {
       if (!isNaN(value)) {
@@ -79,7 +79,7 @@ gatewayRouter.post("/deposit/bitclout", tokenAuthenticator, depositBitcloutSchem
   const { transactionHex, transactionIDBase58Check, value } = req.body;
   const user = await User.findOne({ "bitclout.publicKey": req.key });
   if (user && user.bitclout.publicKey) {
-    if (user.verification.status !== "verified") {
+    if (!userVerifyCheck(user)) {
       next(createError(401, "User not verified."));
     } else {
       try {
@@ -116,7 +116,7 @@ gatewayRouter.post("/deposit/bitclout", tokenAuthenticator, depositBitcloutSchem
 gatewayRouter.post("/deposit/eth", tokenAuthenticator, async (req, res, next) => {
   const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
   if (user && user.bitclout.publicKey) {
-    if (user.verification.status !== "verified") {
+    if (!userVerifyCheck(user)) {
       next(createError(401, "User not verified."));
     } else {
       const depositCheck = await Transaction.findOne({
@@ -153,7 +153,7 @@ gatewayRouter.post("/withdraw/bitclout", tokenAuthenticator, async (req, res, ne
   const { value } = req.body;
   const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
   if (user && user.bitclout.publicKey) {
-    if (user.verification.status !== "verified") {
+    if (!userVerifyCheck(user)) {
       next(createError(401, "User not verified."));
     } else {
       if (isNaN(value) && user.balance.bitclout >= value) {
@@ -202,7 +202,7 @@ gatewayRouter.post("/withdraw/eth", tokenAuthenticator, async (req, res, next) =
   const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
   const pool = await Pool.findOne({ balance: { $gt: value } }).exec();
   if (user && pool && user.bitclout.publicKey) {
-    if (user.verification.status !== "verified") {
+    if (!userVerifyCheck(user)) {
       next(createError(401, "User not verified."));
     } else {
       if (!isNaN(value) && user.balance.ether >= value && checkEthAddr(withdrawAddress)) {
@@ -237,74 +237,6 @@ gatewayRouter.post("/withdraw/eth", tokenAuthenticator, async (req, res, next) =
       } else {
         next(createError(409, "Insufficient funds."));
       }
-    }
-  } else {
-    next(createError(400, "Invalid Request."));
-  }
-});
-
-gatewayRouter.post("/limit", tokenAuthenticator, limitOrderSchema, async (req, res, next) => {
-  const { orderQuantity, orderPrice, orderSide } = req.body;
-  const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
-  //add verification to check user's balance
-  if (user) {
-    let body = {
-      username: user.bitclout.publicKey,
-      orderSide: orderSide,
-      orderQuantity: orderQuantity,
-      orderPrice: orderPrice,
-    };
-    try {
-      const response = await axios.post(`${config.EXCHANGE_API}/exchange/limit`, body, {
-        headers: { "server-signature": generateHMAC(body) },
-      });
-      res.status(response.status).send({ data: response.data });
-    } catch (e) {
-      next(e);
-    }
-  } else {
-    next(createError(400, "Invalid Request."));
-  }
-});
-
-gatewayRouter.post("/market", tokenAuthenticator, marketOrderSchema, async (req, res, next) => {
-  const { orderQuantity, orderSide } = req.body;
-  const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
-  //add verification to check user's balance
-  if (user) {
-    let body = {
-      username: user.bitclout.publicKey,
-      orderSide: orderSide,
-      orderQuantity: orderQuantity,
-    };
-    try {
-      const response = await axios.post(`${config.EXCHANGE_API}/exchange/market`, body, {
-        headers: { "server-signature": generateHMAC(body) },
-      });
-      res.status(response.status).send({ data: response.data });
-    } catch (e) {
-      next(e);
-    }
-  } else {
-    next(createError(400, "Invalid Request."));
-  }
-});
-
-gatewayRouter.post("/cancel", tokenAuthenticator, async (req, res, next) => {
-  const { orderID } = req.body;
-  const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
-  //add verification to check user's balance
-  if (user) {
-    let body = {
-      orderID: orderID,
-    };
-    try {
-      const response = await axios.post(`${config.EXCHANGE_API}/exchange/cancel`, body, {
-        headers: { "server-signature": generateHMAC(body) },
-      });
-      res.status(response.status).send(response.data);
-    } catch (e) {
-      next(e);
     }
   } else {
     next(createError(400, "Invalid Request."));

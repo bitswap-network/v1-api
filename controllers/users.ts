@@ -1,10 +1,9 @@
 import User from "../models/user";
+import Order from "../models/order";
 import { getProfilePosts } from "../helpers/bitclout";
 import { tokenAuthenticator, updateProfileSchema } from "../utils/middleware";
-import { emailverified, invalidlink, servererror } from "../utils/mailBody";
-import { nextTick } from "process";
+import { emailverified, servererror } from "../utils/mailBody";
 const createError = require("http-errors");
-
 const userRouter = require("express").Router();
 
 userRouter.get("/data", tokenAuthenticator, async (req, res, next) => {
@@ -89,7 +88,7 @@ userRouter.get("/verify-bitclout/:depth", tokenAuthenticator, async (req, res, n
             if (found) {
               user.verification.status = "verified";
               await user.save();
-              res.status(200).send({ data: post });
+              res.json({ data: post });
             } else {
               next(createError(400, "Unable to find verification post."));
             }
@@ -114,6 +113,16 @@ userRouter.get("/transactions", tokenAuthenticator, async (req, res, next) => {
   const user = await User.findOne({ "bitclout.publicKey": req.key }).populate("transactions").exec();
   if (user) {
     res.json({ data: user.transactions });
+  } else {
+    next(createError(400, "Invalid Request."));
+  }
+});
+
+userRouter.get("/orders", tokenAuthenticator, async (req, res, next) => {
+  const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
+  if (user) {
+    const orders = await Order.find({ username: user.bitclout.publicKey }).exec();
+    res.json({ data: orders });
   } else {
     next(createError(400, "Invalid Request."));
   }

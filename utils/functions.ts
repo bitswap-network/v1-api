@@ -34,13 +34,20 @@ export const verifySignature = (request: any) => {
     throw new Error("missing token");
   }
 };
-
+//add typed response
 export const getGasEtherscan: () => Promise<AxiosResponse> = async function (): Promise<AxiosResponse<any>> {
   return await axios.get(`https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=${config.ETHERSCAN_KEY}`);
 };
-
+//add typed response
 export const getEthUsd: () => Promise<AxiosResponse> = async function (): Promise<AxiosResponse<any>> {
   return await axios.get(`${config.EXCHANGE_API}/ethusd`);
+};
+//add typed response
+export const getMarketPrice: (side: string, quantity: number) => Promise<AxiosResponse> = async function (
+  side: string,
+  quantity: number
+): Promise<AxiosResponse<any>> {
+  return await axios.get(`${config.EXCHANGE_API}/market-price/${side}/${quantity}`);
 };
 
 export const generateCode = (len: number) => [...Array(len)].map(() => Math.floor(Math.random() * 16).toString(16)).join("");
@@ -62,4 +69,24 @@ export const genString = (size: number) => {
 
 export const toNanos = (value: number) => {
   return parseInt((value * 1e9).toString());
+};
+
+export const orderBalanceValidate = async (user: UserDoc, type: string, side: string, quantity: number, price?: number) => {
+  if (type === "market" && side === "buy") {
+    const ethPriceResp = await getEthUsd();
+    const totalPriceResp = await getMarketPrice(side, quantity);
+    const totalEth = totalPriceResp.data.price / ethPriceResp.data.result;
+    return totalEth <= user.balance.ether;
+  } else if (type === "limit" && side === "buy" && price) {
+    const ethPriceResp = await getEthUsd();
+    const totalPrice = quantity * price;
+    const totalEth = totalPrice / ethPriceResp.data.result;
+    return totalEth <= user.balance.ether;
+  } else {
+    return quantity <= user.balance.bitclout;
+  }
+};
+
+export const userVerifyCheck = (user: UserDoc) => {
+  return user.verification.status === "verified" && user.verification.email;
 };

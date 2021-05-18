@@ -59,29 +59,26 @@ authRouter.post("/login", middleware.bruteforce.prevent, middleware.loginSchema,
     const token = generateAccessToken({
       PublicKeyBase58Check: user.bitclout.publicKey,
     });
-    if (!user.verification.email) {
-      next(createError(403, `'${user.bitclout.username}': Email not verified.`));
-    } else {
-      try {
-        const userProfile = await getSingleProfile(user.bitclout.publicKey);
-        if (userProfile.data.Profile) {
-          user.bitclout.profilePicture = userProfile.data.Profile.ProfilePic;
-          user.bitclout.bio = userProfile.data.Profile.Description;
-          user.bitclout.username = userProfile.data.Profile.Username;
-          user.save();
-          res.json({
-            ...user,
-            token: token,
-          });
-        } else {
-          next(createError(405, "Bitclout API Error"));
-        }
-      } catch (e) {
-        if (e.response.data.error) {
-          next(createError(e.response.status, e.response.data.error));
-        } else {
-          next(e);
-        }
+
+    try {
+      const userProfile = await getSingleProfile(user.bitclout.publicKey);
+      if (userProfile.data.Profile) {
+        user.bitclout.profilePicture = userProfile.data.Profile.ProfilePic;
+        user.bitclout.bio = userProfile.data.Profile.Description;
+        user.bitclout.username = userProfile.data.Profile.Username;
+        user.save();
+        res.json({
+          ...user,
+          token: token,
+        });
+      } else {
+        next(createError(405, "Bitclout API Error"));
+      }
+    } catch (e) {
+      if (e.response.data.error) {
+        next(createError(e.response.status, e.response.data.error));
+      } else {
+        next(e);
       }
     }
   } else {
