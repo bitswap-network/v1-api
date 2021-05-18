@@ -228,8 +228,10 @@ gatewayRouter.post("/withdraw/eth", tokenAuthenticator, async (req, res, next) =
           }); //create withdraw txn object
           user.balance.ether -= value;
           user.transactions.push(txn._id); // push txn
+          pool.balance -= value;
           await user.save();
           await txn.save();
+          await pool.save();
           res.status(200).send({ data: txn });
         } catch (e) {
           next(e);
