@@ -119,10 +119,9 @@ export const errorHandler = (error, req, res, next) => {
 };
 
 export const tokenAuthenticator = (req, res, next) => {
-  const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
+  const token = req.headers["x-access-token"];
 
-  if (token == null) return res.status(401).send("Missing token");
+  if (token == null) return res.status(400).send("Missing token");
 
   jwt.verify(token, config.SECRET, (err, key) => {
     if (err) return res.status(403).send("Invalid token");

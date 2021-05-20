@@ -9,7 +9,7 @@ const createError = require("http-errors");
 
 const authRouter = require("express").Router();
 
-authRouter.put("/register", async (req, res, next) => {
+authRouter.put("/register", middleware.registerSchema, async (req, res, next) => {
   const { publicKey, email, name } = req.body;
 
   const emailCheck = await User.findOne({
@@ -54,7 +54,7 @@ authRouter.post("/login", middleware.bruteforce.prevent, middleware.loginSchema,
     "bitclout.publicKey": publicKey,
   }).exec();
   if (!user) {
-    next(createError(300, "Public key does not exist within database."));
+    next(createError(301, "Public key does not exist within database."));
   } else if (user && validateJwt(publicKey, identityJWT)) {
     const token = generateAccessToken({
       PublicKeyBase58Check: user.bitclout.publicKey,
@@ -68,7 +68,7 @@ authRouter.post("/login", middleware.bruteforce.prevent, middleware.loginSchema,
         user.bitclout.username = userProfile.data.Profile.Username;
         user.save();
         res.json({
-          ...user,
+          user: user,
           token: token,
         });
       } else {
