@@ -96,7 +96,7 @@ userRouter.get("/verify-bitclout/:depth", tokenAuthenticator, async (req, res, n
           }
         }
       } else {
-        next(createError(405, "Bitclout API Error"));
+        next(createError(409, "Bitclout API Error"));
       }
     } catch (e) {
       if (e.response.data.error) {

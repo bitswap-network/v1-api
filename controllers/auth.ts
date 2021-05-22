@@ -54,7 +54,7 @@ authRouter.post("/login", middleware.bruteforce.prevent, middleware.loginSchema,
     "bitclout.publicKey": publicKey,
   }).exec();
   if (!user) {
-    next(createError(301, "Public key does not exist within database."));
+    next(createError(406, "Public key does not exist within database."));
   } else if (user && validateJwt(publicKey, identityJWT)) {
     const token = generateAccessToken({
       PublicKeyBase58Check: user.bitclout.publicKey,
@@ -72,7 +72,7 @@ authRouter.post("/login", middleware.bruteforce.prevent, middleware.loginSchema,
           token: token,
         });
       } else {
-        next(createError(405, "Bitclout API Error"));
+        next(createError(409, "Bitclout API Error"));
       }
     } catch (e) {
       if (e.response.data.error) {
@@ -93,7 +93,7 @@ authRouter.post("/fetch-profile", middleware.fetchProfileSchema, async (req, res
     if (userProfile.data.Profile) {
       res.json(userProfile.data.Profile);
     } else {
-      next(createError(405, "Bitclout API Error"));
+      next(createError(409, "Bitclout API Error"));
     }
   } catch (e) {
     if (e.response.data.error) {
