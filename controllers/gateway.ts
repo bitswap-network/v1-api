@@ -99,6 +99,7 @@ gatewayRouter.post("/deposit/bitclout", tokenAuthenticator, depositBitcloutSchem
         user.balance.bitclout += value;
         await user.save();
         await txn.save();
+        axios.get(`${config.EXCHANGE_API}/sanitize`);
         res.send({ data: txn });
       } catch (e) {
         if (e.response.data.error) {
@@ -136,6 +137,7 @@ gatewayRouter.post("/deposit/eth", tokenAuthenticator, async (req, res, next) =>
           user.transactions.push(txn._id);
           await user.save();
           await txn.save();
+          axios.get(`${config.EXCHANGE_API}/sanitize`);
           res.status(200).send({ data: { address: poolAddr } });
         } catch (e) {
           next(e);
@@ -180,6 +182,7 @@ gatewayRouter.post("/withdraw/bitclout", tokenAuthenticator, async (req, res, ne
           user.balance.bitclout -= value;
           await user.save();
           await txn.save();
+          axios.get(`${config.EXCHANGE_API}/sanitize`);
           res.send({ data: txn });
         } catch (e) {
           if (e.response.data.error) {
@@ -229,6 +232,7 @@ gatewayRouter.post("/withdraw/eth", tokenAuthenticator, async (req, res, next) =
           user.balance.ether -= value;
           user.transactions.push(txn._id); // push txn
           pool.balance -= value;
+          axios.get(`${config.EXCHANGE_API}/sanitize`);
           await user.save();
           await txn.save();
           await pool.save();
