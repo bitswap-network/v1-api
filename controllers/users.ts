@@ -3,6 +3,9 @@ import Order from "../models/order";
 import { getProfilePosts } from "../helpers/bitclout";
 import { tokenAuthenticator, updateProfileSchema } from "../utils/middleware";
 import { emailverified, servererror } from "../utils/mailBody";
+import { emailVerify } from "../utils/mailBody";
+import sendMail from "../utils/mailer";
+
 const createError = require("http-errors");
 const userRouter = require("express").Router();
 
@@ -23,6 +26,17 @@ userRouter.get("/profile/:username", async (req, res, next) => {
   }).exec();
   if (user) {
     res.json(user);
+  } else {
+    next(createError(400, "Invalid Request."));
+  }
+});
+
+userRouter.get("/resend-verification", tokenAuthenticator, async (req, res, next) => {
+  const user = await User.findOne({ "bitclout.publicKey": req.key });
+  if (user) {
+    const mailBody = emailVerify(user.verification.emailString);
+    sendMail(user.email, mailBody.header, mailBody.body);
+    res.sendStatus(201);
   } else {
     next(createError(400, "Invalid Request."));
   }
