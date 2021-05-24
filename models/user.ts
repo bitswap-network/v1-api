@@ -2,7 +2,6 @@ import { model, Schema, Document } from "mongoose";
 export interface UserDoc extends Document {
   name: string;
   email: string;
-  password: string;
   balance: {
     bitclout: number;
     ether: number;
@@ -11,7 +10,6 @@ export interface UserDoc extends Document {
   verification: {
     email: boolean;
     emailString: string;
-    passwordString: string;
     status: string;
     bitcloutString: string;
   };
@@ -37,11 +35,10 @@ const userSchema = new Schema<UserDoc>({
   verification: {
     email: { type: Boolean, default: false },
     emailString: { type: String },
-    passwordString: { type: String },
     status: {
       type: String,
       default: "unverified",
-      enum: ["unverified", "pending", "verified"],
+      enum: ["unverified", "verified"],
     },
     bitcloutString: { type: String },
   },
@@ -52,6 +49,7 @@ const userSchema = new Schema<UserDoc>({
     profilePicture: { type: String },
     username: {
       type: String,
+      unique: true,
     },
   },
   created: {
