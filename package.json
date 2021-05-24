@@ -31,7 +31,7 @@
     "jsonwebtoken": "^8.5.1",
     "key-encoder": "^2.0.3",
     "mongoose": "^5.12.9",
-    "nodemailer": "^6.5.0",
+    "nodemailer": "^6.6.1",
     "npm": "^7.13.0",
     "rollbar": "^2.21.1",
     "sha256": "^0.2.0",
