@@ -2,6 +2,8 @@ require("dotenv").config();
 
 export const PORT = process.env.PORT ? process.env.PORT : 5000;
 export const MONGODB_URI = process.env.MONGODB_URI;
+export const URL =
+  process.env.ENVIRONMENT === "production" ? "https://bitwap-core-api.herokuapp.com/" : "https://bitswap-core-api-staging.herokuapp.com/";
 export const MAIL = process.env.MAIL; // support email password
 export const SECRET = process.env.SECRET; //jwt secret
 export const ETHERSCAN_KEY = process.env.ETHERSCAN_KEY; //etherscan api key

@@ -1,7 +1,5 @@
 import { getGasEtherscan, getEthUsd } from "../utils/functions";
 import Depth from "../models/depth";
-import Pool from "../models/pool";
-import { decryptAddress } from "../helpers/pool";
 
 const utilRouter = require("express").Router();
 
