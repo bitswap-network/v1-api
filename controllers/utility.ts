@@ -16,7 +16,7 @@ utilRouter.get("/eth-gasprice", async (req, res, next) => {
 utilRouter.get("/eth-usd", async (req, res, next) => {
   try {
     const response = await getEthUsd();
-    res.json({ data: response.data });
+    res.json({ data: response.data.result });
   } catch (e) {
     next(e);
   }
