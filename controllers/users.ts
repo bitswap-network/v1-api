@@ -125,7 +125,9 @@ userRouter.get("/verify-bitclout/:depth", tokenAuthenticator, async (req, res, n
 });
 
 userRouter.get("/transactions", tokenAuthenticator, async (req, res, next) => {
-  const user = await User.findOne({ "bitclout.publicKey": req.key }).populate("transactions").exec();
+  const user = await User.findOne({ "bitclout.publicKey": req.key })
+    .populate({ path: "transactions", options: { sort: { created: -1 } } })
+    .exec();
   if (user) {
     res.json({ data: user.transactions });
   } else {
