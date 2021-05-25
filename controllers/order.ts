@@ -68,23 +68,26 @@ orderRouter.post("/market", tokenAuthenticator, marketOrderSchema, async (req, r
   }
 });
 
-orderRouter.post("/cancel", tokenAuthenticator, async (req, res, next) => {
-  const { orderID } = req.body;
-  const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
-  if (user) {
-    let body = {
-      orderID: orderID,
-    };
-    try {
-      const response = await axios.post(`${config.EXCHANGE_API}/exchange/cancel`, body, {
-        headers: { "server-signature": generateHMAC(body) },
-      });
-      res.status(response.status).send(response.data);
-    } catch (e) {
-      next(e);
-    }
-  } else {
+orderRouter.get("/cancel/:id", tokenAuthenticator, async (req, res, next) => {
+  if (!req.params.id) {
     next(createError(400, "Invalid Request."));
+  } else {
+    const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
+    if (user) {
+      let body = {
+        orderID: req.params.id,
+      };
+      try {
+        const response = await axios.post(`${config.EXCHANGE_API}/exchange/cancel`, body, {
+          headers: { "server-signature": generateHMAC(body) },
+        });
+        res.status(response.status).send(response.data);
+      } catch (e) {
+        next(e);
+      }
+    } else {
+      next(createError(400, "Invalid Request."));
+    }
   }
 });
 

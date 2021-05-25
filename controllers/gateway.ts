@@ -137,7 +137,6 @@ gatewayRouter.post("/deposit/eth", tokenAuthenticator, async (req, res, next) =>
           user.transactions.push(txn._id);
           await user.save();
           await txn.save();
-          axios.get(`${config.EXCHANGE_API}/sanitize`);
           res.status(200).send({ data: { address: poolAddr } });
         } catch (e) {
           next(e);
