@@ -50,7 +50,7 @@ userRouter.put("/update-profile", tokenAuthenticator, updateProfileSchema, async
   const user = await User.findOne({ "bitclout.publicKey": req.key });
   if (user && !emailCheck) {
     user.email = email.toLowerCase();
-    user.name = name;
+    user.name = name !== "" ? name : user.name;
     user.save((err: any) => {
       if (err) {
         next(err);

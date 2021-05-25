@@ -42,7 +42,7 @@ export const depositBitcloutSchema = (req, res, next) => {
 export const updateProfileSchema = (req, res, next) => {
   const schema = Joi.object({
     email: Joi.string().email(),
-    name: Joi.string(),
+    name: Joi.string().allow(""),
   });
   validateRequest(req, next, schema);
 };
