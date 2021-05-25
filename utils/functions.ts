@@ -44,6 +44,7 @@ export const getGasEtherscan: () => Promise<AxiosResponse> = async function (): 
 export const getEthUsd: () => Promise<AxiosResponse> = async function (): Promise<AxiosResponse<any>> {
   return await axios.get(`${config.EXCHANGE_API}/ethusd`);
 };
+
 //add typed response
 export const getMarketPrice: (side: string, quantity: number) => Promise<AxiosResponse> = async function (
   side: string,

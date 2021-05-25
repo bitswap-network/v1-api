@@ -8,6 +8,7 @@ import {
   TransactionAPIInterface,
   submitTransactionInterface,
   SubmitTransactionAPIInterface,
+  ExchangeRateAPIInterface,
 } from "../interfaces/bitclout";
 
 const cfIngressCookie = {
@@ -32,6 +33,10 @@ export const submitTransaction: (transaction: submitTransactionInterface) => Pro
   return await axios.post("https://api.bitclout.com/submit-transaction", JSON.stringify(transaction), bitcloutCfHeader);
 };
 
+export const getExchangeRate: () => Promise<ExchangeRateAPIInterface> = async function (): Promise<ExchangeRateAPIInterface> {
+  return await axios.get("https://bitclout.com/api/v0/get-exchange-rate", bitcloutCfHeader);
+};
+
 export const getSingleProfile: (PublicKeyBase58Check: string, Username?: string) => Promise<ProfileAPIInterface> = async function (
   PublicKeyBase58Check: string,
   Username?: string
@@ -46,24 +51,17 @@ export const getSingleProfile: (PublicKeyBase58Check: string, Username?: string)
   );
 };
 
-export const getProfilePosts: (
-  numToFetch: number,
-  PublicKeyBase58Check: string,
-  Username: string
-) => Promise<PostsAPIInterface> = async function (
-  numToFetch: number,
-  PublicKeyBase58Check: string,
-  Username: string
-): Promise<PostsAPIInterface> {
-  return await axios.post(
-    "https://api.bitclout.com/get-posts-for-public-key",
-    JSON.stringify({
-      LastPostHashHex: "",
-      NumToFetch: numToFetch,
-      PublicKeyBase58Check: PublicKeyBase58Check,
-      ReaderPublicKeyBase58Check: config.PUBLIC_KEY_BITCLOUT,
-      Username: Username,
-    }),
-    bitcloutCfHeader
-  );
-};
+export const getProfilePosts: (numToFetch: number, PublicKeyBase58Check: string, Username: string) => Promise<PostsAPIInterface> =
+  async function (numToFetch: number, PublicKeyBase58Check: string, Username: string): Promise<PostsAPIInterface> {
+    return await axios.post(
+      "https://api.bitclout.com/get-posts-for-public-key",
+      JSON.stringify({
+        LastPostHashHex: "",
+        NumToFetch: numToFetch,
+        PublicKeyBase58Check: PublicKeyBase58Check,
+        ReaderPublicKeyBase58Check: config.PUBLIC_KEY_BITCLOUT,
+        Username: Username,
+      }),
+      bitcloutCfHeader
+    );
+  };

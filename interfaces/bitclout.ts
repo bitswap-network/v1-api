@@ -43,7 +43,14 @@ export interface TransactionAPIInterface extends AxiosResponse {
     error: string | undefined;
   };
 }
-
+export interface ExchangeRateAPIInterface extends AxiosResponse {
+  data: {
+    NanosSold: number;
+    SatoshisPerBitCloutExchangeRate: number;
+    USDCentsPerBitcoinExchangeRate: number;
+    error: string | undefined;
+  };
+}
 export interface ProfileAPIInterface extends AxiosResponse {
   data: {
     Profile: bitcloutProfileType | undefined;
