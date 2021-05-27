@@ -22,7 +22,7 @@ const transactionSchema = new Schema<transactionDoc>({
     enum: ["withdraw", "deposit"],
   },
   assetType: { type: String, required: true, enum: ["ETH", "BCLT"] },
-  value: { type: Number },
+  value: { type: Number, required: true, default: 0 },
   created: { type: Date, default: new Date() },
   completed: { type: Boolean, required: true, default: false },
   completionDate: { type: Date },
