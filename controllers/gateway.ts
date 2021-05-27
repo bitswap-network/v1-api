@@ -139,6 +139,17 @@ gatewayRouter.get("/deposit/eth", tokenAuthenticator, async (req, res, next) => 
           next(e);
         }
       } else {
+        const pool = await Pool.findOne({ user: user._id, active: true }).exec();
+        if (pool) {
+          res.status(200).send({ data: { address: pool.address, transaction: depositCheck } });
+        } else {
+          depositCheck.completed = true;
+          depositCheck.completionDate = new Date();
+          depositCheck.state = "failed";
+          depositCheck.error = "Server Error";
+          depositCheck.save();
+          next(createError(500, "Malformed pool/transaction objects."));
+        }
         next(createError(409, "Deposit already ongoing."));
       }
     }
