@@ -13,6 +13,20 @@ export const bruteforce = new ExpressBrute(store, {
   freeRetries: 5,
 });
 
+export const valueSchema = (req, res, next) => {
+  const schema = Joi.object({
+    value: Joi.number().greater(0).required(),
+  });
+  validateRequest(req, next, schema);
+};
+export const withdrawEthSchema = (req, res, next) => {
+  const schema = Joi.object({
+    value: Joi.number().greater(0).required(),
+    withdrawAddress: Joi.string().required(),
+  });
+  validateRequest(req, next, schema);
+};
+
 export const marketOrderSchema = (req, res, next) => {
   const schema = Joi.object({
     orderQuantity: Joi.number().greater(0).required(),

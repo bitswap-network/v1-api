@@ -1,5 +1,5 @@
 import User from "../models/user";
-import { tokenAuthenticator, depositBitcloutSchema } from "../utils/middleware";
+import { tokenAuthenticator, depositBitcloutSchema, valueSchema, withdrawEthSchema } from "../utils/middleware";
 import Transaction from "../models/transaction";
 import Pool from "../models/pool";
 import { getGasEtherscan, toNanos, userVerifyCheck } from "../utils/functions";
@@ -42,32 +42,28 @@ gatewayRouter.get("/deposit/cancel/:id", tokenAuthenticator, async (req, res, ne
   }
 });
 
-gatewayRouter.post("/deposit/bitclout-preflight", tokenAuthenticator, async (req, res, next) => {
+gatewayRouter.post("/deposit/bitclout-preflight", tokenAuthenticator, valueSchema, async (req, res, next) => {
   const { value } = req.body;
   const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
   if (user) {
     if (!userVerifyCheck(user)) {
       next(createError(401, "User not verified."));
     } else {
-      if (!isNaN(value)) {
-        try {
-          const preflight = await preflightTransaction({
-            AmountNanos: toNanos(value),
-            MinFeeRateNanosPerKB: config.MinFeeRateNanosPerKB,
-            RecipientPublicKeyOrUsername: config.PUBLIC_KEY_BITCLOUT,
-            SenderPublicKeyBase58Check: user.bitclout.publicKey,
-          });
+      try {
+        const preflight = await preflightTransaction({
+          AmountNanos: toNanos(value),
+          MinFeeRateNanosPerKB: config.MinFeeRateNanosPerKB,
+          RecipientPublicKeyOrUsername: config.PUBLIC_KEY_BITCLOUT,
+          SenderPublicKeyBase58Check: user.bitclout.publicKey,
+        });
 
-          res.send({ data: preflight.data });
-        } catch (e) {
-          if (e.response.data.error) {
-            next(createError(e.response.status, e.response.data.error));
-          } else {
-            next(e);
-          }
+        res.send({ data: preflight.data });
+      } catch (e) {
+        if (e.response.data.error) {
+          next(createError(e.response.status, e.response.data.error));
+        } else {
+          next(e);
         }
-      } else {
-        next(createError(400, "Invalid Request."));
       }
     }
   } else {
@@ -150,14 +146,14 @@ gatewayRouter.post("/deposit/eth", tokenAuthenticator, async (req, res, next) =>
   }
 });
 
-gatewayRouter.post("/withdraw/bitclout", tokenAuthenticator, async (req, res, next) => {
+gatewayRouter.post("/withdraw/bitclout", tokenAuthenticator, valueSchema, async (req, res, next) => {
   const { value } = req.body;
   const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
   if (user && user.bitclout.publicKey) {
     if (!userVerifyCheck(user)) {
       next(createError(401, "User not verified."));
     } else {
-      if (isNaN(value) && user.balance.bitclout >= value) {
+      if (user.balance.bitclout >= value) {
         try {
           const preflight = await preflightTransaction({
             AmountNanos: toNanos(value),
@@ -199,7 +195,7 @@ gatewayRouter.post("/withdraw/bitclout", tokenAuthenticator, async (req, res, ne
   }
 });
 
-gatewayRouter.post("/withdraw/eth", tokenAuthenticator, async (req, res, next) => {
+gatewayRouter.post("/withdraw/eth", tokenAuthenticator, withdrawEthSchema, async (req, res, next) => {
   const { value, withdrawAddress } = req.body;
   const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
   const pool = await Pool.findOne({ balance: { $gt: value } }).exec();
@@ -207,7 +203,7 @@ gatewayRouter.post("/withdraw/eth", tokenAuthenticator, async (req, res, next) =
     if (!userVerifyCheck(user)) {
       next(createError(401, "User not verified."));
     } else {
-      if (!isNaN(value) && user.balance.ether >= value && checkEthAddr(withdrawAddress)) {
+      if (user.balance.ether >= value && checkEthAddr(withdrawAddress)) {
         try {
           const gas = await getGasEtherscan(); // get gas
           const key = decryptAddress(pool.privateKey); // decrypt pool key
