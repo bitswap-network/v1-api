@@ -111,7 +111,7 @@ gatewayRouter.post("/deposit/bitclout", tokenAuthenticator, depositBitcloutSchem
   }
 });
 
-gatewayRouter.post("/deposit/eth", tokenAuthenticator, async (req, res, next) => {
+gatewayRouter.get("/deposit/eth", tokenAuthenticator, async (req, res, next) => {
   const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
   if (user && user.bitclout.publicKey) {
     if (!userVerifyCheck(user)) {
