@@ -134,7 +134,7 @@ gatewayRouter.post("/deposit/eth", tokenAuthenticator, async (req, res, next) =>
           user.transactions.push(txn._id);
           await user.save();
           await txn.save();
-          res.status(200).send({ data: { address: poolAddr } });
+          res.status(200).send({ data: { address: poolAddr, transaction: txn } });
         } catch (e) {
           next(e);
         }
