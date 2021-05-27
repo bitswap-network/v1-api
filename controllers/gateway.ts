@@ -90,6 +90,7 @@ gatewayRouter.post("/deposit/bitclout", tokenAuthenticator, depositBitcloutSchem
           completed: true,
           completionDate: new Date(),
           txnHash: transactionIDBase58Check,
+          state: "done",
         });
         user.transactions.push(txn._id);
         user.balance.bitclout += value;
@@ -153,14 +154,15 @@ gatewayRouter.post("/withdraw/bitclout", tokenAuthenticator, valueSchema, async 
     if (!userVerifyCheck(user)) {
       next(createError(401, "User not verified."));
     } else {
-      if (user.balance.bitclout >= value) {
-        try {
-          const preflight = await preflightTransaction({
-            AmountNanos: toNanos(value),
-            MinFeeRateNanosPerKB: config.MinFeeRateNanosPerKB,
-            RecipientPublicKeyOrUsername: user.bitclout.publicKey,
-            SenderPublicKeyBase58Check: config.PUBLIC_KEY_BITCLOUT,
-          });
+      try {
+        const preflight = await preflightTransaction({
+          AmountNanos: toNanos(value),
+          MinFeeRateNanosPerKB: config.MinFeeRateNanosPerKB,
+          RecipientPublicKeyOrUsername: user.bitclout.publicKey,
+          SenderPublicKeyBase58Check: config.PUBLIC_KEY_BITCLOUT,
+        });
+        const totalAmount = value + preflight.data.FeeNanos / 1e9;
+        if (user.balance.bitclout >= totalAmount) {
           const withdrawRes = await submitTransaction({
             TransactionHex: handleSign(preflight.data.TransactionHex),
           });
@@ -172,22 +174,23 @@ gatewayRouter.post("/withdraw/bitclout", tokenAuthenticator, valueSchema, async 
             completed: true,
             completionDate: new Date(),
             txnHash: preflight.data.TransactionIDBase58Check,
+            state: "done",
           });
           user.transactions.push(txn._id);
-          user.balance.bitclout -= value;
+          user.balance.bitclout -= totalAmount;
           await user.save();
           await txn.save();
           axios.get(`${config.EXCHANGE_API}/sanitize`);
           res.send({ data: txn });
-        } catch (e) {
-          if (e.response.data.error) {
-            next(createError(e.response.status, e.response.data.error));
-          } else {
-            next(e);
-          }
+        } else {
+          next(createError(409, "Insufficient funds."));
         }
-      } else {
-        next(createError(409, "Insufficient funds."));
+      } catch (e) {
+        if (e.response.data.error) {
+          next(createError(e.response.status, e.response.data.error));
+        } else {
+          next(e);
+        }
       }
     }
   } else {
@@ -223,6 +226,7 @@ gatewayRouter.post("/withdraw/eth", tokenAuthenticator, withdrawEthSchema, async
             completed: true, //set completed to true after transaction goes through?
             txnHash: receipt.transactionHash,
             gasPrice: parseInt(gas.data.result.FastGasPrice.toString()),
+            state: "true",
           }); //create withdraw txn object
           user.balance.ether -= value;
           user.transactions.push(txn._id); // push txn

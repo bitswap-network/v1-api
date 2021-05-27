@@ -22,11 +22,11 @@ export interface SubmitTransactionAPIInterface extends AxiosResponse {
 
 export interface TransactionAPIInterface extends AxiosResponse {
   data: {
-    TotalInputNanos: number | undefined;
-    SpendAmountNanos: number | undefined;
-    ChangeAmountNanos: number | undefined;
-    FeeNanos: number | undefined;
-    TransactionIDBase58Check: string | undefined;
+    TotalInputNanos: number;
+    SpendAmountNanos: number;
+    ChangeAmountNanos: number;
+    FeeNanos: number;
+    TransactionIDBase58Check: string;
     Transaction:
       | {
           TxInputs: TxnInputs;
