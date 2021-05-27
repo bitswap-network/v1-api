@@ -42,6 +42,7 @@ export const getAndAssignPool: (user: UserDoc) => Promise<poolDoc> = async funct
     pool.active = true;
     pool.activeStart = Date.now();
     pool.user = user._id;
+    pool.save();
     return pool;
   } else {
     try {
