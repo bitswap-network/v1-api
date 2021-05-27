@@ -13,6 +13,14 @@ export const bruteforce = new ExpressBrute(store, {
   freeRetries: 5,
 });
 
+export const depthSchema = (req, res, next) => {
+  const schema = Joi.object({
+    startAt: Joi.number().greater(0).required(),
+    endAt: Joi.number().greater(0).required(),
+  });
+  validateRequest(req, next, schema);
+};
+
 export const valueSchema = (req, res, next) => {
   const schema = Joi.object({
     value: Joi.number().greater(0).required(),
