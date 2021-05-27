@@ -125,16 +125,16 @@ gatewayRouter.get("/deposit/eth", tokenAuthenticator, async (req, res, next) => 
       }).exec();
       if (!depositCheck) {
         try {
-          const poolAddr = await getAndAssignPool(user._id.toString());
+          const pool = await getAndAssignPool(user);
           const txn = new Transaction({
             user: user._id,
             transactionType: "deposit",
             assetType: "ETH",
           });
           user.transactions.push(txn._id);
-          await user.save();
-          await txn.save();
-          res.status(200).send({ data: { address: poolAddr, transaction: txn } });
+          user.save();
+          txn.save();
+          res.status(200).send({ data: { address: pool.address, transaction: txn } });
         } catch (e) {
           next(e);
         }

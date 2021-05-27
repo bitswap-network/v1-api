@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import * as config from "../utils/config";
 import Pool, { poolDoc } from "../models/pool";
-import User from "../models/user";
+import User, { UserDoc } from "../models/user";
 import { genWallet, addAddressWebhook } from "../helpers/web3";
 import Transaction from "../models/transaction";
 const algorithm = "aes-256-cbc";
@@ -35,34 +35,30 @@ export const processDeposit: (pool_id: string, value: number, asset: string, has
   }
 };
 
-export const getAndAssignPool: (user_id: string) => Promise<string> = async function (user_id: string): Promise<string> | never {
+export const getAndAssignPool: (user: UserDoc) => Promise<poolDoc> = async function (user: UserDoc): Promise<poolDoc> {
   const pool = await Pool.findOne({ active: false }).exec();
-  const user = await User.findById(user_id).exec();
-  if (user) {
-    if (pool) {
-      pool.active = true;
-      pool.activeStart = Date.now();
-      pool.user = user._id;
-      return pool._id;
-    } else {
-      try {
-        const wallet = await genWallet();
-        const pool = new Pool({
-          address: wallet.address.toLowerCase(),
-          privateKey: encryptAddress(wallet.privateKey),
-          user: user._id,
-          active: true,
-          activeStart: Date.now(),
-        });
-        await addAddressWebhook([wallet.address]);
-        await pool.save();
-        return pool.address;
-      } catch (e) {
-        throw new Error(e);
-      }
-    }
+  // const user = await User.findById(user_id).exec();
+  if (pool) {
+    pool.active = true;
+    pool.activeStart = Date.now();
+    pool.user = user._id;
+    return pool;
   } else {
-    throw new Error("user id not found");
+    try {
+      const wallet = await genWallet();
+      const pool = new Pool({
+        address: wallet.address.toLowerCase(),
+        privateKey: encryptAddress(wallet.privateKey),
+        user: user._id,
+        active: true,
+        activeStart: Date.now(),
+      });
+      addAddressWebhook([wallet.address]);
+      pool.save();
+      return pool;
+    } catch (e) {
+      throw new Error(e);
+    }
   }
 };
 
