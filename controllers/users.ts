@@ -1,5 +1,6 @@
 import User from "../models/user";
 import Order from "../models/order";
+import Transaction from "../models/transaction";
 import { getProfilePosts } from "../helpers/bitclout";
 import { tokenAuthenticator, updateProfileSchema } from "../utils/middleware";
 import { emailverified, servererror } from "../utils/mailBody";
@@ -132,6 +133,19 @@ userRouter.get("/transactions", tokenAuthenticator, async (req, res, next) => {
     res.json({ data: user.transactions });
   } else {
     next(createError(400, "Invalid Request."));
+  }
+});
+
+userRouter.get("/transaction/:id", tokenAuthenticator, async (req, res, next) => {
+  if (!req.params.id || req.params.id === "") {
+    next(createError(400, "Invalid Request."));
+  } else {
+    const transaction = await Transaction.findById(req.params.id).exec();
+    if (transaction) {
+      res.json({ data: transaction });
+    } else {
+      next(createError(400, "Unable to find transaction."));
+    }
   }
 });
 
