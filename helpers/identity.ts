@@ -1,7 +1,10 @@
 import * as config from "../utils/config";
-import { createDecipher } from "crypto";
+import { createDecipher, createCipher } from "crypto";
 import { ec as EC } from "elliptic";
 import * as sha256 from "sha256";
+import HDNode from "hdkey";
+import * as bip39 from "bip39";
+import HDKey from "hdkey";
 const jwt = require("jsonwebtoken");
 const KeyEncoder = require("key-encoder").default;
 const bs58check = require("bs58check");
@@ -24,26 +27,26 @@ export const validateJwt = (bitCloutPublicKey: string, jwtToken: string) => {
   return result;
 };
 
-const decryptSeedHex = (encryptedSeedHex: string) => {
-  const encryptionKey = config.SEED_HEX ? config.SEED_HEX : "";
-  const decipher = createDecipher("aes-256-gcm", encryptionKey);
-  return decipher.update(Buffer.from(encryptedSeedHex, "hex")).toString();
+const mnemonicToKeychain = (mnemonic: string, extraText?: string, nonStandard?: boolean): HDNode => {
+  const seed = bip39.mnemonicToSeedSync(mnemonic, extraText);
+  // @ts-ignore
+  return HDKey.fromMasterSeed(seed).derive("m/44'/0'/0'/0/0", nonStandard);
 };
 
-const encryptedSeedHexToPrivateKey = (encryptedSeedHex: string) => {
-  const seedHex = decryptSeedHex(encryptedSeedHex);
-  return seedHexToPrivateKey(seedHex);
+const keychainToSeedHex = (keychain: HDNode): string => {
+  return keychain.privateKey.toString("hex");
 };
+
 const seedHexToPrivateKey = (seedHex: string) => {
   const ec = new EC("secp256k1");
   return ec.keyFromPrivate(seedHex);
 };
 
 export const handleSign = (transactionHex: string) => {
-  // const { encryptedSeedHex, transactionHex } = data;
-  const encryptedSeedHex = config.ENCRYPTEDSEEDHEX;
-  const privateKey = encryptedSeedHexToPrivateKey(encryptedSeedHex);
-
+  const keychain = mnemonicToKeychain(config.MNEMONIC);
+  const seedHex = keychainToSeedHex(keychain);
+  const privateKey = seedHexToPrivateKey(seedHex);
+  console.log(seedHex, config.MNEMONIC, keychain);
   const transactionBytes = Buffer.from(transactionHex, "hex");
   const transactionHash = Buffer.from(sha256.x2(transactionBytes), "hex");
   const signature = privateKey.sign(transactionHash);
