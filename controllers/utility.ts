@@ -1,7 +1,6 @@
 import { getGasEtherscan, getEthUsd } from "../utils/functions";
 import { getExchangeRate } from "../helpers/bitclout";
-import Depth from "../models/depth";
-import { depthSchema } from "../utils/middleware";
+import Depth, { depthDoc } from "../models/depth";
 
 const utilRouter = require("express").Router();
 
@@ -35,23 +34,97 @@ utilRouter.get("/bitclout-usd", async (req, res, next) => {
   }
 });
 
-utilRouter.post("/depth", depthSchema, async (req, res, next) => {
-  //startAt, endAt should be relative to the number of milliseconds elapsed since January 1, 1970 00:00
-  const { startAt, endAt } = req.body;
-  const startDate = new Date(startAt);
-  const endDate = new Date(endAt);
-  try {
-    const depths = await Depth.find({
-      timestamp: {
-        $gte: startDate,
-        $lt: endDate,
-      },
-    })
-      .sort({ timestamp: "desc" })
-      .exec();
-    res.json({ data: depths });
-  } catch (e) {
-    next(e);
+// utilRouter.post("/depth", depthSchema, async (req, res, next) => {
+//   //startAt, endAt should be relative to the number of milliseconds elapsed since January 1, 1970 00:00
+//   const { startAt, endAt } = req.body;
+//   const startDate = new Date(startAt);
+//   const endDate = new Date(endAt);
+//   try {
+//     const depths = await Depth.find({
+//       timestamp: {
+//         $gte: startDate,
+//         $lt: endDate,
+//       },
+//     })
+//       .sort({ timestamp: "desc" })
+//       .exec();
+//     res.json({ data: depths });
+//   } catch (e) {
+//     next(e);
+//   }
+// });
+
+utilRouter.get("/depth", async (req, res, next) => {
+  const dateRange = req.query.dateRange;
+
+  switch (dateRange) {
+    case "max": {
+      const depths = await Depth.find().sort({ timestamp: "asc" }).exec();
+      const step = Math.round(depths.length / 300);
+      const depthArr: depthDoc[] = [];
+      for (let i = depths.length - 1; i >= 0; i -= step) {
+        depthArr.push(depths[i]);
+      }
+      res.json(depthArr);
+      break;
+    }
+
+    case "1m": {
+      const now = new Date();
+      now.setDate(now.getDate() - 30);
+      const depths = await Depth.find({
+        timestamp: {
+          $gte: now,
+        },
+      })
+        .sort({ timestamp: "asc" })
+        .exec();
+      const step = Math.round(depths.length / 300);
+      const depthArr: depthDoc[] = [];
+      for (let i = depths.length - 1; i >= 0; i -= step) {
+        depthArr.push(depths[i]);
+      }
+      res.json(depthArr);
+      break;
+    }
+
+    case "1w": {
+      const now = new Date();
+      now.setDate(now.getDate() - 7);
+      const depths = await Depth.find({
+        timestamp: {
+          $gte: now,
+        },
+      })
+        .sort({ timestamp: "asc" })
+        .exec();
+      const step = Math.round(depths.length / 300);
+      const depthArr: depthDoc[] = [];
+      for (let i = depths.length - 1; i >= 0; i -= step) {
+        depthArr.push(depths[i]);
+      }
+      res.json(depthArr);
+      break;
+    }
+
+    case "1d": {
+      const now = new Date();
+      now.setDate(now.getDate() - 1);
+      const depths = await Depth.find({
+        timestamp: {
+          $gte: now,
+        },
+      })
+        .sort({ timestamp: "asc" })
+        .exec();
+      res.json({ data: depths });
+      break;
+    }
+
+    default: {
+      res.status(400).send({ error: "Incorrect query" });
+      break;
+    }
   }
 });
 
