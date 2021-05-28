@@ -17,15 +17,6 @@ import * as middleware from "./utils/middleware";
 import * as logger from "./utils/logger";
 import * as config from "./utils/config";
 
-//Rollbar logging
-// const Rollbar = require("rollbar")
-// Rollbar.configure({ logLevel: "info" })
-// const rollbar = new Rollbar({
-//   accessToken: config.ROLLBAR,
-//   captureUncaught: true,
-//   captureUnhandledRejections: true,
-// })
-
 const app: express.Application = express();
 
 mongoose
@@ -43,6 +34,7 @@ mongoose
   });
 app.use(morgan("combined"));
 app.use(cors());
+app.options("*", cors());
 app.use(helmet());
 app.use(express.json());
 // app.use(rollbar.errorHandler())
