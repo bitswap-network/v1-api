@@ -65,7 +65,7 @@ utilRouter.get("/depth", async (req, res, next) => {
       for (let i = depths.length - 1; i >= 0; i -= step) {
         depthArr.push(depths[i]);
       }
-      res.json(depthArr);
+      res.json({ data: depthArr });
       break;
     }
 
@@ -84,7 +84,7 @@ utilRouter.get("/depth", async (req, res, next) => {
       for (let i = depths.length - 1; i >= 0; i -= step) {
         depthArr.push(depths[i]);
       }
-      res.json(depthArr);
+      res.json({ data: depthArr });
       break;
     }
 
@@ -103,7 +103,7 @@ utilRouter.get("/depth", async (req, res, next) => {
       for (let i = depths.length - 1; i >= 0; i -= step) {
         depthArr.push(depths[i]);
       }
-      res.json(depthArr);
+      res.json({ data: depthArr });
       break;
     }
 
