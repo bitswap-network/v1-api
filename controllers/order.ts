@@ -27,14 +27,14 @@ orderRouter.post("/limit", tokenAuthenticator, limitOrderSchema, async (req, res
   //add verification to check user's balance
   if (user && orderBalanceValidate(user, "limit", orderSide, orderQuantity, orderPrice) && userVerifyCheck(user)) {
     let body = {
-      username: user.bitclout.publicKey,
+      username: user.bitclout.username,
       orderSide: orderSide,
       orderQuantity: orderQuantity,
       orderPrice: orderPrice,
     };
     try {
       const response = await axios.post(`${config.EXCHANGE_API}/exchange/limit`, body, {
-        headers: { "server-signature": generateHMAC(body) },
+        headers: { "Server-Signature": generateHMAC(body) },
       });
       res.status(response.status).send({ data: response.data });
     } catch (e) {
@@ -57,7 +57,7 @@ orderRouter.post("/market", tokenAuthenticator, marketOrderSchema, async (req, r
     };
     try {
       const response = await axios.post(`${config.EXCHANGE_API}/exchange/market`, body, {
-        headers: { "server-signature": generateHMAC(body) },
+        headers: { "Server-Signature": generateHMAC(body) },
       });
       res.status(response.status).send({ data: response.data });
     } catch (e) {
@@ -79,7 +79,7 @@ orderRouter.get("/cancel/:id", tokenAuthenticator, async (req, res, next) => {
       };
       try {
         const response = await axios.post(`${config.EXCHANGE_API}/exchange/cancel`, body, {
-          headers: { "server-signature": generateHMAC(body) },
+          headers: { "Server-Signature": generateHMAC(body) },
         });
         res.status(response.status).send(response.data);
       } catch (e) {
