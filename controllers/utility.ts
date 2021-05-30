@@ -25,7 +25,6 @@ utilRouter.get("/eth-usd", async (req, res, next) => {
 utilRouter.get("/bitclout-usd", async (req, res, next) => {
   try {
     const response = await getExchangeRate();
-    console.log(response);
     const bitcloutPerUSD =
       1e9 / ((1e9 / response.data.SatoshisPerBitCloutExchangeRate / (response.data.USDCentsPerBitcoinExchangeRate / 100)) * 1e8);
     res.json({ data: bitcloutPerUSD });
