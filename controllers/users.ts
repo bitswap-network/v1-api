@@ -113,7 +113,7 @@ userRouter.put("/update-profile", tokenAuthenticator, updateProfileSchema, async
 
 userRouter.get("/verify-email/:code", async (req, res, next) => {
   const code = req.params.code;
-  const user = await User.findOne({ emailverification: code }).exec();
+  const user = await User.findOne({ "verification.emailString": code }).exec();
   if (user) {
     user.verification.email = true;
     user.verification.emailString = "";
