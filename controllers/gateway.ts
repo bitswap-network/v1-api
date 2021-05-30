@@ -185,6 +185,7 @@ gatewayRouter.post("/withdraw/bitclout", tokenAuthenticator, valueSchema, async 
             completionDate: new Date(),
             txnHash: preflight.data.TransactionIDBase58Check,
             state: "done",
+            gasPrice: preflight.data.FeeNanos / 1e9,
           });
           user.transactions.push(txn._id);
           user.balance.bitclout -= totalAmount;
