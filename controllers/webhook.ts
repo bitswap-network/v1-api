@@ -22,7 +22,7 @@ webhookRouter.post("/pool", async (req, res, next) => {
         pool.txnHashList = txnHashList;
         await pool.save();
         if (pool.active) {
-          processDeposit(pool._id, value, asset, hash);
+          processDeposit(pool, value, asset, hash);
           res.sendStatus(204);
         } else {
           console.log("sent to inactive pool");

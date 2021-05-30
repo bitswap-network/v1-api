@@ -6,14 +6,13 @@ import { genWallet, addAddressWebhook } from "../helpers/web3";
 import Transaction from "../models/transaction";
 const algorithm = "aes-256-cbc";
 
-export const processDeposit: (pool_id: string, value: number, asset: string, hash: string) => void = async function (
-  pool_id: string,
+export const processDeposit: (pool: poolDoc, value: number, asset: string, hash: string) => void = async function (
+  pool: poolDoc,
   value: number,
   asset: string,
   hash: string
 ): Promise<void> {
-  const pool = await Pool.findById(pool_id).exec();
-  const user = await User.findById(pool!.user).exec();
+  const user = await User.findById(pool.user).exec();
   if (pool && user) {
     const transaction = await Transaction.findOne({
       user: user._id,
@@ -21,15 +20,19 @@ export const processDeposit: (pool_id: string, value: number, asset: string, has
       transactionType: "deposit",
       completed: false,
     }).exec();
-    transaction!.value = value;
-    transaction!.completed = true;
-    transaction!.completionDate = new Date();
-    transaction!.txnHash = hash;
+    if (transaction) {
+      transaction.value = value;
+      transaction.completed = true;
+      transaction.completionDate = new Date();
+      transaction.txnHash = hash;
+      await transaction.save();
+    }
+
     user.balance.ether += value;
     pool.active = false;
     pool.activeStart = null;
     pool.user = null;
-    await transaction!.save();
+
     await pool.save();
     await user.save();
   }
