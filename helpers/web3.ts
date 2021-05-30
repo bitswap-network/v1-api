@@ -11,6 +11,7 @@ export const checkEthAddr = async (address: string) => {
 export const genWallet = async () => {
   return web3.eth.accounts.create();
 };
+
 export const addAddressWebhook: (address: string[]) => Promise<AxiosResponse> = async function (
   address: string[]
 ): Promise<AxiosResponse<any>> {
@@ -47,6 +48,7 @@ export const sendEth = async (
     gasPrice: web3.utils.toHex(web3.utils.toWei(gasprice.toString(), "gwei")),
     nonce: web3.utils.toHex(nonce),
   };
+
   console.log(rawTx, gasprice, nonce);
   const transaction = new EthereumTx(rawTx, {
     chain: config.NETWORK,

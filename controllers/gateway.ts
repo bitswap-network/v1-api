@@ -237,7 +237,7 @@ gatewayRouter.post("/withdraw/eth", tokenAuthenticator, withdrawEthSchema, async
             completed: true, //set completed to true after transaction goes through?
             txnHash: receipt.transactionHash,
             gasPrice: parseInt(gas.data.result.FastGasPrice.toString()),
-            state: "true",
+            state: "done",
           }); //create withdraw txn object
           user.balance.ether -= value;
           user.transactions.push(txn._id); // push txn
