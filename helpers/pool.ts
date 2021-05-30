@@ -24,6 +24,7 @@ export const processDeposit: (pool: poolDoc, value: number, asset: string, hash:
       transaction.value = value;
       transaction.completed = true;
       transaction.completionDate = new Date();
+      transaction.state = "done";
       transaction.txnHash = hash;
       await transaction.save();
     }
