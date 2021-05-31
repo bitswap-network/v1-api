@@ -16,7 +16,11 @@ orderRouter.get("/:id", tokenAuthenticator, async (req, res, next) => {
       const order = await Order.findOne({ orderID: req.params.id }).exec();
       res.json({ data: order });
     } catch (e) {
-      next(e);
+      if (e.response.data.error) {
+        next(createError(e.response.status, e.response.data.error));
+      } else {
+        next(e);
+      }
     }
   }
 });
@@ -38,7 +42,11 @@ orderRouter.post("/limit", tokenAuthenticator, limitOrderSchema, async (req, res
       });
       res.status(response.status).send({ data: response.data });
     } catch (e) {
-      next(e);
+      if (e.response.data.error) {
+        next(createError(e.response.status, e.response.data.error));
+      } else {
+        next(e);
+      }
     }
   } else {
     next(createError(400, "Invalid Request."));
@@ -61,7 +69,11 @@ orderRouter.post("/market", tokenAuthenticator, marketOrderSchema, async (req, r
       });
       res.status(response.status).send({ data: response.data });
     } catch (e) {
-      next(e);
+      if (e.response.data.error) {
+        next(createError(e.response.status, e.response.data.error));
+      } else {
+        next(e);
+      }
     }
   } else {
     next(createError(400, "Invalid Request."));
@@ -81,7 +93,11 @@ orderRouter.get("/cancel/:id", tokenAuthenticator, async (req, res, next) => {
       });
       res.status(response.status).send(response.data);
     } catch (e) {
-      next(e);
+      if (e.response.data.error) {
+        next(createError(e.response.status, e.response.data.error));
+      } else {
+        next(e);
+      }
     }
   }
 });
