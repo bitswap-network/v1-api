@@ -1,25 +1,17 @@
 import Joi from "joi";
 import * as config from "./config";
 const jwt = require("jsonwebtoken");
-const mongoose = require("mongoose");
+// const mongoose = require("mongoose");
 const createError = require("http-errors");
-const ExpressBrute = require("express-brute");
-const MongooseStore = require("express-brute-mongoose");
-const BruteForceSchema = require("express-brute-mongoose/dist/schema");
+// const ExpressBrute = require("express-brute");
+// const MongooseStore = require("express-brute-mongoose");
+// const BruteForceSchema = require("express-brute-mongoose/dist/schema");
 
-const bruteforce_model = mongoose.model("bruteforce", new mongoose.Schema(BruteForceSchema));
-const store = new MongooseStore(bruteforce_model);
-export const bruteforce = new ExpressBrute(store, {
-  freeRetries: 5,
-});
-
-// export const depthSchema = (req, res, next) => {
-//   const schema = Joi.object({
-//     startAt: Joi.number().greater(0).required(),
-//     endAt: Joi.number().greater(0).required(),
-//   });
-//   validateRequest(req, next, schema);
-// };
+// const bruteforce_model = mongoose.model("bruteforce", new mongoose.Schema(BruteForceSchema));
+// const store = new MongooseStore(bruteforce_model);
+// export const bruteforce = new ExpressBrute(store, {
+//   freeRetries: 5,
+// });
 
 export const valueSchema = (req, res, next) => {
   const schema = Joi.object({

@@ -33,26 +33,6 @@ utilRouter.get("/bitclout-usd", async (req, res, next) => {
   }
 });
 
-// utilRouter.post("/depth", depthSchema, async (req, res, next) => {
-//   //startAt, endAt should be relative to the number of milliseconds elapsed since January 1, 1970 00:00
-//   const { startAt, endAt } = req.body;
-//   const startDate = new Date(startAt);
-//   const endDate = new Date(endAt);
-//   try {
-//     const depths = await Depth.find({
-//       timestamp: {
-//         $gte: startDate,
-//         $lt: endDate,
-//       },
-//     })
-//       .sort({ timestamp: "desc" })
-//       .exec();
-//     res.json({ data: depths });
-//   } catch (e) {
-//     next(e);
-//   }
-// });
-
 utilRouter.get("/depth", async (req, res, next) => {
   const dateRange = req.query.dateRange;
 
