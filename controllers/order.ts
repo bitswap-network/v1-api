@@ -33,8 +33,8 @@ orderRouter.post("/limit", tokenAuthenticator, limitOrderSchema, async (req, res
       orderPrice: orderPrice,
     };
     try {
-      const response = await axios.post(`${config.EXCHANGE_API}/exchange/limit`, body, {
-        headers: { "Server-Signature": generateHMAC(body) },
+      const response = await axios.post(`${config.EXCHANGE_API}/exchange/limit`, JSON.stringify(body), {
+        headers: { "Server-Signature": generateHMAC(body), "Content-Type": "application/json" },
       });
       res.status(response.status).send({ data: response.data });
     } catch (e) {
@@ -97,7 +97,11 @@ orderRouter.post("/market-price", tokenAuthenticator, marketOrderSchema, async (
     const response = await axios.get(`${config.EXCHANGE_API}/market-price/${orderSide}/${orderQuantity}`);
     res.status(response.status).send(response.data);
   } catch (e) {
-    next(e);
+    if (e.response.data.error) {
+      next(createError(e.response.status, e.response.data.error));
+    } else {
+      next(e);
+    }
   }
 });
 
