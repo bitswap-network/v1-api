@@ -45,6 +45,10 @@ export const getEthUsd: () => Promise<AxiosResponse> = async function (): Promis
   return await axios.get(`${config.EXCHANGE_API}/ethusd`);
 };
 
+export const getOrderbookState: () => Promise<AxiosResponse> = async function (): Promise<AxiosResponse<any>> {
+  return await axios.get(`${config.EXCHANGE_API}/orderbook-state`);
+};
+
 //add typed response
 export const getMarketPrice: (side: string, quantity: number) => Promise<AxiosResponse> = async function (
   side: string,

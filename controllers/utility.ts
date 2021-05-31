@@ -1,4 +1,4 @@
-import { getGasEtherscan, getEthUsd } from "../utils/functions";
+import { getGasEtherscan, getEthUsd, getOrderbookState } from "../utils/functions";
 import { getExchangeRate } from "../helpers/bitclout";
 import Depth, { depthDoc } from "../models/depth";
 
@@ -111,6 +111,15 @@ utilRouter.get("/depth-current", async (req, res, next) => {
   try {
     const depth = await Depth.findOne({}).sort({ timestamp: "desc" }).exec();
     res.json({ data: depth });
+  } catch (e) {
+    next(e);
+  }
+});
+
+utilRouter.get("/orderbook", async (req, res, next) => {
+  try {
+    const response = await getOrderbookState();
+    res.json(response.data);
   } catch (e) {
     next(e);
   }
