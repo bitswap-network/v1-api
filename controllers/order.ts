@@ -51,7 +51,7 @@ orderRouter.post("/market", tokenAuthenticator, marketOrderSchema, async (req, r
   //add verification to check user's balance
   if (user && orderBalanceValidate(user, "market", orderSide, orderQuantity) && userVerifyCheck(user)) {
     let body = {
-      username: user.bitclout.publicKey,
+      username: user.bitclout.username,
       orderSide: orderSide,
       orderQuantity: orderQuantity,
     };
@@ -72,21 +72,16 @@ orderRouter.get("/cancel/:id", tokenAuthenticator, async (req, res, next) => {
   if (!req.params.id) {
     next(createError(400, "Invalid Request."));
   } else {
-    const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
-    if (user) {
-      let body = {
-        orderID: req.params.id,
-      };
-      try {
-        const response = await axios.post(`${config.EXCHANGE_API}/exchange/cancel`, body, {
-          headers: { "Server-Signature": generateHMAC(body) },
-        });
-        res.status(response.status).send(response.data);
-      } catch (e) {
-        next(e);
-      }
-    } else {
-      next(createError(400, "Invalid Request."));
+    let body = {
+      orderID: req.params.id,
+    };
+    try {
+      const response = await axios.post(`${config.EXCHANGE_API}/exchange/cancel`, body, {
+        headers: { "Server-Signature": generateHMAC(body) },
+      });
+      res.status(response.status).send(response.data);
+    } catch (e) {
+      next(e);
     }
   }
 });
