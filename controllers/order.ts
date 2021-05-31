@@ -38,7 +38,7 @@ orderRouter.post("/limit", tokenAuthenticator, limitOrderSchema, async (req, res
     };
     try {
       const response = await axios.post(`${config.EXCHANGE_API}/exchange/limit`, JSON.stringify(body), {
-        headers: { "Server-Signature": generateHMAC(body), "Content-Type": "application/json" },
+        headers: { "x-server-signature": generateHMAC(body), "Content-Type": "application/json" },
       });
       res.status(response.status).send({ data: response.data });
     } catch (e) {
@@ -65,7 +65,7 @@ orderRouter.post("/market", tokenAuthenticator, marketOrderSchema, async (req, r
     };
     try {
       const response = await axios.post(`${config.EXCHANGE_API}/exchange/market`, body, {
-        headers: { "Server-Signature": generateHMAC(body) },
+        headers: { "x-server-signature": generateHMAC(body) },
       });
       res.status(response.status).send({ data: response.data });
     } catch (e) {
@@ -89,7 +89,7 @@ orderRouter.get("/cancel/:id", tokenAuthenticator, async (req, res, next) => {
     };
     try {
       const response = await axios.post(`${config.EXCHANGE_API}/exchange/cancel`, body, {
-        headers: { "Server-Signature": generateHMAC(body) },
+        headers: { "x-server-signature": generateHMAC(body) },
       });
       res.status(response.status).send(response.data);
     } catch (e) {
