@@ -26,7 +26,7 @@ export const verifySignature = (request: any) => {
   const token = config.ServerAuth ? config.ServerAuth : "";
   if (token) {
     const headers = request.headers;
-    const signature = headers["x-server-signature"]; // Lowercase for NodeJS
+    const signature = headers["server-signature"]; // Lowercase for NodeJS
     const body = request.body;
     const hmac = createHmac("sha256", token); // Create a HMAC SHA256 hash using the auth token
     hmac.update(JSON.stringify(body), "utf8");
