@@ -132,7 +132,9 @@ utilRouter.get("/order-history", async (req, res, next) => {
       complete: true,
       orderSide: "sell",
       error: "",
-    }).exec();
+    })
+      .sort({ completeTime: "desc" })
+      .exec();
     const orderArr: { timestamp: Date; price: number }[] = [];
     orders.forEach(order => {
       orderArr.push({
@@ -140,7 +142,30 @@ utilRouter.get("/order-history", async (req, res, next) => {
         price: order.orderPrice!,
       });
     });
-    res.json(orderArr);
+    // loop through orderArr
+    const finalArr: { timestamp: Date; price: number }[] = [];
+    let dateString1 = `${orderArr[0].timestamp.getFullYear()}-${orderArr[0].timestamp.getMonth()}-${orderArr[0].timestamp.getDate()}`;
+    let dateString2 = "";
+    let sum = orderArr[0].price;
+    let count = 1;
+    console.log(orderArr.length, dateString1);
+    for (let i = 1; i < orderArr.length; ++i) {
+      dateString2 = `${orderArr[i].timestamp.getFullYear()}-${orderArr[i].timestamp.getMonth()}-${orderArr[i].timestamp.getDate()}`;
+      console.log(i, dateString1, dateString2);
+      if (dateString1 === dateString2) {
+        sum += orderArr[i].price;
+        count++;
+      } else {
+        console.log({ timestamp: new Date(dateString1), price: sum / count });
+        finalArr.push({ timestamp: new Date(dateString1), price: sum / count });
+        sum = orderArr[i].price;
+        count = 1;
+      }
+      dateString1 = dateString2;
+    }
+    console.log({ timestamp: new Date(dateString1), price: sum / count });
+    finalArr.push({ timestamp: new Date(dateString1), price: sum / count });
+    res.json(finalArr);
   } catch (e) {
     next(e);
   }
