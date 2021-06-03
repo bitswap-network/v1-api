@@ -2,6 +2,7 @@ import { getGasEtherscan, getEthUsd, getOrderbookState } from "../utils/function
 import { getExchangeRate } from "../helpers/bitclout";
 import Depth, { depthDoc } from "../models/depth";
 import Order from "../models/order";
+import User from "../models/user";
 
 const utilRouter = require("express").Router();
 
@@ -166,6 +167,23 @@ utilRouter.get("/order-history", async (req, res, next) => {
     console.log({ timestamp: new Date(dateString1), price: sum / count });
     finalArr.push({ timestamp: new Date(dateString1), price: sum / count });
     res.json(finalArr);
+  } catch (e) {
+    next(e);
+  }
+});
+
+utilRouter.get("/total-balances", async (req, res, next) => {
+  try {
+    const users = await User.find().exec();
+    const balances = {
+      ether: 0,
+      bitclout: 0,
+    };
+    users.forEach(user => {
+      balances.ether += user.balance.ether;
+      balances.bitclout += user.balance.bitclout;
+    });
+    res.json(balances);
   } catch (e) {
     next(e);
   }
