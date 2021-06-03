@@ -2,7 +2,7 @@ import User from "../models/user";
 import { tokenAuthenticator, depositBitcloutSchema, valueSchema, withdrawEthSchema } from "../utils/middleware";
 import Transaction from "../models/transaction";
 import Pool from "../models/pool";
-import { getGasEtherscan, toNanos, userVerifyCheck } from "../utils/functions";
+import { getGasEtherscan, toNanos, userVerifyCheck, generateHMAC } from "../utils/functions";
 import { getAndAssignPool, decryptAddress } from "../helpers/pool";
 import { getNonce, checkEthAddr, sendEth } from "../helpers/web3";
 import * as config from "../utils/config";
@@ -96,7 +96,12 @@ gatewayRouter.post("/deposit/bitclout", tokenAuthenticator, depositBitcloutSchem
         user.balance.bitclout += value;
         await user.save();
         await txn.save();
-        axios.get(`${config.EXCHANGE_API}/sanitize`);
+        const body = {
+          username: user.bitclout.username,
+        };
+        axios.post(`${config.EXCHANGE_API}/exchange/sanitize`, body, {
+          headers: { "Server-Signature": generateHMAC(body) },
+        });
         res.send({ data: txn });
       } catch (e) {
         if (e.response.data.error) {
@@ -191,7 +196,12 @@ gatewayRouter.post("/withdraw/bitclout", tokenAuthenticator, valueSchema, async 
           user.balance.bitclout -= totalAmount;
           await user.save();
           await txn.save();
-          axios.get(`${config.EXCHANGE_API}/sanitize`);
+          const body = {
+            username: user.bitclout.username,
+          };
+          axios.post(`${config.EXCHANGE_API}/exchange/sanitize`, body, {
+            headers: { "Server-Signature": generateHMAC(body) },
+          });
           res.send({ data: txn });
         } else {
           next(createError(409, "Insufficient funds."));
@@ -242,7 +252,12 @@ gatewayRouter.post("/withdraw/eth", tokenAuthenticator, withdrawEthSchema, async
           user.balance.ether -= value;
           user.transactions.push(txn._id); // push txn
           pool.balance -= value;
-          axios.get(`${config.EXCHANGE_API}/sanitize`);
+          const body = {
+            username: user.bitclout.username,
+          };
+          axios.post(`${config.EXCHANGE_API}/exchange/sanitize`, body, {
+            headers: { "Server-Signature": generateHMAC(body) },
+          });
           await user.save();
           await txn.save();
           await pool.save();
