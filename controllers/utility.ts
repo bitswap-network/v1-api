@@ -1,6 +1,7 @@
 import { getGasEtherscan, getEthUsd, getOrderbookState } from "../utils/functions";
 import { getExchangeRate } from "../helpers/bitclout";
 import Depth, { depthDoc } from "../models/depth";
+import Order from "../models/order";
 
 const utilRouter = require("express").Router();
 
@@ -120,6 +121,26 @@ utilRouter.get("/orderbook", async (req, res, next) => {
   try {
     const response = await getOrderbookState();
     res.json(response.data);
+  } catch (e) {
+    next(e);
+  }
+});
+
+utilRouter.get("/order-history", async (req, res, next) => {
+  try {
+    const orders = await Order.find({
+      complete: true,
+      orderSide: "sell",
+      error: "",
+    }).exec();
+    const orderArr: { timestamp: Date; price: number }[] = [];
+    orders.forEach(order => {
+      orderArr.push({
+        timestamp: order.completeTime!,
+        price: order.orderPrice!,
+      });
+    });
+    res.json(orderArr);
   } catch (e) {
     next(e);
   }
