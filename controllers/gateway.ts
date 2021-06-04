@@ -42,7 +42,7 @@ gatewayRouter.get("/deposit/cancel/:id", tokenAuthenticator, async (req, res, ne
   }
 });
 
-gatewayRouter.post("/deposit/bitclout-preflight", tokenAuthenticator, valueSchema, async (req, res, next) => {
+gatewayRouter.post("/withdraw/bitclout-preflight", tokenAuthenticator, valueSchema, async (req, res, next) => {
   const { value } = req.body;
   const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
   if (user) {
@@ -53,8 +53,8 @@ gatewayRouter.post("/deposit/bitclout-preflight", tokenAuthenticator, valueSchem
         const preflight = await preflightTransaction({
           AmountNanos: toNanos(value),
           MinFeeRateNanosPerKB: config.MinFeeRateNanosPerKB,
-          RecipientPublicKeyOrUsername: config.PUBLIC_KEY_BITCLOUT,
-          SenderPublicKeyBase58Check: user.bitclout.publicKey,
+          RecipientPublicKeyOrUsername: user.bitclout.publicKey,
+          SenderPublicKeyBase58Check: config.PUBLIC_KEY_BITCLOUT,
         });
 
         res.send({ data: preflight.data });
