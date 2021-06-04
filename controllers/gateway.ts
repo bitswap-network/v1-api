@@ -42,6 +42,35 @@ gatewayRouter.get("/deposit/cancel/:id", tokenAuthenticator, async (req, res, ne
   }
 });
 
+gatewayRouter.post("/deposit/bitclout-preflight", tokenAuthenticator, valueSchema, async (req, res, next) => {
+  const { value } = req.body;
+  const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
+  if (user) {
+    if (!userVerifyCheck(user)) {
+      next(createError(401, "User not verified."));
+    } else {
+      try {
+        const preflight = await preflightTransaction({
+          AmountNanos: toNanos(value),
+          MinFeeRateNanosPerKB: config.MinFeeRateNanosPerKB,
+          RecipientPublicKeyOrUsername: config.PUBLIC_KEY_BITCLOUT,
+          SenderPublicKeyBase58Check: user.bitclout.publicKey,
+        });
+
+        res.send({ data: preflight.data });
+      } catch (e) {
+        if (e.response.data.error) {
+          next(createError(e.response.status, e.response.data.error));
+        } else {
+          next(e);
+        }
+      }
+    }
+  } else {
+    next(createError(400, "Invalid Request."));
+  }
+});
+
 gatewayRouter.post("/withdraw/bitclout-preflight", tokenAuthenticator, valueSchema, async (req, res, next) => {
   const { value } = req.body;
   const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
