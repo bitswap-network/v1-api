@@ -1,192 +1,120 @@
-import { getGasEtherscan, getEthUsd, getOrderbookState } from "../utils/functions";
-import { getExchangeRate } from "../helpers/bitclout";
-import Depth, { depthDoc } from "../models/depth";
-import Order from "../models/order";
-import User from "../models/user";
+import { tokenAuthenticator } from "../utils/middleware"
+import { genString } from "../utils/functions"
+import { completeEmail } from "../utils/mailBody"
+import User from "../models/user"
+import Transaction from "../models/transaction"
+import sendMail from "../utils/mailer"
+import { getGasEtherscan, getEthUsdCC, generateHMAC } from "../utils/functions"
+// import { getFulfillmentLogs } from "../helpers/bitclout"
+import axios from "axios"
 
-const utilRouter = require("express").Router();
+const utilRouter = require("express").Router()
 
-utilRouter.get("/eth-gasprice", async (req, res, next) => {
+utilRouter.get("/getGas", async (req, res) => {
   try {
-    const response = await getGasEtherscan();
-    res.json({ data: response.data.result });
-  } catch (e) {
-    next(e);
-  }
-});
-
-utilRouter.get("/eth-usd", async (req, res, next) => {
-  try {
-    const response = await getEthUsd();
-    res.json({ data: response.data.result });
-  } catch (e) {
-    next(e);
-  }
-});
-
-utilRouter.get("/bitclout-usd", async (req, res, next) => {
-  try {
-    const response = await getExchangeRate();
-    const bitcloutPerUSD =
-      1e9 / ((1e9 / response.data.SatoshisPerBitCloutExchangeRate / (response.data.USDCentsPerBitcoinExchangeRate / 100)) * 1e8);
-    res.json({ data: bitcloutPerUSD });
-  } catch (e) {
-    next(e);
-  }
-});
-
-utilRouter.get("/depth", async (req, res, next) => {
-  const dateRange = req.query.dateRange;
-
-  switch (dateRange) {
-    case "max": {
-      const depths = await Depth.find().sort({ timestamp: "asc" }).exec();
-      const step = Math.round(depths.length / 300);
-      const depthArr: depthDoc[] = [];
-      for (let i = depths.length - 1; i >= 0; i -= step) {
-        depthArr.push(depths[i]);
-      }
-      res.json({ data: depthArr });
-      break;
+    const response = await getGasEtherscan()
+    if (response.status === 200) {
+      res.send(response.data.result)
     }
-
-    case "1m": {
-      const now = new Date();
-      now.setDate(now.getDate() - 30);
-      const depths = await Depth.find({
-        timestamp: {
-          $gte: now,
-        },
-      })
-        .sort({ timestamp: "asc" })
-        .exec();
-      const step = Math.round(depths.length / 300);
-      const depthArr: depthDoc[] = [];
-      for (let i = depths.length - 1; i >= 0; i -= step) {
-        depthArr.push(depths[i]);
-      }
-      res.json({ data: depthArr });
-      break;
-    }
-
-    case "1w": {
-      const now = new Date();
-      now.setDate(now.getDate() - 7);
-      const depths = await Depth.find({
-        timestamp: {
-          $gte: now,
-        },
-      })
-        .sort({ timestamp: "asc" })
-        .exec();
-      const step = Math.round(depths.length / 300);
-      const depthArr: depthDoc[] = [];
-      for (let i = depths.length - 1; i >= 0; i -= step) {
-        depthArr.push(depths[i]);
-      }
-      res.json({ data: depthArr });
-      break;
-    }
-
-    case "1d": {
-      const now = new Date();
-      now.setDate(now.getDate() - 1);
-      const depths = await Depth.find({
-        timestamp: {
-          $gte: now,
-        },
-      })
-        .sort({ timestamp: "asc" })
-        .exec();
-      res.json({ data: depths });
-      break;
-    }
-
-    default: {
-      res.status(400).send({ error: "Incorrect query" });
-      break;
-    }
+  } catch (error) {
+    console.log(error)
+    res.status(500).send(error.data)
   }
-});
+})
 
-utilRouter.get("/depth-current", async (req, res, next) => {
-  try {
-    const depth = await Depth.findOne({}).sort({ timestamp: "desc" }).exec();
-    res.json({ data: depth });
-  } catch (e) {
-    next(e);
-  }
-});
-
-utilRouter.get("/orderbook", async (req, res, next) => {
-  try {
-    const response = await getOrderbookState();
-    res.json(response.data);
-  } catch (e) {
-    next(e);
-  }
-});
-
-utilRouter.get("/order-history", async (req, res, next) => {
-  try {
-    const orders = await Order.find({
-      complete: true,
-      error: "",
-      orderPrice: { $ne: undefined },
-    })
-      .sort({ completeTime: "desc" })
-      .exec();
-    const orderArr: { timestamp: Date; price: number }[] = [];
-    orders.forEach(order => {
-      orderArr.push({
-        timestamp: order.completeTime!,
-        price: order.orderPrice!,
-      });
-    });
-    // loop through orderArr
-    const finalArr: { timestamp: Date; price: number }[] = [];
-    let dateString1 = `${orderArr[0].timestamp.getFullYear()}-${orderArr[0].timestamp.getMonth()}-${orderArr[0].timestamp.getDate()}`;
-    let dateString2 = "";
-    let sum = orderArr[0].price;
-    let count = 1;
-    // console.log(orderArr.length, dateString1);
-    for (let i = 1; i < orderArr.length; ++i) {
-      dateString2 = `${orderArr[i].timestamp.getFullYear()}-${orderArr[i].timestamp.getMonth()}-${orderArr[i].timestamp.getDate()}`;
-      console.log(i, dateString1, dateString2, orderArr[i].price, sum, count);
-      if (dateString1 === dateString2) {
-        sum += orderArr[i].price;
-        count++;
+utilRouter.get("/pendingtxns", tokenAuthenticator, async (req, res) => {
+  const user = await User.findOne({ username: req.user.username }).exec()
+  if (user) {
+    if (user.admin) {
+      const Txns = await Transaction.find({ status: "pending" }).exec()
+      if (Txns) {
+        res.status(200).send(Txns)
       } else {
-        console.log({ timestamp: new Date(dateString1), price: sum / count });
-        finalArr.push({ timestamp: new Date(dateString1), price: sum / count });
-        sum = orderArr[i].price;
-        count = 1;
+        res.status(500).send("error getting txns")
       }
-      dateString1 = dateString2;
+    } else {
+      res.status(403).send("user not admin")
     }
-    console.log({ timestamp: new Date(dateString1), price: sum / count });
-    finalArr.push({ timestamp: new Date(dateString1), price: sum / count });
-    res.json(finalArr);
-  } catch (e) {
-    next(e);
+  } else {
+    res.status(400).send("user not found")
   }
-});
+})
 
-utilRouter.get("/total-balances", async (req, res, next) => {
+utilRouter.get("/getEthUSD", async (req, res) => {
   try {
-    const users = await User.find().exec();
-    const balances = {
-      ether: 0,
-      bitclout: 0,
-    };
-    users.forEach(user => {
-      balances.ether += user.balance.ether;
-      balances.bitclout += user.balance.bitclout;
-    });
-    res.json(balances);
-  } catch (e) {
-    next(e);
+    const response = await getEthUsdCC()
+    if (response.status === 200) {
+      res.send(response.data)
+    }
+  } catch (error) {
+    console.log(error)
+    res.status(500).send(error.data)
   }
-});
+})
 
-export default utilRouter;
+// utilRouter.get("/logging/:type", tokenAuthenticator, async (req, res) => {
+//   const types = ["combined", "out", "error"]
+//   const user = await User.findOne({ username: req.user.username }).exec()
+//   if (user) {
+//     if (user.admin) {
+//       if (types.includes(req.params.type)) {
+//         try {
+//           const body = { id: genString(32) }
+//           const response = await getFulfillmentLogs(req.params.type, body)
+//           if (response.status === 200) {
+//             res.send(response.data)
+//           }
+//         } catch (error) {
+//           console.log(error.data)
+//           res.status(500).send(error.data)
+//         }
+//       } else {
+//         res.status(400).send(`Request param must be one of: ${types.join(", ")}`)
+//       }
+//     } else {
+//       res.status(403).send("unauthorized: user must be admin")
+//     }
+//   } else {
+//     res.status(400).send("user not found")
+//   }
+// })
+
+utilRouter.post("/adminpasswordreset", tokenAuthenticator, async (req, res) => {
+  const { username, password } = req.body
+  const admin = await User.findOne({ username: req.user.username }).exec()
+  const user = await User.findOne({ username: username }).exec()
+  if (user && admin) {
+    if (admin.admin) {
+      user.password = user.generateHash(password)
+      user.save((err: any) => {
+        if (err) {
+          res.status(500).send(err)
+        } else {
+          res.status(200).send(password)
+        }
+      })
+    } else {
+      res.status(403).send("unauthorized")
+    }
+  } else {
+    res.status(400).send("not found")
+  }
+})
+
+utilRouter.post("/sendcompleteemail", async (req, res) => {
+  const { seller, buyer, id } = req.body
+  if (seller && buyer && id && req.headers.authorization === "179f7a49640c7004449101b043852736") {
+    try {
+      const mailBody = completeEmail(id)
+      sendMail(seller, mailBody.header, mailBody.body.seller)
+      sendMail(buyer, mailBody.header, mailBody.body.buyer)
+      res.sendStatus(204)
+    } catch (error) {
+      res.status(500).send({ error: error.message })
+    }
+  } else {
+    res.status(403).send({ error: "Unauthorized" })
+  }
+})
+
+export default utilRouter
