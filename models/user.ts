@@ -1,63 +1,81 @@
-import { model, Schema, Document } from "mongoose";
+import { model, Schema, Document } from "mongoose"
+import { transactionDoc } from "./transaction"
+const bcrypt = require("bcrypt")
+
 export interface UserDoc extends Document {
-  name: string;
-  email: string;
+  generateHash(password: string): string
+  validPassword(password: string): string
+  username: string
+  email: string
+  password: string
   balance: {
-    bitclout: number;
-    ether: number;
-  };
-  transactions: Schema.Types.ObjectId[];
+    bitclout: number
+    ether: number
+  }
+  onGoingDeposit: transactionDoc | null
+  transactions: Schema.Types.ObjectId[]
   verification: {
-    email: boolean;
-    emailString: string;
-    status: string;
-    bitcloutString: string;
-  };
+    email: boolean
+    emailString: string
+    passwordString: string
+    status: string
+    bitcloutString: string
+  }
   bitclout: {
-    publicKey: string;
-    bio: string | undefined;
-    verified: boolean;
-    profilePicture: string | undefined;
-    username: string;
-  };
-  created: Date;
-  admin: boolean;
+    publicKey: string
+    bio: string | undefined
+    verified: boolean
+    profilePicture: string | undefined
+  }
+  created: Date
+  admin: boolean
 }
 
 const userSchema = new Schema<UserDoc>({
-  name: { type: String },
+  username: { type: String, unique: true, required: true },
   email: { type: String, unique: true, required: true },
+  password: { type: String, required: true },
   balance: {
     bitclout: { type: Number, default: 0, required: true },
     ether: { type: Number, default: 0, required: true },
+  },
+  onGoingDeposit: {
+    type: Schema.Types.ObjectId,
+    ref: "Transaction",
+    default: null,
   },
   transactions: [{ type: Schema.Types.ObjectId, ref: "Transaction" }],
   verification: {
     email: { type: Boolean, default: false },
     emailString: { type: String },
+    passwordString: { type: String },
     status: {
       type: String,
       default: "unverified",
-      enum: ["unverified", "verified"],
+      enum: ["unverified", "pending", "verified"],
     },
     bitcloutString: { type: String },
   },
   bitclout: {
-    publicKey: { type: String, unique: true, required: true },
+    publicKey: { type: String, unique: true },
     bio: { type: String },
     verified: { type: Boolean, default: false },
     profilePicture: { type: String },
-    username: {
-      type: String,
-      unique: true,
-    },
   },
   created: {
     type: Date,
     default: Date.now,
   },
   admin: { type: Boolean, default: false },
-});
+})
 
-const User = model<UserDoc>("User", userSchema);
-export default User;
+userSchema.methods.generateHash = function (password: string) {
+  return bcrypt.hashSync(password, 8)
+}
+
+userSchema.methods.validPassword = function (password: string) {
+  return bcrypt.compareSync(password, this.password)
+}
+
+const User = model<UserDoc>("User", userSchema)
+export default User

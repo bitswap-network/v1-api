@@ -1,5 +1,5 @@
-const nodemailer = require("nodemailer");
-const config = require("./config");
+const nodemailer = require("nodemailer")
+const config = require("./config")
 
 const mail = nodemailer.createTransport({
   service: "gmail",
@@ -7,7 +7,7 @@ const mail = nodemailer.createTransport({
     user: "support@bitswap.network",
     pass: config.MAIL,
   },
-});
+})
 
 function sendMail(toEmail, subject, html) {
   const mailOptions = {
@@ -15,14 +15,14 @@ function sendMail(toEmail, subject, html) {
     to: toEmail,
     subject: subject,
     html: html,
-  };
+  }
   mail.sendMail(mailOptions, function (error, info) {
     if (error) {
-      throw error;
+      throw error
     } else {
-      return info.response;
+      return info.response
     }
-  });
+  })
 }
 
-export default sendMail;
+export default sendMail
