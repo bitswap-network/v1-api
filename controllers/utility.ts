@@ -131,8 +131,8 @@ utilRouter.get("/order-history", async (req, res, next) => {
   try {
     const orders = await Order.find({
       complete: true,
-      orderSide: "sell",
       error: "",
+      orderPrice: { $ne: undefined },
     })
       .sort({ completeTime: "desc" })
       .exec();
@@ -149,10 +149,10 @@ utilRouter.get("/order-history", async (req, res, next) => {
     let dateString2 = "";
     let sum = orderArr[0].price;
     let count = 1;
-    console.log(orderArr.length, dateString1);
+    // console.log(orderArr.length, dateString1);
     for (let i = 1; i < orderArr.length; ++i) {
       dateString2 = `${orderArr[i].timestamp.getFullYear()}-${orderArr[i].timestamp.getMonth()}-${orderArr[i].timestamp.getDate()}`;
-      console.log(i, dateString1, dateString2);
+      console.log(i, dateString1, dateString2, orderArr[i].price, sum, count);
       if (dateString1 === dateString2) {
         sum += orderArr[i].price;
         count++;
