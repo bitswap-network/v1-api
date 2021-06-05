@@ -1,16 +1,17 @@
-import { model, Schema, Document } from "mongoose"
+import { model, Schema, Document } from "mongoose";
 
 export interface poolDoc extends Document {
-  address: string
+  address: string;
   privateKey: {
-    salt: string
-    encryptedKey: string
-  }
-  active: boolean
-  activeStart: number | null
-  user: Schema.Types.ObjectId | null
-  super: number
-  balance: number
+    salt: string;
+    encryptedKey: string;
+  };
+  active: boolean;
+  activeStart: number | null;
+  user: Schema.Types.ObjectId | null;
+  super: number;
+  balance: number;
+  txnHashList: string[];
 }
 
 const poolSchema = new Schema<poolDoc>({
@@ -24,7 +25,8 @@ const poolSchema = new Schema<poolDoc>({
   user: { type: Schema.Types.ObjectId, ref: "User", default: null },
   super: { type: Number, default: 1 },
   balance: { type: Number, default: 0 },
-})
-const Pool = model<poolDoc>("Pool", poolSchema)
+  txnHashList: [{ type: String }],
+});
+const Pool = model<poolDoc>("Pool", poolSchema);
 
-export default Pool
+export default Pool;

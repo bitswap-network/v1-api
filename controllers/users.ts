@@ -1,213 +1,209 @@
-import User from "../models/user"
-import { getProfilePosts, preFlightSendBitclout } from "../helpers/bitclout"
-import { tokenAuthenticator } from "../utils/middleware"
-import sendMail from "../utils/mailer"
-import { emailverified, invalidlink, servererror, passwordResetEmail, verifyPasswordHTML } from "../utils/mailBody"
-import { generateCode } from "../utils/functions"
-import * as config from "../utils/config"
+import User from "../models/user";
+import Order from "../models/order";
+import Transaction from "../models/transaction";
+import { getProfilePosts } from "../helpers/bitclout";
+import { tokenAuthenticator, updateProfileSchema } from "../utils/middleware";
+import { emailverified, servererror } from "../utils/mailBody";
+import { emailVerify } from "../utils/mailBody";
+import sendMail from "../utils/mailer";
+import { generateCode } from "../utils/functions";
 
-const userRouter = require("express").Router()
+const createError = require("http-errors");
+const userRouter = require("express").Router();
 
-userRouter.get("/data", tokenAuthenticator, async (req, res) => {
+userRouter.get("/data", tokenAuthenticator, async (req, res, next) => {
   const user = await User.findOne({
-    username: req.user.username,
-  }).exec()
+    "bitclout.publicKey": req.key,
+  }).exec();
   if (user) {
-    res.json(user)
+    res.json(user);
   } else {
-    res.status(404).send("User not found")
+    next(createError(400, "Invalid Request."));
   }
-})
+});
 
-userRouter.get("/profile/:username", async (req, res) => {
+userRouter.get("/profile/:username", async (req, res, next) => {
   const user = await User.findOne({
-    username: req.params.username,
-  }).exec()
+    "bitclout.username": req.params.username,
+  }).exec();
   if (user) {
-    res.status(200).json(user)
+    res.json(user);
   } else {
-    res.status(404).send("User not found")
+    next(createError(400, "Invalid Request."));
   }
-})
+});
 
-userRouter.put("/updateProfile", tokenAuthenticator, async (req, res) => {
-  const { email } = req.body
-  const user = await User.findOne({ username: req.user.username })
+userRouter.get("/resend-verification", tokenAuthenticator, async (req, res, next) => {
+  const user = await User.findOne({ "bitclout.publicKey": req.key });
   if (user) {
-    user.email = email.toLowerCase()
+    const mailBody = emailVerify(user.verification.emailString);
+    sendMail(user.email, mailBody.header, mailBody.body);
+    res.sendStatus(201);
+  } else {
+    next(createError(400, "Invalid Request."));
+  }
+});
+
+userRouter.put("/update-email", tokenAuthenticator, async (req, res, next) => {
+  const { email } = req.body;
+  const emailCheck = await User.findOne({
+    email: email,
+  }).exec();
+  const user = await User.findOne({ "bitclout.publicKey": req.key });
+  if (user && !emailCheck) {
+    user.email = email.toLowerCase();
+    user.verification.email = false;
+    const email_code = generateCode(8);
+    user.verification.emailString = email_code;
     user.save((err: any) => {
       if (err) {
-        res.status(500).send(err)
+        next(err);
       } else {
-        res.status(201).send("Profile successfully updated")
-      }
-    })
-  } else {
-    res.sendStatus(400)
-  }
-})
-
-userRouter.post("/updatepassword", tokenAuthenticator, async (req, res) => {
-  const { oldpassword, newpassword } = req.body
-  if (oldpassword && newpassword) {
-    const user = await User.findOne({ username: req.user.username }).exec()
-    if (user && user.validPassword(oldpassword) && newpassword.length >= 8) {
-      user.password = user.generateHash(newpassword)
-      user.save((err: any) => {
-        if (err) {
-          res.status(500).send(err)
-        } else {
-          res.status(201).send("Password successfully updated")
+        try {
+          const mailBody = emailVerify(email_code);
+          sendMail(email, mailBody.header, mailBody.body);
+          res.sendStatus(201);
+        } catch (err) {
+          res.status(500).send({ error: err.message });
         }
-      })
-    } else {
-      res.status(400).send("Invalid password")
-    }
-  } else {
-    res.status(400).send("Missing fields")
-  }
-})
-
-userRouter.post("/forgotpassword", async (req, res) => {
-  const { email } = req.body
-  const user = await User.findOne({ email: email }).exec()
-  if (user) {
-    const code = generateCode(8)
-    user.verification.passwordString = code
-    user
-      .save()
-      .then(() => {
-        const mailBody = passwordResetEmail(code)
-        sendMail(email, mailBody.header, mailBody.body)
-      })
-      .then(() => {
-        res.status(200).send("Email successfully sent")
-      })
-      .catch(error => {
-        res.status(500).send("An error occurred:", error)
-      })
-  } else {
-    res.status(404).send("A user with that email could not be found")
-  }
-})
-
-userRouter.get("/verifyemail/:code", async (req, res) => {
-  const code = req.params.code
-  const user = await User.findOne({ emailverification: code }).exec()
-  if (user) {
-    user.verification.email = true
-    user.verification.emailString = ""
-    user
-      .save()
-      .then(() => {
-        res.status(200).send(emailverified)
-      })
-      .catch(error => {
-        res.status(500).send(servererror)
-      })
-  } else {
-    res.status(404).send(invalidlink)
-  }
-})
-
-userRouter.get("/verifypassword/:code", async (req, res) => {
-  const code = req.params.code
-  const user = await User.findOne({ passwordverification: code }).exec()
-  if (user) {
-    const password = generateCode(8)
-    user.password = user.generateHash(password)
-    user.verification.passwordString = ""
-    user
-      .save()
-      .then(() => {
-        res.status(200).send(verifyPasswordHTML(password))
-      })
-      .catch(error => {
-        res.status(500).send(servererror)
-      })
-  } else {
-    res.status(404).send(invalidlink)
-  }
-})
-
-userRouter.post("/preFlightTxn", tokenAuthenticator, async (req, res) => {
-  const { bitcloutvalue } = req.body
-  const user = await User.findOne({ username: req.user.username }).exec()
-  if (user && user.verification.status === "verified") {
-    if (bitcloutvalue) {
-      try {
-        const preflight = await preFlightSendBitclout({
-          AmountNanos: bitcloutvalue * 1e9,
-          MinFeeRateNanosPerKB: 1000,
-          RecipientPublicKeyOrUsername: user.bitclout.publicKey,
-          SenderPublicKeyBase58Check: config.PUBLIC_KEY_BITCLOUT,
-        })
-        if (preflight.data.error) {
-          res.status(500).send(preflight.data)
-        } else {
-          res.send(preflight.data)
-        }
-      } catch (error) {
-        console.log(error)
-        res.status(error.response.status).send(error.response.data)
       }
-    } else {
-      res.status(400).send("invalid request")
-    }
+    });
   } else {
-    res.status(400).send("User not found")
+    next(createError(400, "Invalid Request."));
   }
-})
+});
 
-userRouter.get("/verifyBitclout/:depth", tokenAuthenticator, async (req, res) => {
-  const user = await User.findOne({ username: req.user.username }).exec()
-  const numToFetch = req.params.depth ? req.params.depth : 20
+userRouter.put("/update-name", tokenAuthenticator, async (req, res, next) => {
+  const { name } = req.body;
+  const user = await User.findOne({ "bitclout.publicKey": req.key });
+  if (user && name !== "") {
+    user.name = name;
+    user.save((err: any) => {
+      if (err) {
+        next(err);
+      } else {
+        res.sendStatus(201);
+      }
+    });
+  } else {
+    next(createError(400, "Invalid Request."));
+  }
+});
+
+userRouter.put("/update-profile", tokenAuthenticator, updateProfileSchema, async (req, res, next) => {
+  const { email, name } = req.body;
+  const emailCheck = await User.findOne({
+    email: email,
+  }).exec();
+  const user = await User.findOne({ "bitclout.publicKey": req.key });
+  if (user && !emailCheck) {
+    user.email = email.toLowerCase();
+    user.name = name !== "" ? name : user.name;
+    user.save((err: any) => {
+      if (err) {
+        next(err);
+      } else {
+        res.sendStatus(201);
+      }
+    });
+  } else {
+    next(createError(400, "Invalid Request."));
+  }
+});
+
+userRouter.get("/verify-email/:code", async (req, res, next) => {
+  const code = req.params.code;
+  const user = await User.findOne({ "verification.emailString": code }).exec();
+  if (user) {
+    user.verification.email = true;
+    user.verification.emailString = "";
+    user
+      .save()
+      .then(() => {
+        res.status(200).send(emailverified);
+      })
+      .catch(error => {
+        res.status(500).send(servererror);
+      });
+  } else {
+    next(createError(400, "Invalid Link."));
+  }
+});
+
+userRouter.get("/verify-bitclout/:depth", tokenAuthenticator, async (req, res, next) => {
+  const user = await User.findOne({ "bitclout.publicKey": req.key });
+  const numToFetch = Number(req.params.depth) ? Number(req.params.depth) : 10;
+
   if (user) {
     try {
-      const response = await getProfilePosts(numToFetch, user.bitclout.publicKey, user.username)
-      const error = response.data.error
-      const posts = response.data.Posts
-      if (error) {
-        res.status(500).send(error)
-      } else if (posts) {
-        console.log(posts)
-        let i = 0
-        let found = false
-        const key = user.verification.bitcloutString
+      const response = await getProfilePosts(numToFetch, user.bitclout.publicKey, user.bitclout.username);
+      const posts = response.data.Posts;
+      if (posts) {
+        let i = 0;
+        let found = false;
         for (const post of posts) {
-          i += 1
-          const body = post.Body.toLowerCase()
-          if (body.includes(key.toLowerCase())) {
-            found = true
+          i += 1;
+          const body = post.Body.toLowerCase();
+          if (body.includes(user.verification.bitcloutString.toLowerCase())) {
+            found = true;
           }
           if (i === posts.length) {
             if (found) {
-              user.verification.status = "verified"
-              user.save()
-              res.status(200).send(post)
+              user.verification.status = "verified";
+              await user.save();
+              res.json({ data: post });
             } else {
-              user.verification.status = "pending"
-              user.save()
-              res.status(400).send("unable to find profile verification post")
+              next(createError(400, "Unable to find verification post."));
             }
           }
         }
+      } else {
+        next(createError(409, "Bitclout API Error"));
       }
     } catch (e) {
-      res.status(500).send(e)
+      if (e.response.data.error) {
+        next(createError(e.response.status, e.response.data.error));
+      } else {
+        next(e);
+      }
     }
   } else {
-    res.status(400).send("user not found")
+    next(createError(400, "Invalid Request."));
   }
-})
+});
 
-userRouter.get("/transactions", tokenAuthenticator, async (req, res) => {
-  const user = await User.findOne({ username: req.user.username }).populate("transactions").exec()
+userRouter.get("/transactions", tokenAuthenticator, async (req, res, next) => {
+  const user = await User.findOne({ "bitclout.publicKey": req.key })
+    .populate({ path: "transactions", options: { sort: { created: -1 } } })
+    .exec();
   if (user) {
-    res.json(user.transactions)
+    res.json({ data: user.transactions });
   } else {
-    res.status(500).send("user not found")
+    next(createError(400, "Invalid Request."));
   }
-})
+});
 
-export default userRouter
+userRouter.get("/transaction/:id", tokenAuthenticator, async (req, res, next) => {
+  if (!req.params.id || req.params.id === "") {
+    next(createError(400, "Invalid Request."));
+  } else {
+    const transaction = await Transaction.findById(req.params.id).exec();
+    if (transaction) {
+      res.json({ data: transaction });
+    } else {
+      next(createError(400, "Unable to find transaction."));
+    }
+  }
+});
+
+userRouter.get("/orders", tokenAuthenticator, async (req, res, next) => {
+  const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
+  if (user) {
+    const orders = await Order.find({ username: user.bitclout.username }).sort({ created: "desc" }).exec();
+    res.json({ data: orders });
+  } else {
+    next(createError(400, "Invalid Request."));
+  }
+});
+
+export default userRouter;
