@@ -165,7 +165,7 @@ utilRouter.get("/order-history", async (req, res, next) => {
       dateString1 = dateString2;
     }
     console.log({ timestamp: new Date(dateString1), price: sum / count });
-    finalArr.push({ timestamp: new Date(dateString1), price: sum / count });
+    finalArr.push({ timestamp: new Date(dateString1), price: +(sum / count).toFixed(2) });
     res.json(finalArr);
   } catch (e) {
     next(e);
