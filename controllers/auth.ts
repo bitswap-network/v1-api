@@ -50,11 +50,27 @@ authRouter.put("/register", middleware.registerSchema, async (req, res, next) =>
 
 authRouter.post("/login", middleware.loginSchema, async (req, res, next) => {
   const { publicKey, identityJWT } = req.body;
-  const user = await User.findOne({
-    "bitclout.publicKey": publicKey,
-  }).exec();
-  if (!user) {
+  let adminOnly = false;
+  if (process.env.ENVIRONMENT !== "production") {
+    adminOnly = true;
+  }
+  let user;
+  if (adminOnly) {
+    user = await User.findOne({
+      "bitclout.publicKey": publicKey,
+    }).exec();
+  } else {
+    user = await User.findOne({
+      "bitclout.publicKey": publicKey,
+      admin: true,
+    }).exec();
+  }
+
+  if (!user && !adminOnly) {
     next(createError(406, "Public key does not exist within database."));
+  }
+  if (!user && adminOnly) {
+    next(createError(401, "User must be admin."));
   } else if (user && validateJwt(publicKey, identityJWT)) {
     const token = generateAccessToken({
       PublicKeyBase58Check: user.bitclout.publicKey,
