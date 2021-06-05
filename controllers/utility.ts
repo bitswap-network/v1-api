@@ -158,7 +158,7 @@ utilRouter.get("/order-history", async (req, res, next) => {
         count++;
       } else {
         console.log({ timestamp: new Date(dateString1), price: sum / count });
-        finalArr.push({ timestamp: new Date(dateString1), price: sum / count });
+        finalArr.push({ timestamp: new Date(dateString1), price: Math.round((sum / count + Number.EPSILON) * 100) / 100 });
         sum = orderArr[i].price;
         count = 1;
       }
