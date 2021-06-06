@@ -3,7 +3,7 @@ import { tokenAuthenticator, depositBitcloutSchema, valueSchema, withdrawEthSche
 import Transaction from "../models/transaction";
 import Pool from "../models/pool";
 import { getGasEtherscan, toNanos, userVerifyCheck, generateHMAC } from "../utils/functions";
-import { getAndAssignPool, decryptAddress } from "../helpers/pool";
+import { getAndAssignPool, decryptAddressGCM } from "../helpers/pool";
 import { getNonce, checkEthAddr, sendEth } from "../helpers/web3";
 import * as config from "../utils/config";
 import { preflightTransaction, submitTransaction } from "../helpers/bitclout";
@@ -260,7 +260,7 @@ gatewayRouter.post("/withdraw/eth", tokenAuthenticator, withdrawEthSchema, async
       if (user.balance.ether >= value && checkEthAddr(withdrawAddress)) {
         try {
           const gas = await getGasEtherscan(); // get gas
-          const key = decryptAddress(pool.privateKey); // decrypt pool key
+          const key = decryptAddressGCM(pool.hashedKey); // decrypt pool key
           const nonce = await getNonce(pool.address); // get nonce
           const receipt = await sendEth(
             key,
@@ -272,12 +272,14 @@ gatewayRouter.post("/withdraw/eth", tokenAuthenticator, withdrawEthSchema, async
           ); // receipt object: https://web3js.readthedocs.io/en/v1.3.4/web3-eth.html#eth-gettransactionreceipt-return
           const txn = new Transaction({
             user: user._id,
+            created: new Date(),
             transactionType: "withdraw",
             assetType: "ETH",
             completed: true, //set completed to true after transaction goes through?
             txnHash: receipt.transactionHash,
             gasPrice: parseInt(gas.data.result.FastGasPrice.toString()),
             state: "done",
+            value: value,
           }); //create withdraw txn object
           user.balance.ether -= value;
           user.transactions.push(txn._id); // push txn
@@ -288,9 +290,9 @@ gatewayRouter.post("/withdraw/eth", tokenAuthenticator, withdrawEthSchema, async
           axios.post(`${config.EXCHANGE_API}/exchange/sanitize`, body, {
             headers: { "Server-Signature": generateHMAC(body) },
           });
-          await user.save();
-          await txn.save();
-          await pool.save();
+          user.save();
+          txn.save();
+          pool.save();
           res.status(200).send({ data: txn });
         } catch (e) {
           next(e);

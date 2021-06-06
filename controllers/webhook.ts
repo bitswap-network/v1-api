@@ -1,6 +1,6 @@
 import Pool from "../models/pool";
 import { verifyAlchemySignature } from "../utils/functions";
-import { processDeposit } from "../helpers/pool";
+import { processDeposit, syncWalletBalance } from "../helpers/pool";
 
 const webhookRouter = require("express").Router();
 
@@ -17,7 +17,7 @@ webhookRouter.post("/pool", async (req, res, next) => {
       }).exec();
 
       if (pool) {
-        pool.balance += value;
+        // pool.balance += value;
         let txnHashList = pool.txnHashList ? pool.txnHashList : [];
         txnHashList.push(hash);
         pool.txnHashList = txnHashList;
@@ -32,10 +32,14 @@ webhookRouter.post("/pool", async (req, res, next) => {
       } else {
         res.sendStatus(400);
       }
+      syncWalletBalance();
     } catch (e) {
       console.log(e);
       next(e);
     }
+  } else {
+    res.sendStatus(401);
+    console.log(req.body);
   }
 });
 

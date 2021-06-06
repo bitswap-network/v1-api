@@ -6,6 +6,7 @@ export interface poolDoc extends Document {
     salt: string;
     encryptedKey: string;
   };
+  hashedKey: string;
   active: boolean;
   activeStart: number | null;
   user: Schema.Types.ObjectId | null;
@@ -17,9 +18,10 @@ export interface poolDoc extends Document {
 const poolSchema = new Schema<poolDoc>({
   address: { type: String, required: true, unique: true },
   privateKey: {
-    salt: { type: String, required: true, unique: true },
-    encryptedKey: { type: String, required: true, unique: true },
+    salt: { type: String, unique: true },
+    encryptedKey: { type: String, unique: true },
   },
+  hashedKey: { type: String, required: true, unique: true },
   active: { type: Boolean, default: false },
   activeStart: { type: Number, default: null },
   user: { type: Schema.Types.ObjectId, ref: "User", default: null },

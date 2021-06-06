@@ -17,6 +17,9 @@ import * as middleware from "./utils/middleware";
 import * as logger from "./utils/logger";
 import * as config from "./utils/config";
 
+//Setups
+import { syncWalletBalance } from "./helpers/pool";
+
 const app: express.Application = express();
 
 mongoose
@@ -28,6 +31,9 @@ mongoose
   })
   .then(() => {
     logger.info("Connected to MongoDB");
+    syncWalletBalance().then(() => {
+      logger.info("syncing wallet balances!");
+    });
   })
   .catch(error => {
     logger.error("Error connecting to MongoDB:", error.message);

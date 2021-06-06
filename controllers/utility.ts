@@ -1,9 +1,14 @@
 import { getGasEtherscan, getEthUsd, getOrderbookState } from "../utils/functions";
 import { getExchangeRate } from "../helpers/bitclout";
+import { encryptAddressGCM, decryptAddressGCM, encryptAddress, decryptAddress } from "../helpers/pool";
 import Depth, { depthDoc } from "../models/depth";
 import Order from "../models/order";
 import User from "../models/user";
+import Pool from "../models/pool";
+import * as config from "../utils/config";
+import * as argon2 from "argon2";
 
+//TODO CLEANUP
 const utilRouter = require("express").Router();
 
 utilRouter.get("/eth-gasprice", async (req, res, next) => {
@@ -152,7 +157,7 @@ utilRouter.get("/order-history", async (req, res, next) => {
     // console.log(orderArr.length, dateString1);
     for (let i = 1; i < orderArr.length; ++i) {
       dateString2 = `${orderArr[i].timestamp.getFullYear()}-${orderArr[i].timestamp.getMonth()}-${orderArr[i].timestamp.getDate()}`;
-      console.log(i, dateString1, dateString2, orderArr[i].price, sum, count);
+      // console.log(i, dateString1, dateString2, orderArr[i].price, sum, count);
       if (dateString1 === dateString2) {
         sum += orderArr[i].price;
         count++;
@@ -164,7 +169,7 @@ utilRouter.get("/order-history", async (req, res, next) => {
       }
       dateString1 = dateString2;
     }
-    console.log({ timestamp: new Date(dateString1), price: sum / count });
+    // console.log({ timestamp: new Date(dateString1), price: sum / count });
     finalArr.push({ timestamp: new Date(dateString1), price: Math.round((sum / count + Number.EPSILON) * 100) / 100 });
     res.json(finalArr);
   } catch (e) {
