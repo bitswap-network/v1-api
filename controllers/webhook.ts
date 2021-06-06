@@ -5,9 +5,9 @@ import { processDeposit, syncWalletBalance } from "../helpers/pool";
 const webhookRouter = require("express").Router();
 
 webhookRouter.post("/pool", async (req, res, next) => {
+  console.log(req.body);
   if (verifyAlchemySignature(req)) {
     const { fromAddress, toAddress, value, asset, hash } = req.body.activity[0];
-    console.log(req.body.activity[0]);
     // If the transaction is successfully sent from the wallet
     // Mark the listing as completed
     // Transaction is sent to the wallet
@@ -21,7 +21,7 @@ webhookRouter.post("/pool", async (req, res, next) => {
         let txnHashList = pool.txnHashList ? pool.txnHashList : [];
         txnHashList.push(hash);
         pool.txnHashList = txnHashList;
-        await pool.save();
+        pool.save();
         if (pool.active) {
           processDeposit(pool, value, asset, hash);
           res.sendStatus(204);
@@ -39,7 +39,6 @@ webhookRouter.post("/pool", async (req, res, next) => {
     }
   } else {
     res.sendStatus(401);
-    console.log(req.body);
   }
 });
 
