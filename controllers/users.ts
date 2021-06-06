@@ -115,6 +115,7 @@ userRouter.get("/verify-email/:code", async (req, res, next) => {
   const code = req.params.code;
   const user = await User.findOne({ "verification.emailString": code }).exec();
   if (user) {
+    user.verification.status = "verified";
     user.verification.email = true;
     user.verification.emailString = "";
     user

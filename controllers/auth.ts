@@ -29,9 +29,9 @@ authRouter.put("/register", middleware.registerSchema, async (req, res, next) =>
       bitclout: { publicKey: publicKey },
     });
     const email_code = generateCode(8);
-    const bitclout_code = generateCode(16);
+    // const bitclout_code = generateCode(16);
     newUser.verification.emailString = email_code;
-    newUser.verification.bitcloutString = bitclout_code;
+    // newUser.verification.bitcloutString = bitclout_code;
     newUser.save((err: any) => {
       if (err) {
         next(err);
@@ -54,22 +54,21 @@ authRouter.post("/login", middleware.loginSchema, async (req, res, next) => {
   if (process.env.ENVIRONMENT !== "production") {
     adminOnly = true;
   }
-  let user;
-  if (adminOnly) {
-    user = await User.findOne({
-      "bitclout.publicKey": publicKey,
-    }).exec();
-  } else {
-    user = await User.findOne({
-      "bitclout.publicKey": publicKey,
-      admin: true,
-    }).exec();
-  }
+  // let user;
+  // if (adminOnly) {
+  const user = await User.findOne({
+    "bitclout.publicKey": publicKey,
+  }).exec();
+  // } else {
+  //   user = await User.findOne({
+  //     "bitclout.publicKey": publicKey,
+  //     admin: true,
+  //   }).exec();
+  // }
 
-  if (!user && !adminOnly) {
+  if (!user) {
     next(createError(406, "Public key does not exist within database."));
-  }
-  if (!user && adminOnly) {
+  } else if (user && adminOnly && !user.admin) {
     next(createError(401, "User must be admin."));
   } else if (user && validateJwt(publicKey, identityJWT)) {
     const token = generateAccessToken({
