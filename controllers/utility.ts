@@ -1,12 +1,8 @@
 import { getGasEtherscan, getEthUsd, getOrderbookState } from "../utils/functions";
 import { getExchangeRate } from "../helpers/bitclout";
-import { encryptAddressGCM, decryptAddressGCM, encryptAddress, decryptAddress } from "../helpers/pool";
 import Depth, { depthDoc } from "../models/depth";
 import Order from "../models/order";
 import User from "../models/user";
-import Pool from "../models/pool";
-import * as config from "../utils/config";
-import * as argon2 from "argon2";
 
 //TODO CLEANUP
 const utilRouter = require("express").Router();
