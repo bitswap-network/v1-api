@@ -14,7 +14,7 @@ export const ServerAuth = process.env.SERVER_AUTH ? process.env.SERVER_AUTH : ""
 export const PUBLIC_KEY_BITCLOUT = process.env.PUBLIC_KEY_BITCLOUT; //escrow wallet bitclout public key
 export const cfuid = "d948f4d42aa8cf1c00b7f93ba8951d45b1619496624";
 export const ingressCookie = "c7d7d1526f37eb58ae5a7a5f87b91d24";
-export const WEBHOOK_ID = process.env.ENVIRONMENT === "production" ? 149131 : 149102;
+export const WEBHOOK_ID = process.env.ENVIRONMENT === "production" ? 149208 : 149102;
 export const NETWORK = process.env.ENVIRONMENT === "production" ? "mainnet" : "kovan";
 export const EXCHANGE_API =
   process.env.ENVIRONMENT === "production"
