@@ -173,21 +173,21 @@ utilRouter.get("/order-history", async (req, res, next) => {
   }
 });
 
-utilRouter.get("/total-balances", async (req, res, next) => {
-  try {
-    const users = await User.find().exec();
-    const balances = {
-      ether: 0,
-      bitclout: 0,
-    };
-    users.forEach(user => {
-      balances.ether += user.balance.ether;
-      balances.bitclout += user.balance.bitclout;
-    });
-    res.json(balances);
-  } catch (e) {
-    next(e);
-  }
-});
+// utilRouter.get("/total-balances", async (req, res, next) => {
+//   try {
+//     const users = await User.find().exec();
+//     const balances = {
+//       ether: 0,
+//       bitclout: 0,
+//     };
+//     users.forEach(user => {
+//       balances.ether += user.balance.ether;
+//       balances.bitclout += user.balance.bitclout;
+//     });
+//     res.json(balances);
+//   } catch (e) {
+//     next(e);
+//   }
+// });
 
 export default utilRouter;
