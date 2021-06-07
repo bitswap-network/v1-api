@@ -102,7 +102,7 @@ orderRouter.get("/cancel/:id", tokenAuthenticator, async (req, res, next) => {
   }
 });
 
-orderRouter.post("/market-price", tokenAuthenticator, marketOrderSchema, async (req, res, next) => {
+orderRouter.post("/market-price", marketOrderSchema, async (req, res, next) => {
   const { orderQuantity, orderSide } = req.body;
   try {
     const response = await axios.get(`${config.EXCHANGE_API}/market-price/${orderSide}/${orderQuantity}`);
