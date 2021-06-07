@@ -8,6 +8,7 @@ export interface orderDoc extends Document {
   orderType: string;
   orderQuantity: number;
   orderPrice: number | undefined;
+  execPrice: number | undefined;
   orderQuantityProcessed: number | undefined;
   complete: boolean;
   error: string | undefined;
@@ -22,6 +23,7 @@ const orderSchema = new Schema<orderDoc>({
   orderType: { type: String, required: true, enum: ["limit", "market"] },
   orderQuantity: { type: Number, required: true },
   orderPrice: { type: Number },
+  execPrice: { type: Number },
   orderQuantityProcessed: { type: Number },
   complete: { type: Boolean, default: false },
   error: { type: String, default: undefined },
