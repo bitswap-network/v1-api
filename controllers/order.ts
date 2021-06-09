@@ -33,8 +33,8 @@ orderRouter.post("/limit", tokenAuthenticator, limitOrderSchema, async (req, res
     let body = {
       username: user.bitclout.username,
       orderSide: orderSide,
-      orderQuantity: orderQuantity,
-      orderPrice: orderPrice,
+      orderQuantity: +orderQuantity.toFixed(2),
+      orderPrice: +orderPrice.toFixed(2),
     };
     try {
       const response = await axios.post(`${config.EXCHANGE_API}/exchange/limit`, JSON.stringify(body), {
@@ -61,7 +61,7 @@ orderRouter.post("/market", tokenAuthenticator, marketOrderSchema, async (req, r
     let body = {
       username: user.bitclout.username,
       orderSide: orderSide,
-      orderQuantity: orderQuantity,
+      orderQuantity: +orderQuantity.toFixed(2),
     };
     try {
       const response = await axios.post(`${config.EXCHANGE_API}/exchange/market`, body, {
@@ -105,7 +105,7 @@ orderRouter.get("/cancel/:id", tokenAuthenticator, async (req, res, next) => {
 orderRouter.post("/market-price", marketOrderSchema, async (req, res, next) => {
   const { orderQuantity, orderSide } = req.body;
   try {
-    const response = await axios.get(`${config.EXCHANGE_API}/market-price/${orderSide}/${orderQuantity}`);
+    const response = await axios.get(`${config.EXCHANGE_API}/market-price/${orderSide}/${+orderQuantity.toFixed(2)}`);
     res.status(response.status).send(response.data);
   } catch (e) {
     if (e.response.data.error) {

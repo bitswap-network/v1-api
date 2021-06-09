@@ -3,7 +3,7 @@ import { tokenAuthenticator, depositBitcloutSchema, valueSchema, withdrawEthSche
 import Transaction from "../models/transaction";
 import Pool from "../models/pool";
 import { getGasEtherscan, toNanos, userVerifyCheck, generateHMAC } from "../utils/functions";
-import { getAndAssignPool, decryptAddressGCM } from "../helpers/pool";
+import { getAndAssignPool, decryptAddressGCM, syncWalletBalance } from "../helpers/pool";
 import { getNonce, checkEthAddr, sendEth } from "../helpers/web3";
 import * as config from "../utils/config";
 import { preflightTransaction, submitTransaction } from "../helpers/bitclout";
@@ -111,18 +111,19 @@ gatewayRouter.post("/deposit/bitclout", tokenAuthenticator, depositBitcloutSchem
         await submitTransaction({
           TransactionHex: transactionHex,
         });
+        const valueTruncated = +value.toFixed(8);
         const txn = new Transaction({
           user: user._id,
           transactionType: "deposit",
           assetType: "BCLT",
-          value: value,
+          value: valueTruncated,
           completed: true,
           completionDate: new Date(),
           txnHash: transactionIDBase58Check,
           state: "done",
         });
         user.transactions.push(txn._id);
-        user.balance.bitclout += value;
+        user.balance.bitclout += valueTruncated;
         await user.save();
         await txn.save();
         const body = {
@@ -283,7 +284,6 @@ gatewayRouter.post("/withdraw/eth", tokenAuthenticator, withdrawEthSchema, async
           }); //create withdraw txn object
           user.balance.ether -= value;
           user.transactions.push(txn._id); // push txn
-          pool.balance -= value;
           const body = {
             username: user.bitclout.username,
           };
@@ -292,7 +292,7 @@ gatewayRouter.post("/withdraw/eth", tokenAuthenticator, withdrawEthSchema, async
           });
           user.save();
           txn.save();
-          pool.save();
+          syncWalletBalance();
           res.status(200).send({ data: txn });
         } catch (e) {
           next(e);
