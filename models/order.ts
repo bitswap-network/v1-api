@@ -7,9 +7,9 @@ export interface orderDoc extends Document {
   orderSide: string;
   orderType: string;
   orderQuantity: number;
-  orderPrice: number | undefined;
+  orderPrice: number;
   execPrice: number | undefined;
-  orderQuantityProcessed: number | undefined;
+  orderQuantityProcessed: number;
   complete: boolean;
   error: string | undefined;
   completeTime: Date | undefined;

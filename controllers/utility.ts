@@ -2,8 +2,6 @@ import { getGasEtherscan, getEthUsd, getOrderbookState } from "../utils/function
 import { getExchangeRate } from "../helpers/bitclout";
 import Depth, { depthDoc } from "../models/depth";
 import Order from "../models/order";
-import User from "../models/user";
-
 //TODO CLEANUP
 const utilRouter = require("express").Router();
 
@@ -134,39 +132,37 @@ utilRouter.get("/order-history", async (req, res, next) => {
       complete: true,
       error: "",
       orderPrice: { $ne: undefined },
+      orderQuantityProcessed: { $gt: 0 },
     })
       .sort({ completeTime: "desc" })
       .exec();
-    const orderArr: { timestamp: Date; price: number }[] = [];
-    orders.forEach(order => {
-      orderArr.push({
-        timestamp: order.completeTime!,
-        price: order.orderPrice!,
-      });
-    });
-    // loop through orderArr
+
     const finalArr: { timestamp: Date; price: number }[] = [];
-    let dateString1 = `${orderArr[0].timestamp.getFullYear()}-${orderArr[0].timestamp.getMonth()}-${orderArr[0].timestamp.getDate()}`;
+    let dateString1 = orders[0].completeTime
+      ? `${orders[0].completeTime.getFullYear()}-${orders[0].completeTime.getMonth()}-${orders[0].completeTime.getDate()}`
+      : `${orders[0].created.getFullYear()}-${orders[0].created.getMonth()}-${orders[0].created.getDate()}`;
     let dateString2 = "";
-    let sum = orderArr[0].price;
-    let count = 1;
-    // console.log(orderArr.length, dateString1);
-    for (let i = 1; i < orderArr.length; ++i) {
-      dateString2 = `${orderArr[i].timestamp.getFullYear()}-${orderArr[i].timestamp.getMonth()}-${orderArr[i].timestamp.getDate()}`;
-      // console.log(i, dateString1, dateString2, orderArr[i].price, sum, count);
-      if (dateString1 === dateString2) {
-        sum += orderArr[i].price;
-        count++;
-      } else {
-        console.log({ timestamp: new Date(dateString1), price: sum / count });
-        finalArr.push({ timestamp: new Date(dateString1), price: Math.round((sum / count + Number.EPSILON) * 100) / 100 });
-        sum = orderArr[i].price;
-        count = 1;
+    let priceSum = orders[0].orderPrice;
+    let quantSum = orders[0].orderQuantityProcessed ? orders[0].orderQuantityProcessed : orders[0].orderQuantity;
+    for (let i = 1; i < orders.length; ++i) {
+      if (orders[i]) {
+        const orderPrice = orders[i].orderPrice;
+        const orderQuantity = orders[i].orderQuantityProcessed ? orders[i].orderQuantityProcessed : orders[i].orderQuantity;
+        dateString2 = orders[i].completeTime
+          ? `${orders[i].completeTime!.getFullYear()}-${orders[i].completeTime!.getMonth()}-${orders[i].completeTime!.getDate()}`
+          : `${orders[i].created.getFullYear()}-${orders[i].created.getMonth()}-${orders[i].created.getDate()}`;
+        if (dateString1 === dateString2 && orderQuantity && orderPrice) {
+          priceSum += orderPrice;
+          quantSum += orderQuantity;
+        } else if (orderQuantity && orderPrice) {
+          finalArr.push({ timestamp: new Date(dateString1), price: Math.round((priceSum / quantSum + Number.EPSILON) * 100) / 100 });
+          priceSum = orderPrice;
+          quantSum = orderQuantity;
+        }
+        dateString1 = dateString2;
       }
-      dateString1 = dateString2;
     }
-    // console.log({ timestamp: new Date(dateString1), price: sum / count });
-    finalArr.push({ timestamp: new Date(dateString1), price: Math.round((sum / count + Number.EPSILON) * 100) / 100 });
+    finalArr.push({ timestamp: new Date(dateString1), price: Math.round((priceSum / quantSum + Number.EPSILON) * 100) / 100 });
     res.json(finalArr);
   } catch (e) {
     next(e);
