@@ -139,8 +139,8 @@ utilRouter.get("/order-history", async (req, res, next) => {
     if (orders.length > 0) {
       const finalArr: { timestamp: Date; price: number }[] = [];
       let dateString1 = orders[0].completeTime
-        ? `${orders[0].completeTime.getFullYear()}-${orders[0].completeTime.getMonth()}-${orders[0].completeTime.getDate()}`
-        : `${orders[0].created.getFullYear()}-${orders[0].created.getMonth()}-${orders[0].created.getDate()}`;
+        ? `${orders[0].completeTime.getUTCFullYear()}-${orders[0].completeTime.getUTCMonth()}-${orders[0].completeTime.getUTCDate()}`
+        : `${orders[0].created.getUTCFullYear()}-${orders[0].created.getUTCMonth()}-${orders[0].created.getUTCDate()}`;
       let dateString2 = "";
       let priceQuantitySum =
         (orders[0].execPrice ? orders[0].execPrice : orders[0].orderPrice) *
@@ -154,8 +154,8 @@ utilRouter.get("/order-history", async (req, res, next) => {
           const orderQuantity = orders[i].orderQuantityProcessed ? orders[i].orderQuantityProcessed : orders[i].orderQuantity;
 
           dateString2 = orders[i].completeTime
-            ? `${orders[i].completeTime!.getFullYear()}-${orders[i].completeTime!.getMonth()}-${orders[i].completeTime!.getDate()}`
-            : `${orders[i].created.getFullYear()}-${orders[i].created.getMonth()}-${orders[i].created.getDate()}`;
+            ? `${orders[i].completeTime!.getUTCFullYear()}-${orders[i].completeTime!.getUTCMonth()}-${orders[i].completeTime!.getUTCDate()}`
+            : `${orders[i].created.getUTCFullYear()}-${orders[i].created.getUTCMonth()}-${orders[i].created.getUTCDate()}`;
           if (dateString1 === dateString2 && orderQuantity && orderPriceQuantity && priceQuantitySum && quantSum) {
             priceQuantitySum += orderPriceQuantity;
             quantSum += orderQuantity;
