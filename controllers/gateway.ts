@@ -233,11 +233,12 @@ gatewayRouter.post("/withdraw/bitclout", tokenAuthenticator, valueSchema, async 
             state: "done",
             gasPrice: preflight.data.FeeNanos / 1e9,
           });
-          txn.save();
-          User.updateOne(
+
+          await User.updateOne(
             { "bitclout.publicKey": req.key },
             { $set: { "balance.in_transaction": false }, $push: { transactions: txn._id } }
           );
+          txn.save();
           res.send({ data: txn });
         } else {
           next(createError(409, "Insufficient funds."));
@@ -297,11 +298,11 @@ gatewayRouter.post("/withdraw/eth", tokenAuthenticator, withdrawEthSchema, async
             state: "done",
             value: value,
           }); //create withdraw txn object
-          txn.save();
-          User.updateOne(
+          await User.updateOne(
             { "bitclout.publicKey": req.key },
             { $set: { "balance.in_transaction": false }, $push: { transactions: txn._id } }
           );
+          txn.save();
           syncWalletBalance();
           res.status(200).send({ data: txn });
         } catch (e) {
