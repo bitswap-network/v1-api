@@ -27,7 +27,7 @@ orderRouter.get("/:id", tokenAuthenticator, async (req, res, next) => {
 
 orderRouter.post("/limit", tokenAuthenticator, limitOrderSchema, async (req, res, next) => {
   const { orderQuantity, orderPrice, orderSide } = req.body;
-  const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
+  const user = await User.findOne({ "bitclout.publicKey": req.key, "balance.in_transaction": false }).exec();
   //add verification to check user's balance
   if (user && orderBalanceValidate(user, "limit", orderSide, orderQuantity, orderPrice) && userVerifyCheck(user)) {
     let body = {
@@ -55,7 +55,7 @@ orderRouter.post("/limit", tokenAuthenticator, limitOrderSchema, async (req, res
 
 orderRouter.post("/market", tokenAuthenticator, marketOrderSchema, async (req, res, next) => {
   const { orderQuantity, orderSide } = req.body;
-  const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
+  const user = await User.findOne({ "bitclout.publicKey": req.key, "balance.in_transaction": false }).exec();
   //add verification to check user's balance
   if (user && orderBalanceValidate(user, "market", orderSide, orderQuantity) && userVerifyCheck(user)) {
     let body = {
