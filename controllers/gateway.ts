@@ -209,7 +209,10 @@ gatewayRouter.post("/withdraw/bitclout", tokenAuthenticator, valueSchema, async 
         });
         const totalAmount = value + preflight.data.FeeNanos / 1e9;
         if (user.balance.bitclout >= totalAmount) {
-          await User.updateOne({ "bitclout.publicKey": req.key }, { $inc: { "balance.bitclout": -totalAmount } }).exec();
+          await User.updateOne(
+            { "bitclout.publicKey": req.key },
+            { $inc: { "balance.bitclout": -totalAmount }, $set: { "balance.in_transaction": true } }
+          ).exec();
           const body = {
             username: user.bitclout.username,
           };
@@ -233,7 +236,7 @@ gatewayRouter.post("/withdraw/bitclout", tokenAuthenticator, valueSchema, async 
           user.transactions.push(txn._id);
           user.save();
           txn.save();
-
+          User.updateOne({ "bitclout.publicKey": req.key }, { $set: { "balance.in_transaction": false } }).exec();
           res.send({ data: txn });
         } else {
           next(createError(409, "Insufficient funds."));
@@ -264,7 +267,10 @@ gatewayRouter.post("/withdraw/eth", tokenAuthenticator, withdrawEthSchema, async
           const gas = await getGasEtherscan(); // get gas
           const key = decryptAddressGCM(pool.hashedKey); // decrypt pool key
           const nonce = await getNonce(pool.address); // get nonce
-          await User.updateOne({ "bitclout.publicKey": req.key }, { $inc: { "balance.ether": -value } }).exec();
+          await User.updateOne(
+            { "bitclout.publicKey": req.key },
+            { $inc: { "balance.ether": -value }, $set: { "balance.in_transaction": true } }
+          ).exec();
           const body = {
             username: user.bitclout.username,
           };
@@ -293,6 +299,7 @@ gatewayRouter.post("/withdraw/eth", tokenAuthenticator, withdrawEthSchema, async
           user.transactions.push(txn._id); // push txn
           user.save();
           txn.save();
+          User.updateOne({ "bitclout.publicKey": req.key }, { $set: { "balance.in_transaction": false } }).exec();
           syncWalletBalance();
           res.status(200).send({ data: txn });
         } catch (e) {
