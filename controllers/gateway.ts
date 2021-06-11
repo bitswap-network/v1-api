@@ -147,7 +147,7 @@ gatewayRouter.post("/deposit/bitclout", tokenAuthenticator, depositBitcloutSchem
 });
 
 gatewayRouter.get("/deposit/eth", tokenAuthenticator, async (req, res, next) => {
-  const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
+  const user = await User.findOne({ "bitclout.publicKey": req.key, "balance.in_transaction": false }).exec();
   if (user && user.bitclout.publicKey) {
     if (!userVerifyCheck(user)) {
       next(createError(401, "User not verified."));
@@ -195,7 +195,7 @@ gatewayRouter.get("/deposit/eth", tokenAuthenticator, async (req, res, next) => 
 
 gatewayRouter.post("/withdraw/bitclout", tokenAuthenticator, valueSchema, async (req, res, next) => {
   const { value } = req.body;
-  const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
+  const user = await User.findOne({ "bitclout.publicKey": req.key, "balance.in_transaction": false }).exec();
   if (user && user.bitclout.publicKey) {
     if (!userVerifyCheck(user)) {
       next(createError(401, "User not verified."));
