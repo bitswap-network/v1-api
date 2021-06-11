@@ -208,6 +208,15 @@ gatewayRouter.post("/withdraw/bitclout", tokenAuthenticator, valueSchema, async 
           SenderPublicKeyBase58Check: config.PUBLIC_KEY_BITCLOUT,
         });
         const totalAmount = value + preflight.data.FeeNanos / 1e9;
+        const txn = new Transaction({
+          user: user._id,
+          transactionType: "withdraw",
+          assetType: "BCLT",
+          value: value,
+          created: new Date(),
+          txnHash: preflight.data.TransactionIDBase58Check,
+          gasPrice: preflight.data.FeeNanos / 1e9,
+        });
         if (user.balance.bitclout >= totalAmount) {
           await User.updateOne(
             { "bitclout.publicKey": req.key },
@@ -222,17 +231,9 @@ gatewayRouter.post("/withdraw/bitclout", tokenAuthenticator, valueSchema, async 
           await submitTransaction({
             TransactionHex: handleSign(preflight.data.TransactionHex),
           });
-          const txn = new Transaction({
-            user: user._id,
-            transactionType: "withdraw",
-            assetType: "BCLT",
-            value: value,
-            completed: true,
-            completionDate: new Date(),
-            txnHash: preflight.data.TransactionIDBase58Check,
-            state: "done",
-            gasPrice: preflight.data.FeeNanos / 1e9,
-          });
+          txn.state = "done";
+          txn.completed = true;
+          txn.completionDate = new Date();
 
           await User.updateOne(
             { "bitclout.publicKey": req.key },
