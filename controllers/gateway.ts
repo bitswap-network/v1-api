@@ -230,7 +230,7 @@ gatewayRouter.post("/withdraw/bitclout", tokenAuthenticator, valueSchema, async 
           const body = {
             username: user.bitclout.username,
           };
-          axios.post(`${config.EXCHANGE_API}/exchange/sanitize`, body, {
+          await axios.post(`${config.EXCHANGE_API}/exchange/sanitize`, body, {
             headers: { "Server-Signature": generateHMAC(body) },
           });
           res.send({ data: txn });
@@ -287,7 +287,7 @@ gatewayRouter.post("/withdraw/eth", tokenAuthenticator, withdrawEthSchema, async
           const body = {
             username: user.bitclout.username,
           };
-          axios.post(`${config.EXCHANGE_API}/exchange/sanitize`, body, {
+          await axios.post(`${config.EXCHANGE_API}/exchange/sanitize`, body, {
             headers: { "Server-Signature": generateHMAC(body) },
           });
           user.save();
