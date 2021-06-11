@@ -12,7 +12,6 @@ export const syncWalletBalance = async () => {
     try {
       const balance = await getBalance(pool.address.toLowerCase());
       pool.balance = parseFloat(balance);
-      console.log(pool.address, "- Balance: ", balance);
       await pool.save();
     } catch (e) {
       console.error(e);
@@ -60,7 +59,6 @@ export const getAndAssignPool: (user: UserDoc) => Promise<poolDoc> = async funct
     pool.active = true;
     pool.activeStart = Date.now();
     pool.user = user._id;
-    console.log("saving pool");
     await pool.save();
     return pool;
   } else {
@@ -93,7 +91,6 @@ export const encryptAddressGCM = (address: string) => {
 
 export const decryptAddressGCM = (address: string) => {
   const addressSplit = address.split(":");
-  console.log(addressSplit);
   const iv = Buffer.from(addressSplit[1], "base64");
   const authTag = Buffer.from(addressSplit[2], "base64");
   const decipher = crypto.createDecipheriv("aes-256-gcm", Buffer.from(config.POOL_HASHKEY), iv);

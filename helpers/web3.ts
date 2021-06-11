@@ -55,7 +55,6 @@ export const sendEth = async (
     nonce: web3.utils.toHex(nonce),
   };
 
-  console.log(rawTx, gasprice, nonce);
   const transaction = new EthereumTx(rawTx, {
     chain: config.NETWORK,
   });

@@ -46,7 +46,6 @@ export const handleSign = (transactionHex: string) => {
   const keychain = mnemonicToKeychain(config.MNEMONIC);
   const seedHex = keychainToSeedHex(keychain);
   const privateKey = seedHexToPrivateKey(seedHex);
-  console.log(seedHex, config.MNEMONIC, keychain);
   const transactionBytes = Buffer.from(transactionHex, "hex");
   const transactionHash = Buffer.from(sha256.x2(transactionBytes), "hex");
   const signature = privateKey.sign(transactionHash);
