@@ -128,10 +128,12 @@ utilRouter.get("/orderbook", async (req, res, next) => {
 
 utilRouter.get("/order-history", async (req, res, next) => {
   try {
+    // only consider fulfilled non-error orders (TODO: Handle partial fulfilled orders that have been cancelled)
     const orders = await Order.find({
       complete: true,
       error: "",
       orderPrice: { $ne: undefined },
+      execPrice: { $ne: undefined },
       orderQuantityProcessed: { $gt: 0 },
     })
       .sort({ completeTime: "desc" })
@@ -164,7 +166,7 @@ utilRouter.get("/order-history", async (req, res, next) => {
           } else if (orderQuantity && orderPriceQuantity && priceQuantitySum && quantSum) {
             finalArr.push({
               timestamp: new Date(dateString1),
-              price: Math.round((priceQuantitySum / quantSum + Number.EPSILON) * 100) / 100,
+              price: Math.round((priceQuantitySum / (quantSum + Number.EPSILON)) * 100) / 100,
             });
 
             priceQuantitySum = orderPriceQuantity;
@@ -173,7 +175,7 @@ utilRouter.get("/order-history", async (req, res, next) => {
           dateString1 = dateString2;
         }
       }
-      finalArr.push({ timestamp: new Date(dateString1), price: Math.round((priceQuantitySum / quantSum + Number.EPSILON) * 100) / 100 });
+      finalArr.push({ timestamp: new Date(dateString1), price: Math.round((priceQuantitySum / (quantSum + Number.EPSILON)) * 100) / 100 });
       res.json(finalArr);
     } else {
       res.json([]);
