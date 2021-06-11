@@ -5,7 +5,7 @@ export const emailVerify = (email_code: string) => {
     header: "Verify your BitSwap email",
     body:
       `<!DOCTYPE html><html><head><title>BitSwap Email Verification</title><body>` +
-      `<p>Click <a href="${config.URL}user/verify-email/${email_code}">here</a> to verify your email. If this wasn't you, simply ignore this email.` +
+      `<p>Go to <a href="${config.URL}user/verify-email/${email_code}">${config.URL}user/verify-email/${email_code}</a> to verify your email. If this wasn't you, simply ignore this email.` +
       `</body></html>`,
   };
 };
