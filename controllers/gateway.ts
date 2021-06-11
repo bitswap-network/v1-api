@@ -209,8 +209,7 @@ gatewayRouter.post("/withdraw/bitclout", tokenAuthenticator, valueSchema, async 
         });
         const totalAmount = value + preflight.data.FeeNanos / 1e9;
         if (user.balance.bitclout >= totalAmount) {
-          user.balance.bitclout -= totalAmount;
-          await user.save();
+          await User.updateOne({ "bitclout.publicKey": req.key }, { $inc: { "balance.bitclout": -totalAmount } }).exec();
           const body = {
             username: user.bitclout.username,
           };
@@ -265,8 +264,7 @@ gatewayRouter.post("/withdraw/eth", tokenAuthenticator, withdrawEthSchema, async
           const gas = await getGasEtherscan(); // get gas
           const key = decryptAddressGCM(pool.hashedKey); // decrypt pool key
           const nonce = await getNonce(pool.address); // get nonce
-          user.balance.ether -= value;
-          await user.save();
+          await User.updateOne({ "bitclout.publicKey": req.key }, { $inc: { "balance.ether": -value } }).exec();
           const body = {
             username: user.bitclout.username,
           };
