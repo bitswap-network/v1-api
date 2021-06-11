@@ -5,6 +5,7 @@ export interface UserDoc extends Document {
   balance: {
     bitclout: number;
     ether: number;
+    in_transaction: boolean | undefined;
   };
   transactions: Schema.Types.ObjectId[];
   verification: {
@@ -30,6 +31,7 @@ const userSchema = new Schema<UserDoc>({
   balance: {
     bitclout: { type: Number, default: 0, required: true },
     ether: { type: Number, default: 0, required: true },
+    in_transaction: { type: Boolean, default: false },
   },
   transactions: [{ type: Schema.Types.ObjectId, ref: "Transaction" }],
   verification: {
