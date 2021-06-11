@@ -118,6 +118,7 @@ gatewayRouter.post("/deposit/bitclout", tokenAuthenticator, depositBitcloutSchem
           assetType: "BCLT",
           value: valueTruncated,
           completed: true,
+          created: new Date(),
           completionDate: new Date(),
           txnHash: transactionIDBase58Check,
           state: "done",
@@ -298,6 +299,7 @@ gatewayRouter.post("/withdraw/eth", tokenAuthenticator, withdrawEthSchema, async
             gasPrice: parseInt(gas.data.result.FastGasPrice.toString()),
             state: "done",
             value: value,
+            completionDate: new Date(),
           }); //create withdraw txn object
           await User.updateOne(
             { "bitclout.publicKey": req.key },
