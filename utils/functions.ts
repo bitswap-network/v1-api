@@ -87,18 +87,22 @@ export const toNanos = (value: number) => {
 };
 
 export const orderBalanceValidate = async (user: UserDoc, type: string, side: string, quantity: number, price?: number) => {
-  if (type === "market" && side === "buy") {
-    const ethPriceResp = await getEthUsd();
-    const totalPriceResp = await getMarketPrice(side, quantity);
-    const totalEth = totalPriceResp.data.price / ethPriceResp.data.result;
-    return totalEth <= user.balance.ether;
-  } else if (type === "limit" && side === "buy" && price) {
-    const ethPriceResp = await getEthUsd();
-    const totalPrice = quantity * price;
-    const totalEth = totalPrice / ethPriceResp.data.result;
-    return totalEth <= user.balance.ether;
+  if (user.balance.in_transaction) {
+    return false;
   } else {
-    return quantity <= user.balance.bitclout;
+    if (type === "market" && side === "buy") {
+      const ethPriceResp = await getEthUsd();
+      const totalPriceResp = await getMarketPrice(side, quantity);
+      const totalEth = totalPriceResp.data.price / ethPriceResp.data.result;
+      return totalEth <= user.balance.ether;
+    } else if (type === "limit" && side === "buy" && price) {
+      const ethPriceResp = await getEthUsd();
+      const totalPrice = quantity * price;
+      const totalEth = totalPrice / ethPriceResp.data.result;
+      return totalEth <= user.balance.ether;
+    } else {
+      return quantity <= user.balance.bitclout;
+    }
   }
 };
 
