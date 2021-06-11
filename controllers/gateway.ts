@@ -209,7 +209,15 @@ gatewayRouter.post("/withdraw/bitclout", tokenAuthenticator, valueSchema, async 
         });
         const totalAmount = value + preflight.data.FeeNanos / 1e9;
         if (user.balance.bitclout >= totalAmount) {
-          const withdrawRes = await submitTransaction({
+          user.balance.bitclout -= totalAmount;
+          await user.save();
+          const body = {
+            username: user.bitclout.username,
+          };
+          await axios.post(`${config.EXCHANGE_API}/exchange/sanitize`, body, {
+            headers: { "Server-Signature": generateHMAC(body) },
+          });
+          await submitTransaction({
             TransactionHex: handleSign(preflight.data.TransactionHex),
           });
           const txn = new Transaction({
@@ -224,15 +232,9 @@ gatewayRouter.post("/withdraw/bitclout", tokenAuthenticator, valueSchema, async 
             gasPrice: preflight.data.FeeNanos / 1e9,
           });
           user.transactions.push(txn._id);
-          user.balance.bitclout -= totalAmount;
-          await user.save();
-          await txn.save();
-          const body = {
-            username: user.bitclout.username,
-          };
-          await axios.post(`${config.EXCHANGE_API}/exchange/sanitize`, body, {
-            headers: { "Server-Signature": generateHMAC(body) },
-          });
+          user.save();
+          txn.save();
+
           res.send({ data: txn });
         } else {
           next(createError(409, "Insufficient funds."));
@@ -263,6 +265,14 @@ gatewayRouter.post("/withdraw/eth", tokenAuthenticator, withdrawEthSchema, async
           const gas = await getGasEtherscan(); // get gas
           const key = decryptAddressGCM(pool.hashedKey); // decrypt pool key
           const nonce = await getNonce(pool.address); // get nonce
+          user.balance.ether -= value;
+          await user.save();
+          const body = {
+            username: user.bitclout.username,
+          };
+          await axios.post(`${config.EXCHANGE_API}/exchange/sanitize`, body, {
+            headers: { "Server-Signature": generateHMAC(body) },
+          });
           const receipt = await sendEth(
             key,
             pool.address,
@@ -282,14 +292,7 @@ gatewayRouter.post("/withdraw/eth", tokenAuthenticator, withdrawEthSchema, async
             state: "done",
             value: value,
           }); //create withdraw txn object
-          user.balance.ether -= value;
           user.transactions.push(txn._id); // push txn
-          const body = {
-            username: user.bitclout.username,
-          };
-          await axios.post(`${config.EXCHANGE_API}/exchange/sanitize`, body, {
-            headers: { "Server-Signature": generateHMAC(body) },
-          });
           user.save();
           txn.save();
           syncWalletBalance();
