@@ -212,7 +212,7 @@ gatewayRouter.post("/withdraw/bitclout", tokenAuthenticator, valueSchema, async 
           await User.updateOne(
             { "bitclout.publicKey": req.key },
             { $inc: { "balance.bitclout": -totalAmount }, $set: { "balance.in_transaction": true } }
-          ).exec();
+          );
           const body = {
             username: user.bitclout.username,
           };
@@ -233,10 +233,11 @@ gatewayRouter.post("/withdraw/bitclout", tokenAuthenticator, valueSchema, async 
             state: "done",
             gasPrice: preflight.data.FeeNanos / 1e9,
           });
-          user.transactions.push(txn._id);
-          user.save();
           txn.save();
-          User.updateOne({ "bitclout.publicKey": req.key }, { $set: { "balance.in_transaction": false } }).exec();
+          User.updateOne(
+            { "bitclout.publicKey": req.key },
+            { $set: { "balance.in_transaction": false }, $push: { transactions: txn._id } }
+          );
           res.send({ data: txn });
         } else {
           next(createError(409, "Insufficient funds."));
@@ -270,7 +271,7 @@ gatewayRouter.post("/withdraw/eth", tokenAuthenticator, withdrawEthSchema, async
           await User.updateOne(
             { "bitclout.publicKey": req.key },
             { $inc: { "balance.ether": -value }, $set: { "balance.in_transaction": true } }
-          ).exec();
+          );
           const body = {
             username: user.bitclout.username,
           };
@@ -296,10 +297,11 @@ gatewayRouter.post("/withdraw/eth", tokenAuthenticator, withdrawEthSchema, async
             state: "done",
             value: value,
           }); //create withdraw txn object
-          user.transactions.push(txn._id); // push txn
-          user.save();
           txn.save();
-          User.updateOne({ "bitclout.publicKey": req.key }, { $set: { "balance.in_transaction": false } }).exec();
+          User.updateOne(
+            { "bitclout.publicKey": req.key },
+            { $set: { "balance.in_transaction": false }, $push: { transactions: txn._id } }
+          );
           syncWalletBalance();
           res.status(200).send({ data: txn });
         } catch (e) {
