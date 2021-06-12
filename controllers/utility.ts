@@ -143,14 +143,12 @@ utilRouter.get("/order-history", async (req, res, next) => {
         : `${orders[0].created.getUTCFullYear()}-${orders[0].created.getUTCMonth() + 1}-${orders[0].created.getUTCDate()}`;
       let dateString2 = "";
       let priceQuantitySum =
-        (orders[0].execPrice ? orders[0].execPrice : orders[0].orderPrice) *
-        (orders[0].orderQuantityProcessed ? orders[0].orderQuantityProcessed : orders[0].orderQuantity);
+        orders[0].orderPrice * (orders[0].orderQuantityProcessed ? orders[0].orderQuantityProcessed : orders[0].orderQuantity);
       let quantSum = orders[0].orderQuantityProcessed ? orders[0].orderQuantityProcessed : orders[0].orderQuantity;
       for (let i = 1; i < orders.length; ++i) {
         if (orders[i]) {
           const orderPriceQuantity =
-            (orders[i].execPrice ? orders[i].execPrice! : orders[i].orderPrice) *
-            (orders[i].orderQuantityProcessed ? orders[i].orderQuantityProcessed : orders[i].orderQuantity);
+            orders[i].orderPrice * (orders[i].orderQuantityProcessed ? orders[i].orderQuantityProcessed : orders[i].orderQuantity);
           const orderQuantity = orders[i].orderQuantityProcessed ? orders[i].orderQuantityProcessed : orders[i].orderQuantity;
 
           dateString2 = orders[i].completeTime
