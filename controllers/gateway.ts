@@ -108,9 +108,10 @@ gatewayRouter.post("/deposit/bitclout", tokenAuthenticator, depositBitcloutSchem
       next(createError(401, "User not verified."));
     } else {
       try {
-        await submitTransaction({
+        const reciept = await submitTransaction({
           TransactionHex: transactionHex,
         });
+        console.log(reciept);
         const valueTruncated = +value.toFixed(8);
         const txn = new Transaction({
           user: user._id,

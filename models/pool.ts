@@ -2,10 +2,6 @@ import { model, Schema, Document } from "mongoose";
 
 export interface poolDoc extends Document {
   address: string;
-  privateKey: {
-    salt: string;
-    encryptedKey: string;
-  };
   hashedKey: string;
   active: boolean;
   activeStart: number | null;
@@ -17,10 +13,6 @@ export interface poolDoc extends Document {
 
 const poolSchema = new Schema<poolDoc>({
   address: { type: String, required: true, unique: true },
-  privateKey: {
-    salt: { type: String, unique: true },
-    encryptedKey: { type: String, unique: true },
-  },
   hashedKey: { type: String, required: true, unique: true },
   active: { type: Boolean, default: false },
   activeStart: { type: Number, default: null },

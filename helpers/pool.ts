@@ -54,7 +54,6 @@ export const processDeposit: (pool: poolDoc, value: number, asset: string, hash:
 
 export const getAndAssignPool: (user: UserDoc) => Promise<poolDoc> = async function (user: UserDoc): Promise<poolDoc> {
   const pool = await Pool.findOne({ active: false }).exec();
-  // const user = await User.findById(user_id).exec();
   if (pool) {
     pool.active = true;
     pool.activeStart = Date.now();
@@ -71,8 +70,8 @@ export const getAndAssignPool: (user: UserDoc) => Promise<poolDoc> = async funct
         active: true,
         activeStart: Date.now(),
       });
-      addAddressWebhook([wallet.address]);
-      pool.save();
+      await pool.save();
+      await addAddressWebhook([wallet.address]);
       return pool;
     } catch (e) {
       throw new Error(e);
@@ -98,24 +97,4 @@ export const decryptAddressGCM = (address: string) => {
   let str = decipher.update(addressSplit[0], "base64", "utf8");
   str += decipher.final("utf8");
   return str;
-};
-
-export const encryptAddress = (address: string) => {
-  const salt = crypto.randomBytes(16);
-  const cipher = crypto.createCipheriv(algorithm, Buffer.from(config.ADDRESS_ENCRYPT_PRIVATEKEY), salt);
-  let encrypted = cipher.update(address);
-  encrypted = Buffer.concat([encrypted, cipher.final()]);
-  return {
-    salt: salt.toString("hex"),
-    encryptedKey: encrypted.toString("hex"),
-  };
-};
-
-export const decryptAddress = (keyObject: poolDoc["privateKey"]) => {
-  const salt = Buffer.from(keyObject.salt, "hex");
-  const encryptedAddress = Buffer.from(keyObject.encryptedKey, "hex");
-  const decipher = crypto.createDecipheriv(algorithm, Buffer.from(config.ADDRESS_ENCRYPT_PRIVATEKEY), salt);
-  let decrypted = decipher.update(encryptedAddress);
-  decrypted = Buffer.concat([decrypted, decipher.final()]);
-  return decrypted.toString();
 };
