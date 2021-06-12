@@ -32,6 +32,7 @@ authRouter.put("/register", middleware.registerSchema, async (req, res, next) =>
     // const bitclout_code = generateCode(16);
     newUser.verification.emailString = email_code;
     // newUser.verification.bitcloutString = bitclout_code;
+
     newUser.save((err: any) => {
       if (err) {
         next(err);
