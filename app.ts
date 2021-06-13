@@ -61,7 +61,6 @@ app.use("/auth", authRouter);
 app.use("/utility", utilRouter);
 app.use("/webhook", webhookRouter);
 
-app.use(middleware.ValidateDBSumWithBitCloutWallet);
 app.use(middleware.unknownEndpoint);
 app.use(middleware.errorHandler);
 

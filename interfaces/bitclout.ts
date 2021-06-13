@@ -43,69 +43,6 @@ export interface TransactionAPIInterface extends AxiosResponse {
     error: string | undefined;
   };
 }
-
-export interface UsersStatelessAPIInterface extends AxiosResponse {
-  data: {
-    UserList: {
-      PublicKeyBase58Check: string;
-      ProfileEntryResponse: bitcloutProfileType;
-      Utxos: undefined;
-      BalanceNanos: number;
-      UnminedBalanceNanos: number;
-      PublicKeysBase58CheckFollowedByUser: string[];
-      UsersYouHODL: UserYouHODL[];
-      UsersWhoHODLYou: undefined;
-      HasPhoneNumber: boolean;
-      CanCreateProfile: boolean;
-      BlockedPubKeys: undefined;
-      IsAdmin: boolean;
-      IsBlacklisted: boolean;
-      IsGraylisted: boolean;
-    }[];
-    DefaultFeeRateNanosPerKB: number;
-    ParamUpdaters: {
-      string: boolean;
-    };
-  };
-}
-
-export interface UserYouHODL extends AxiosResponse {
-  data: {
-    HODLerPublicKeyBase58Check: string;
-    CreatorPublicKeyBase58Check: string;
-    HasPurchased: boolean;
-    BalanceNanos: number;
-    NetBalanceInMempool: number;
-    ProfileEntryResponse: {
-      PublicKeyBase58Check: string;
-      Username: string;
-      Description: string;
-      IsHidden: boolean;
-      IsReserved: boolean;
-      IsVerified: boolean;
-      Comments: undefined;
-      Posts: undefined;
-      CoinEntry: {
-        CreatorBasisPoints: number;
-        BitCloutLockedNanos: number;
-        NumberOfHolders: number;
-        CoinsInCirculationNanos: number;
-        CoinWatermarkNanos: number;
-      };
-      CoinPriceBitCloutNanos: number;
-      StakeMultipleBasisPoints: number;
-      StakeEntryStats: {
-        TotalStakeNanos: number;
-        TotalStakeOwedNanos: number;
-        TotalCreatorEarningsNanos: number;
-        TotalFeesBurnedNanos: number;
-        TotalPostStakeNanos: number;
-      };
-      UsersThatHODL: undefined;
-    };
-  };
-}
-
 export interface ExchangeRateAPIInterface extends AxiosResponse {
   data: {
     NanosSold: number;
