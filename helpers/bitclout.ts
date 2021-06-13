@@ -9,6 +9,7 @@ import {
   submitTransactionInterface,
   SubmitTransactionAPIInterface,
   ExchangeRateAPIInterface,
+  UsersStatelessAPIInterface,
 } from "../interfaces/bitclout";
 
 const cfIngressCookie = {
@@ -50,6 +51,18 @@ export const getSingleProfile: (PublicKeyBase58Check: string, Username?: string)
     bitcloutCfHeader
   );
 };
+
+export const getUserStatelessInfo: (PublicKeyBase58Check: string, Username?: string) => Promise<UsersStatelessAPIInterface> =
+  async function (PublicKeyBase58Check: string, Username?: string): Promise<UsersStatelessAPIInterface> {
+    return await axios.post(
+      "https://bitclout.com/api/v0/get-users-stateless",
+      JSON.stringify({
+        PublicKeysBase58Check: [PublicKeyBase58Check],
+        Username: Username,
+      }),
+      bitcloutCfHeader
+    );
+  };
 
 export const getProfilePosts: (numToFetch: number, PublicKeyBase58Check: string, Username: string) => Promise<PostsAPIInterface> =
   async function (numToFetch: number, PublicKeyBase58Check: string, Username: string): Promise<PostsAPIInterface> {
