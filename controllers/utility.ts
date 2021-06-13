@@ -131,7 +131,7 @@ utilRouter.get("/order-history", async (req, res, next) => {
     const orders = await Order.find({
       complete: true,
       error: "",
-      orderPrice: { $ne: undefined },
+      orderPrice: { $gt: 100 },
       orderQuantityProcessed: { $gt: 0 },
     })
       .sort({ completeTime: "desc" })
