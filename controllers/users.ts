@@ -131,48 +131,6 @@ userRouter.get("/verify-email/:code", async (req, res, next) => {
   }
 });
 
-userRouter.get("/verify-bitclout/:depth", tokenAuthenticator, async (req, res, next) => {
-  const user = await User.findOne({ "bitclout.publicKey": req.key });
-  const numToFetch = Number(req.params.depth) ? Number(req.params.depth) : 10;
-
-  if (user) {
-    try {
-      const response = await getProfilePosts(numToFetch, user.bitclout.publicKey, user.bitclout.username);
-      const posts = response.data.Posts;
-      if (posts) {
-        let i = 0;
-        let found = false;
-        for (const post of posts) {
-          i += 1;
-          const body = post.Body.toLowerCase();
-          if (body.includes(user.verification.bitcloutString.toLowerCase())) {
-            found = true;
-          }
-          if (i === posts.length) {
-            if (found) {
-              user.verification.status = "verified";
-              await user.save();
-              res.json({ data: post });
-            } else {
-              next(createError(400, "Unable to find verification post."));
-            }
-          }
-        }
-      } else {
-        next(createError(409, "Bitclout API Error"));
-      }
-    } catch (e) {
-      if (e.response.data.error) {
-        next(createError(e.response.status, e.response.data.error));
-      } else {
-        next(e);
-      }
-    }
-  } else {
-    next(createError(400, "Invalid Request."));
-  }
-});
-
 userRouter.get("/transactions", tokenAuthenticator, async (req, res, next) => {
   const user = await User.findOne({ "bitclout.publicKey": req.key })
     .populate({ path: "transactions", options: { sort: { created: -1 } } })

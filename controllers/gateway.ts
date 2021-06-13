@@ -15,7 +15,6 @@ const gatewayRouter = require("express").Router();
 
 gatewayRouter.get("/deposit/cancel/:id", tokenAuthenticator, async (req, res, next) => {
   const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
-  //implement find transaction logic later
   if (user && req.params.id) {
     const transaction = await Transaction.findById(req.params.id).exec();
     const pool = await Pool.findOne({ user: user._id }).exec();
@@ -44,19 +43,20 @@ gatewayRouter.get("/deposit/cancel/:id", tokenAuthenticator, async (req, res, ne
 
 gatewayRouter.post("/deposit/bitclout-preflight", tokenAuthenticator, valueSchema, async (req, res, next) => {
   const { value } = req.body;
-  const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
+  const user = await User.findOne({ "bitclout.publicKey": req.key, "balance.in_transaction": false }).exec();
   if (user) {
     if (!userVerifyCheck(user)) {
       next(createError(401, "User not verified."));
     } else {
       try {
+        console.log(toNanos(value));
         const preflight = await preflightTransaction({
           AmountNanos: toNanos(value),
           MinFeeRateNanosPerKB: config.MinFeeRateNanosPerKB,
           RecipientPublicKeyOrUsername: config.PUBLIC_KEY_BITCLOUT,
           SenderPublicKeyBase58Check: user.bitclout.publicKey,
         });
-
+        console.log(preflight);
         res.send({ data: preflight.data });
       } catch (e) {
         if (e.response.data.error) {
@@ -73,7 +73,7 @@ gatewayRouter.post("/deposit/bitclout-preflight", tokenAuthenticator, valueSchem
 
 gatewayRouter.post("/withdraw/bitclout-preflight", tokenAuthenticator, valueSchema, async (req, res, next) => {
   const { value } = req.body;
-  const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
+  const user = await User.findOne({ "bitclout.publicKey": req.key, "balance.in_transaction": false }).exec();
   if (user) {
     if (!userVerifyCheck(user)) {
       next(createError(401, "User not verified."));
@@ -102,7 +102,7 @@ gatewayRouter.post("/withdraw/bitclout-preflight", tokenAuthenticator, valueSche
 
 gatewayRouter.post("/deposit/bitclout", tokenAuthenticator, depositBitcloutSchema, async (req, res, next) => {
   const { transactionHex, transactionIDBase58Check, value } = req.body;
-  const user = await User.findOne({ "bitclout.publicKey": req.key });
+  const user = await User.findOne({ "bitclout.publicKey": req.key, "balance.in_transaction": false });
   if (user && user.bitclout.publicKey) {
     if (!userVerifyCheck(user)) {
       next(createError(401, "User not verified."));
@@ -112,7 +112,7 @@ gatewayRouter.post("/deposit/bitclout", tokenAuthenticator, depositBitcloutSchem
           TransactionHex: transactionHex,
         });
         console.log(reciept);
-        const valueTruncated = +value.toFixed(8);
+        const valueTruncated = +(toNanos(value) / 1e9).toFixed(8);
         const txn = new Transaction({
           user: user._id,
           transactionType: "deposit",
@@ -162,17 +162,22 @@ gatewayRouter.get("/deposit/eth", tokenAuthenticator, async (req, res, next) => 
       }).exec();
       if (!depositCheck) {
         try {
-          const pool = await getAndAssignPool(user);
-          const txn = new Transaction({
-            user: user._id,
-            transactionType: "deposit",
-            assetType: "ETH",
-            created: new Date(),
-          });
-          user.transactions.push(txn._id);
-          user.save();
-          txn.save();
-          res.status(200).send({ data: { address: pool.address, transaction: txn } });
+          const pool_address = await getAndAssignPool(user);
+          const pool = await Pool.findOne({ address: pool_address }).exec();
+          if (pool) {
+            const txn = new Transaction({
+              user: user._id,
+              transactionType: "deposit",
+              assetType: "ETH",
+              created: new Date(),
+            });
+            user.transactions.push(txn._id);
+            user.save();
+            txn.save();
+            res.status(200).send({ data: { address: pool.address, transaction: txn } });
+          } else {
+            res.sendStatus(500);
+          }
         } catch (e) {
           next(e);
         }
@@ -209,20 +214,21 @@ gatewayRouter.post("/withdraw/bitclout", tokenAuthenticator, valueSchema, async 
           RecipientPublicKeyOrUsername: user.bitclout.publicKey,
           SenderPublicKeyBase58Check: config.PUBLIC_KEY_BITCLOUT,
         });
-        const totalAmount = value + preflight.data.FeeNanos / 1e9;
+        const valueTruncated = +(toNanos(value + preflight.data.FeeNanos / 1e9) / 1e9).toFixed(8);
+        // const totalAmount = value + preflight.data.FeeNanos / 1e9;
         const txn = new Transaction({
           user: user._id,
           transactionType: "withdraw",
           assetType: "BCLT",
-          value: value,
+          value: valueTruncated,
           created: new Date(),
           txnHash: preflight.data.TransactionIDBase58Check,
           gasPrice: preflight.data.FeeNanos / 1e9,
         });
-        if (user.balance.bitclout >= totalAmount) {
+        if (user.balance.bitclout >= valueTruncated) {
           await User.updateOne(
             { "bitclout.publicKey": req.key },
-            { $inc: { "balance.bitclout": -totalAmount }, $set: { "balance.in_transaction": true } }
+            { $inc: { "balance.bitclout": -valueTruncated }, $set: { "balance.in_transaction": true } }
           );
           const body = {
             username: user.bitclout.username,
@@ -241,7 +247,7 @@ gatewayRouter.post("/withdraw/bitclout", tokenAuthenticator, valueSchema, async 
             { "bitclout.publicKey": req.key },
             { $set: { "balance.in_transaction": false }, $push: { transactions: txn._id } }
           );
-          txn.save();
+          await txn.save();
           res.send({ data: txn });
         } else {
           next(createError(409, "Insufficient funds."));

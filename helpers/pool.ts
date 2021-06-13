@@ -52,14 +52,14 @@ export const processDeposit: (pool: poolDoc, value: number, asset: string, hash:
   }
 };
 
-export const getAndAssignPool: (user: UserDoc) => Promise<poolDoc> = async function (user: UserDoc): Promise<poolDoc> {
+export const getAndAssignPool: (user: UserDoc) => Promise<string> = async function (user: UserDoc): Promise<string> {
   const pool = await Pool.findOne({ active: false }).exec();
   if (pool) {
     pool.active = true;
     pool.activeStart = Date.now();
     pool.user = user._id;
     await pool.save();
-    return pool;
+    return pool.address;
   } else {
     try {
       const wallet = await genWallet();
@@ -72,7 +72,7 @@ export const getAndAssignPool: (user: UserDoc) => Promise<poolDoc> = async funct
       });
       await pool.save();
       await addAddressWebhook([wallet.address]);
-      return pool;
+      return pool.address;
     } catch (e) {
       throw new Error(e);
     }

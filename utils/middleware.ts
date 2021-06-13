@@ -15,7 +15,7 @@ const createError = require("http-errors");
 
 export const valueSchema = (req, res, next) => {
   const schema = Joi.object({
-    value: Joi.number().greater(0).required(),
+    value: Joi.number().greater(0).less(500).required(),
   });
   validateRequest(req, next, schema);
 };
@@ -29,7 +29,7 @@ export const withdrawEthSchema = (req, res, next) => {
 
 export const marketOrderSchema = (req, res, next) => {
   const schema = Joi.object({
-    orderQuantity: Joi.number().greater(0).required(),
+    orderQuantity: Joi.number().greater(0).less(500).required(),
     orderSide: Joi.string().valid("buy", "sell").required(),
   });
   validateRequest(req, next, schema);
@@ -37,8 +37,8 @@ export const marketOrderSchema = (req, res, next) => {
 
 export const limitOrderSchema = (req, res, next) => {
   const schema = Joi.object({
-    orderQuantity: Joi.number().greater(0).required(),
-    orderPrice: Joi.number().greater(0).required(),
+    orderQuantity: Joi.number().greater(0).less(500).required(),
+    orderPrice: Joi.number().greater(100).required(),
     orderSide: Joi.string().valid("buy", "sell").required(),
   });
   validateRequest(req, next, schema);
@@ -48,7 +48,7 @@ export const depositBitcloutSchema = (req, res, next) => {
   const schema = Joi.object({
     transactionHex: Joi.string().required(),
     transactionIDBase58Check: Joi.string().length(54).required(),
-    value: Joi.number().greater(0).required(),
+    value: Joi.number().greater(0).less(500).required(),
   });
   validateRequest(req, next, schema);
 };
@@ -128,7 +128,6 @@ export const errorHandler = (error, req, res, next) => {
   res.json({
     status: error.status,
     message: error.message,
-    // stack: error.stack,
   });
 };
 

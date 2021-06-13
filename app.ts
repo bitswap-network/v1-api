@@ -4,6 +4,7 @@ import cors from "cors";
 import helmet from "helmet";
 const mongoose = require("mongoose");
 import morgan from "morgan";
+import morganBody from "morgan-body";
 // Routers
 import userRouter from "./controllers/users";
 import gatewayRouter from "./controllers/gateway";
@@ -38,11 +39,15 @@ mongoose
   .catch(error => {
     logger.error("Error connecting to MongoDB:", error.message);
   });
-app.use(morgan("combined"));
+
 app.use(cors());
 app.options("*", cors());
 app.use(helmet());
 app.use(express.json());
+app.use(morgan("dev"));
+morganBody(app, {
+  skip: (req, res) => res.statusCode < 400,
+});
 // app.use(rollbar.errorHandler())
 
 app.get("/", (req: express.Request, res: express.Response) => {

@@ -8,6 +8,7 @@ export interface orderDoc extends Document {
   orderType: string;
   orderQuantity: number;
   orderPrice: number;
+  fees: number | undefined;
   execPrice: number | undefined;
   orderQuantityProcessed: number;
   complete: boolean;
@@ -24,6 +25,7 @@ const orderSchema = new Schema<orderDoc>({
   orderQuantity: { type: Number, required: true },
   orderPrice: { type: Number },
   execPrice: { type: Number },
+  fees: { type: Number },
   orderQuantityProcessed: { type: Number },
   complete: { type: Boolean, default: false },
   error: { type: String, default: undefined },
