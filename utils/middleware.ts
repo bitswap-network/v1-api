@@ -38,7 +38,7 @@ export const marketOrderSchema = (req, res, next) => {
 export const limitOrderSchema = (req, res, next) => {
   const schema = Joi.object({
     orderQuantity: Joi.number().greater(0).less(500).required(),
-    orderPrice: Joi.number().greater(100).required(),
+    orderPrice: Joi.number().greater(100).less(500).required(),
     orderSide: Joi.string().valid("buy", "sell").required(),
   });
   validateRequest(req, next, schema);
