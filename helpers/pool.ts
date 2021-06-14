@@ -26,7 +26,7 @@ export const processDeposit: (pool: poolDoc, value: number, asset: string, hash:
   hash: string
 ): Promise<void> {
   const user = await User.findById(pool.user).exec();
-  if (pool && user) {
+  if (pool && user && asset == "ETH") {
     const transaction = await Transaction.findOne({
       user: user._id,
       assetType: "ETH",
