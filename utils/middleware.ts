@@ -166,46 +166,43 @@ export const ValidateDBWithBitCloutWallet = async (req, res, next) => {
   //Get the default connection
   const db = mongoose.connection;
   // The MAXIMUM difference between the sum of bitclout balances in the database and our BitClout Wallet
-  // This is 1e5 / 1e9 bitclout.
+  // This is 1e5 / 1e9 = 1e-4 bitclout.
   const MaxToleranceBetweenDbAndWallet = 0.001;
 
   //Bind connection to error event (to get notification of connection errors)
   db.on(`error`, console.error.bind(console, `MongoDB connection error:`));
+
+  // Sum All User Balances
   let AdjustedUserBitCloutTotal = 0;
-  // await User.find({}, (err, users) => {
-  //   if (err) {
-  //     logger.error(`Encountered an error when communicating with MongoDB`);
-  //     return false;
-  //   }
-  //   const UserBitCloutTotal = users.reduce(
-  //     // (runningtotal, userDoc) => (userDoc.bitclout.username !== "BitSwap" ? runningtotal + userDoc.balance.bitclout : runningtotal),
-  //     (runningtotal, userDoc) => {
-  //       console.log(runningtotal, userDoc.bitclout.username);
-  //       return userDoc.bitclout.username != "BitSwap" ? runningtotal + userDoc.balance.bitclout : runningtotal;
-  //     },
-  //     0
-  //   );
-  //   logger.info("Total Bitclout balance: " + UserBitCloutTotal.toString());
-  //   AdjustedUserBitCloutTotal = UserBitCloutTotal / 0.98;
-  //   logger.info("Adjusted Total Bitclout balance: " + AdjustedUserBitCloutTotal.toString());
-  // });
-  await Order.find({}, (err, orders) => {
+  await User.find({}, (err, users) => {
     if (err) {
       logger.error(`Encountered an error when communicating with MongoDB`);
       return false;
     }
-    logger.info(orders);
-    const totalQuantityProcessed = orders.reduce(
+    AdjustedUserBitCloutTotal += users.reduce((runningtotal, userDoc) => {
+      console.log(runningtotal, userDoc.bitclout.username);
+      // Current issue with BitSwap holding 9 trillion BitClout
+      return userDoc.bitclout.username != "BitSwap" ? runningtotal + userDoc.balance.bitclout : runningtotal;
+      // return runningtotal + userDoc.balance.bitclout;
+    }, 0);
+    logger.info("Adjusted Total Bitclout balance: " + AdjustedUserBitCloutTotal.toString());
+  });
+
+  // Sum the fees in all BUY transactions
+  await Order.find({ complete: true, error: "", orderSide: "buy", fees: { $ne: undefined } }, (err, orders) => {
+    if (err) {
+      logger.error(`Encountered an error when communicating with MongoDB`);
+      return false;
+    }
+    logger.info(`Number of Complete, non-error BUY orders with fees: ${orders.length}`)
+    AdjustedUserBitCloutTotal += orders.reduce(
       // (runningtotal, userDoc) => (userDoc.bitclout.username !== "BitSwap" ? runningtotal + userDoc.balance.bitclout : runningtotal),
       (runningtotal, orderDoc) => {
-        console.log(runningtotal, orderDoc.orderQuantityProcessed);
-        // return userDoc.bitclout.username != "BitSwap" ? runningtotal + userDoc.balance.bitclout : runningtotal;
-        return runningtotal + orderDoc.orderQuantityProcessed;
+        console.log(runningtotal, orderDoc.fees, orderDoc.orderSide);
+        return runningtotal + orderDoc.fees!;
       },
       0
     );
-    logger.info("Total Bitclout balance: " + totalQuantityProcessed.toString());
-    AdjustedUserBitCloutTotal = totalQuantityProcessed;
   });
   // Get Current Wallet BitClout Balance
   const wallet = await getUserStatelessInfo(config.PUBLIC_KEY_BITCLOUT!);
