@@ -20,7 +20,7 @@ export const WEBHOOK_ID = process.env.ENVIRONMENT === "production" ? 149208 : 14
 export const NETWORK = process.env.ENVIRONMENT === "production" ? "mainnet" : "kovan";
 export const EXCHANGE_API =
   process.env.ENVIRONMENT === "production"
-    ? "https://bitswap-exchange-api-prod.herokuapp.com"
+    ? "https://bitswap-exchange-api.herokuapp.com"
     : "https://bitswap-exchange-api-staging.herokuapp.com";
 export const MinFeeRateNanosPerKB = 1000;
 export const MNEMONIC = process.env.MNEMONIC ? process.env.MNEMONIC.replace(/-/g, " ") : "";
