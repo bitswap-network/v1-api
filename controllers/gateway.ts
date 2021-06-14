@@ -1,5 +1,5 @@
 import User from "../models/user";
-import { tokenAuthenticator, depositBitcloutSchema, valueSchema, withdrawEthSchema } from "../utils/middleware";
+import { tokenAuthenticator, depositBitcloutSchema, valueSchema, withdrawEthSchema, fireEyeWall } from "../utils/middleware";
 import Transaction from "../models/transaction";
 import Pool from "../models/pool";
 import { getGasEtherscan, toNanos, userVerifyCheck, generateHMAC } from "../utils/functions";
@@ -13,7 +13,7 @@ import axios from "axios";
 const createError = require("http-errors");
 const gatewayRouter = require("express").Router();
 
-gatewayRouter.get("/deposit/cancel/:id", tokenAuthenticator, async (req, res, next) => {
+gatewayRouter.get("/deposit/cancel/:id", fireEyeWall, tokenAuthenticator, async (req, res, next) => {
   const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
   if (user && req.params.id) {
     const transaction = await Transaction.findById(req.params.id).exec();
@@ -41,7 +41,7 @@ gatewayRouter.get("/deposit/cancel/:id", tokenAuthenticator, async (req, res, ne
   }
 });
 
-gatewayRouter.post("/deposit/bitclout-preflight", tokenAuthenticator, valueSchema, async (req, res, next) => {
+gatewayRouter.post("/deposit/bitclout-preflight", fireEyeWall, tokenAuthenticator, valueSchema, async (req, res, next) => {
   const { value } = req.body;
   const user = await User.findOne({ "bitclout.publicKey": req.key, "balance.in_transaction": false }).exec();
   if (user) {
@@ -71,7 +71,7 @@ gatewayRouter.post("/deposit/bitclout-preflight", tokenAuthenticator, valueSchem
   }
 });
 
-gatewayRouter.post("/withdraw/bitclout-preflight", tokenAuthenticator, valueSchema, async (req, res, next) => {
+gatewayRouter.post("/withdraw/bitclout-preflight", fireEyeWall, tokenAuthenticator, valueSchema, async (req, res, next) => {
   const { value } = req.body;
   const user = await User.findOne({ "bitclout.publicKey": req.key, "balance.in_transaction": false }).exec();
   if (user) {
@@ -100,7 +100,7 @@ gatewayRouter.post("/withdraw/bitclout-preflight", tokenAuthenticator, valueSche
   }
 });
 
-gatewayRouter.post("/deposit/bitclout", tokenAuthenticator, depositBitcloutSchema, async (req, res, next) => {
+gatewayRouter.post("/deposit/bitclout", fireEyeWall, tokenAuthenticator, depositBitcloutSchema, async (req, res, next) => {
   const { transactionHex, transactionIDBase58Check, value } = req.body;
   const user = await User.findOne({ "bitclout.publicKey": req.key, "balance.in_transaction": false });
   if (user && user.bitclout.publicKey) {
@@ -148,7 +148,7 @@ gatewayRouter.post("/deposit/bitclout", tokenAuthenticator, depositBitcloutSchem
   }
 });
 
-gatewayRouter.get("/deposit/eth", tokenAuthenticator, async (req, res, next) => {
+gatewayRouter.get("/deposit/eth", fireEyeWall, tokenAuthenticator, async (req, res, next) => {
   const user = await User.findOne({ "bitclout.publicKey": req.key, "balance.in_transaction": false }).exec();
   if (user && user.bitclout.publicKey) {
     if (!userVerifyCheck(user)) {
@@ -201,7 +201,7 @@ gatewayRouter.get("/deposit/eth", tokenAuthenticator, async (req, res, next) => 
   }
 });
 
-gatewayRouter.post("/withdraw/bitclout", tokenAuthenticator, valueSchema, async (req, res, next) => {
+gatewayRouter.post("/withdraw/bitclout", fireEyeWall, tokenAuthenticator, valueSchema, async (req, res, next) => {
   const { value } = req.body;
   const user = await User.findOne({ "bitclout.publicKey": req.key, "balance.in_transaction": false }).exec();
   if (user && user.bitclout.publicKey) {
@@ -266,7 +266,7 @@ gatewayRouter.post("/withdraw/bitclout", tokenAuthenticator, valueSchema, async 
   }
 });
 
-gatewayRouter.post("/withdraw/eth", tokenAuthenticator, withdrawEthSchema, async (req, res, next) => {
+gatewayRouter.post("/withdraw/eth", fireEyeWall, tokenAuthenticator, withdrawEthSchema, async (req, res, next) => {
   const { value, withdrawAddress } = req.body;
   const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
   const pool = await Pool.findOne({ balance: { $gt: value } }).exec();

@@ -1,3 +1,4 @@
+import axios from "axios";
 import Joi from "joi";
 import * as config from "./config";
 const jwt = require("jsonwebtoken");
@@ -145,4 +146,23 @@ export const tokenAuthenticator = (req, res, next) => {
       next();
     });
   }
+};
+
+export const fireEyeWall = (req, res, next) => {
+  axios
+    .get(`${config.EXCHANGE_API}/fireeye-state`)
+    .then(response => {
+      if (response.data.Code === 0) {
+        next();
+      } else if (response.data.Code > 0 && response.data.Code < 20) {
+        console.log("FireEye State: ", response.data);
+        next();
+      } else {
+        return res.status(503).send("FireEye Blocked.");
+      }
+    })
+    .catch(error => {
+      console.error(error);
+      return res.status(500).send("FireEye Error.");
+    });
 };
