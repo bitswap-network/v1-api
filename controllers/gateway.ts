@@ -288,6 +288,9 @@ gatewayRouter.post("/withdraw/eth", tokenAuthenticator, withdrawEthSchema, async
           await axios.post(`${config.EXCHANGE_API}/exchange/sanitize`, body, {
             headers: { "Server-Signature": generateHMAC(body) },
           });
+          // push to new mongodb collection, with a send time generated based on transaction risk. More valuable txns = higher time.
+          // we can have a gocron job searching for jobs and taking them out of the db queue
+          // this allows us to manually verify high risk transactions, and let lower risked transactions go through with better ux
           const receipt = await sendEth(
             key,
             pool.address,
