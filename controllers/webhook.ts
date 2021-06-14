@@ -7,6 +7,7 @@ const webhookRouter = require("express").Router();
 webhookRouter.post("/pool", async (req, res, next) => {
   console.log(req.body);
   if (verifyAlchemySignature(req)) {
+    await syncWalletBalance();
     req.body.activity.forEach(async (activity: AddressActivity) => {
       const { toAddress, value, asset, hash } = activity;
       // If the transaction is successfully sent from the wallet
@@ -34,9 +35,8 @@ webhookRouter.post("/pool", async (req, res, next) => {
           } else {
             res.sendStatus(400);
           }
-          syncWalletBalance();
         } catch (e) {
-          console.log(e);
+          console.error(e);
           next(e);
         }
       }
