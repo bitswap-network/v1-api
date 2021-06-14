@@ -75,28 +75,26 @@ authRouter.post("/login", middleware.loginSchema, async (req, res, next) => {
     const token = generateAccessToken({
       PublicKeyBase58Check: user.bitclout.publicKey,
     });
-
-    try {
-      const userProfile = await getSingleProfile(user.bitclout.publicKey);
-      if (userProfile.data.Profile) {
-        user.bitclout.profilePicture = userProfile.data.Profile.ProfilePic;
-        user.bitclout.bio = userProfile.data.Profile.Description;
-        user.bitclout.username = userProfile.data.Profile.Username;
-        user.save();
+    getSingleProfile(user.bitclout.publicKey)
+      .then(response => {
+        if (response.data.Profile) {
+          user.bitclout.profilePicture = response.data.Profile.ProfilePic;
+          user.bitclout.bio = response.data.Profile.Description;
+          user.bitclout.username = response.data.Profile.Username;
+          user.save();
+          res.json({
+            user: user,
+            token: token,
+          });
+        }
+      })
+      .catch(error => {
+        console.error(error);
         res.json({
           user: user,
           token: token,
         });
-      } else {
-        next(createError(409, "Bitclout API Error"));
-      }
-    } catch (e) {
-      if (e.response.data.error) {
-        next(createError(e.response.status, e.response.data.error));
-      } else {
-        next(e);
-      }
-    }
+      });
   } else {
     next(createError(401, `Invalid token.`));
   }

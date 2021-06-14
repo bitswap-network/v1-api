@@ -129,7 +129,7 @@ gatewayRouter.post("/deposit/bitclout", fireEyeWall, tokenAuthenticator, deposit
         await user.save();
         await txn.save();
         const body = {
-          username: user.bitclout.username,
+          publicKey: user.bitclout.publicKey,
         };
         axios.post(`${config.EXCHANGE_API}/exchange/sanitize`, body, {
           headers: { "Server-Signature": generateHMAC(body) },
@@ -232,7 +232,7 @@ gatewayRouter.post("/withdraw/bitclout", fireEyeWall, tokenAuthenticator, valueS
             { $inc: { "balance.bitclout": -valueTruncated }, $set: { "balance.in_transaction": true } }
           );
           const body = {
-            username: user.bitclout.username,
+            publicKey: user.bitclout.publicKey,
           };
           await axios.post(`${config.EXCHANGE_API}/exchange/sanitize`, body, {
             headers: { "Server-Signature": generateHMAC(body) },
@@ -284,7 +284,7 @@ gatewayRouter.post("/withdraw/eth", fireEyeWall, tokenAuthenticator, withdrawEth
             { $inc: { "balance.ether": -value }, $set: { "balance.in_transaction": true } }
           );
           const body = {
-            username: user.bitclout.username,
+            publicKey: user.bitclout.publicKey,
           };
           await axios.post(`${config.EXCHANGE_API}/exchange/sanitize`, body, {
             headers: { "Server-Signature": generateHMAC(body) },

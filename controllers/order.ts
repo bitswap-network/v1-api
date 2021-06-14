@@ -31,7 +31,7 @@ orderRouter.post("/limit", tokenAuthenticator, limitOrderSchema, async (req, res
   //add verification to check user's balance
   if (user && orderBalanceValidate(user, "limit", orderSide, orderQuantity, orderPrice) && userVerifyCheck(user)) {
     let body = {
-      username: user.bitclout.username,
+      username: user.bitclout.publicKey,
       orderSide: orderSide,
       orderQuantity: +orderQuantity.toFixed(2),
       orderPrice: +orderPrice.toFixed(2),
@@ -59,7 +59,7 @@ orderRouter.post("/market", tokenAuthenticator, marketOrderSchema, async (req, r
   //add verification to check user's balance
   if (user && orderBalanceValidate(user, "market", orderSide, orderQuantity) && userVerifyCheck(user)) {
     let body = {
-      username: user.bitclout.username,
+      username: user.bitclout.publicKey,
       orderSide: orderSide,
       orderQuantity: +orderQuantity.toFixed(2),
     };

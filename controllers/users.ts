@@ -22,17 +22,6 @@ userRouter.get("/data", tokenAuthenticator, async (req, res, next) => {
   }
 });
 
-userRouter.get("/profile/:username", async (req, res, next) => {
-  const user = await User.findOne({
-    "bitclout.username": req.params.username,
-  }).exec();
-  if (user) {
-    res.json(user);
-  } else {
-    next(createError(400, "Invalid Request."));
-  }
-});
-
 userRouter.get("/resend-verification", tokenAuthenticator, async (req, res, next) => {
   const user = await User.findOne({ "bitclout.publicKey": req.key });
   if (user) {
@@ -158,7 +147,9 @@ userRouter.get("/transaction/:id", tokenAuthenticator, async (req, res, next) =>
 userRouter.get("/orders", tokenAuthenticator, async (req, res, next) => {
   const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
   if (user) {
-    const orders = await Order.find({ username: user.bitclout.username }).sort({ completed: "desc", created: "desc" }).exec();
+    const orders = await Order.find({ $or: [{ username: user.bitclout.publicKey }, { username: user.bitclout.username }] })
+      .sort({ completed: "desc", created: "desc" })
+      .exec();
     res.json({ data: orders });
   } else {
     next(createError(400, "Invalid Request."));
