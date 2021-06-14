@@ -169,6 +169,7 @@ gatewayRouter.get("/deposit/eth", tokenAuthenticator, async (req, res, next) => 
               user: user._id,
               transactionType: "deposit",
               assetType: "ETH",
+              poolAddress: pool.address,
               created: new Date(),
             });
             user.transactions.push(txn._id);

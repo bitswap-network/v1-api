@@ -10,6 +10,7 @@ export interface transactionDoc extends Document {
   completionDate: Date | undefined;
   state: string;
   error: string | null;
+  poolAddress: string | undefined;
   gasPrice: number | undefined;
   txnHash: string | undefined;
 }
@@ -33,6 +34,7 @@ const transactionSchema = new Schema<transactionDoc>({
     enum: ["pending", "done", "failed"],
   },
   error: { type: String, default: null },
+  poolAddress: { type: String },
   gasPrice: { type: Number },
   txnHash: { type: String },
 });
