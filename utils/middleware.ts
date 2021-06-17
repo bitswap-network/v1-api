@@ -20,7 +20,7 @@ export const withdrawEthSchema = (req, res, next) => {
 
 export const marketOrderSchema = (req, res, next) => {
   const schema = Joi.object({
-    orderQuantity: Joi.number().min(0).max(500).required(),
+    orderQuantity: Joi.number().min(0.01).max(500).required(),
     orderSide: Joi.string().valid("buy", "sell").required(),
   });
   validateRequest(req, next, schema);
@@ -28,8 +28,8 @@ export const marketOrderSchema = (req, res, next) => {
 
 export const limitOrderSchema = (req, res, next) => {
   const schema = Joi.object({
-    orderQuantity: Joi.number().greater(0).max(500).required(),
-    orderPrice: Joi.number().greater(0).max(10000).required(),
+    orderQuantity: Joi.number().min(0.01).max(500).required(),
+    orderPrice: Joi.number().min(1).max(10000).required(),
     orderSide: Joi.string().valid("buy", "sell").required(),
   });
   validateRequest(req, next, schema);
