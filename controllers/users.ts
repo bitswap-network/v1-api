@@ -147,9 +147,7 @@ userRouter.get("/transaction/:id", tokenAuthenticator, async (req, res, next) =>
 userRouter.get("/orders", tokenAuthenticator, async (req, res, next) => {
   const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
   if (user) {
-    const orders = await Order.find({ $or: [{ username: user.bitclout.publicKey }, { username: user.bitclout.username }] })
-      .sort({ completed: "desc", created: "desc" })
-      .exec();
+    const orders = await Order.find({ username: user.bitclout.publicKey }).sort({ completed: "desc", created: "desc" }).exec();
     res.json({ data: orders });
   } else {
     next(createError(400, "Invalid Request."));
