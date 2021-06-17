@@ -51,7 +51,7 @@ authRouter.put("/register", middleware.registerSchema, async (req, res, next) =>
 
 authRouter.post("/login", middleware.loginSchema, async (req, res, next) => {
   const { publicKey, identityJWT } = req.body;
-  let adminOnly = true;
+  let adminOnly = false;
   // if (process.env.ENVIRONMENT !== "production") {
   //   adminOnly = true;
   // }
