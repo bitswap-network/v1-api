@@ -49,14 +49,12 @@ gatewayRouter.post("/deposit/bitclout-preflight", fireEyeWall, tokenAuthenticato
       next(createError(401, "User not verified."));
     } else {
       try {
-        console.log(toNanos(value));
         const preflight = await preflightTransaction({
           AmountNanos: toNanos(value),
           MinFeeRateNanosPerKB: config.MinFeeRateNanosPerKB,
           RecipientPublicKeyOrUsername: config.PUBLIC_KEY_BITCLOUT,
           SenderPublicKeyBase58Check: user.bitclout.publicKey,
         });
-        console.log(preflight);
         res.send({ data: preflight.data });
       } catch (e) {
         if (e.response.data.error) {
@@ -111,7 +109,6 @@ gatewayRouter.post("/deposit/bitclout", fireEyeWall, tokenAuthenticator, deposit
         const reciept = await submitTransaction({
           TransactionHex: transactionHex,
         });
-        console.log(reciept);
         const valueTruncated = +(toNanos(value) / 1e9).toFixed(8);
         const txn = new Transaction({
           user: user._id,

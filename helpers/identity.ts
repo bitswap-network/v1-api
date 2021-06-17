@@ -1,5 +1,4 @@
 import * as config from "../utils/config";
-import { createDecipher, createCipher } from "crypto";
 import { ec as EC } from "elliptic";
 import * as sha256 from "sha256";
 import HDNode from "hdkey";

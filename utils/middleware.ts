@@ -92,12 +92,19 @@ const validateRequest = (req, next, schema) => {
   }
 };
 
+const excludeLogPaths = ["/utility/orderbook", "/user/data", "/order/market-price", "/user/orders"];
+
 export const requestLogger = (req, res, next) => {
-  console.log("Method:", req.method);
-  console.log("Path:  ", req.path);
-  console.log("Header:  ", req.header);
-  console.log("Body:  ", req.body);
-  console.log("---");
+  if (excludeLogPaths.includes(req.path)) {
+    console.log("Path:  ", req.path);
+    console.log("---");
+  } else {
+    console.log("Method:", req.method);
+    console.log("Path:  ", req.path);
+    console.log("Header:  ", req.header);
+    console.log("Body:  ", req.body);
+    console.log("---");
+  }
   next();
 };
 

@@ -5,7 +5,6 @@ import { AddressActivity } from "../interfaces/alchemy";
 const webhookRouter = require("express").Router();
 
 webhookRouter.post("/pool", async (req, res, next) => {
-  console.log(req.body);
   if (verifyAlchemySignature(req)) {
     await syncWalletBalance();
     req.body.activity.forEach(async (activity: AddressActivity) => {
@@ -29,7 +28,6 @@ webhookRouter.post("/pool", async (req, res, next) => {
               processDeposit(pool, value, asset, hash);
               res.sendStatus(204);
             } else {
-              console.log("sent to inactive pool");
               res.sendStatus(400);
             }
           } else {
