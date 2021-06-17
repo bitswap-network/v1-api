@@ -89,7 +89,6 @@ export const toNanos = (value: number) => {
 
 export const orderBalanceValidate = async (user: UserDoc, type: string, side: string, quantity: number, price?: number) => {
   const orders = await Order.find({ username: user.bitclout.publicKey, complete: false }).exec();
-
   if (user.balance.in_transaction) {
     return false;
   } else {
@@ -99,7 +98,7 @@ export const orderBalanceValidate = async (user: UserDoc, type: string, side: st
       const totalEth = totalPriceResp.data.price / ethPriceResp.data.result;
       return totalEth <= user.balance.ether;
     } else if (type === "limit" && price) {
-      if (orders.length > 10) {
+      if (orders.length >= 10) {
         return false;
       } else {
         if (side === "buy") {
