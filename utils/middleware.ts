@@ -29,7 +29,7 @@ export const marketOrderSchema = (req, res, next) => {
 export const limitOrderSchema = (req, res, next) => {
   const schema = Joi.object({
     orderQuantity: Joi.number().greater(0).max(500).required(),
-    orderPrice: Joi.number().greater(100).max(500).required(),
+    orderPrice: Joi.number().greater(0).max(10000).required(),
     orderSide: Joi.string().valid("buy", "sell").required(),
   });
   validateRequest(req, next, schema);
@@ -96,11 +96,7 @@ export const requestLogger = (req, res, next) => {
   console.log("Method:", req.method);
   console.log("Path:  ", req.path);
   console.log("Header:  ", req.header);
-  if (req.path === "/auth/login" || req.path === "/auth/register") {
-    console.log("Body Filtered");
-  } else {
-    console.log("Body:  ", req.body);
-  }
+  console.log("Body:  ", req.body);
   console.log("---");
   next();
 };

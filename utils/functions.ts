@@ -1,5 +1,6 @@
 import { createHmac, randomBytes } from "crypto";
 import { UserDoc } from "../models/user";
+import Order from "../models/order";
 import { AxiosResponse } from "axios";
 import axios from "axios";
 import crypto from "crypto";
@@ -87,7 +88,9 @@ export const toNanos = (value: number) => {
 };
 
 export const orderBalanceValidate = async (user: UserDoc, type: string, side: string, quantity: number, price?: number) => {
-  if (user.balance.in_transaction) {
+  const orders = await Order.find({ username: user.bitclout.publicKey, complete: false }).exec();
+
+  if (user.balance.in_transaction || orders.length > 10) {
     return false;
   } else {
     if (type === "market" && side === "buy") {
