@@ -3,6 +3,7 @@ import User from "../models/user";
 import sendMail from "../utils/mailer";
 import * as middleware from "../utils/middleware";
 import { getSingleProfile } from "../helpers/bitclout";
+import { createPersonaAccount, getPersonaAccount } from "../helpers/persona";
 import { validateJwt } from "../helpers/identity";
 import { emailVerify } from "../utils/mailBody";
 const createError = require("http-errors");
@@ -75,26 +76,34 @@ authRouter.post("/login", middleware.loginSchema, async (req, res, next) => {
     const token = generateAccessToken({
       PublicKeyBase58Check: user.bitclout.publicKey,
     });
-    getSingleProfile(user.bitclout.publicKey)
-      .then(response => {
-        if (response.data.Profile) {
-          user.bitclout.profilePicture = response.data.Profile.ProfilePic;
-          user.bitclout.bio = response.data.Profile.Description;
-          user.bitclout.username = response.data.Profile.Username;
-          user.save();
-          res.json({
-            user: user,
-            token: token,
-          });
+    try {
+      const profileResp = await getSingleProfile(user.bitclout.publicKey);
+      user.bitclout.bio = profileResp.data.Profile.Description;
+      user.bitclout.username = profileResp.data.Profile.Username;
+
+      if (!user.verification.personaAccountId) {
+        const personaAccountResp = await getPersonaAccount(user.bitclout.publicKey);
+        if (personaAccountResp.data.data.length > 0) {
+          user.verification.personaAccountId = personaAccountResp.data.data[0].id;
+        } else {
+          const personaCreationResp = await createPersonaAccount(user.bitclout.publicKey);
+          console.log(personaCreationResp);
+          user.verification.personaAccountId = personaCreationResp.data.data.id;
         }
-      })
-      .catch(error => {
-        console.error(error);
-        res.json({
-          user: user,
-          token: token,
-        });
+      }
+      await user.save();
+      res.json({
+        user: user,
+        token: token,
       });
+    } catch (e) {
+      user.save();
+      console.error(e);
+      res.json({
+        user: user,
+        token: token,
+      });
+    }
   } else {
     next(createError(401, `Invalid token.`));
   }

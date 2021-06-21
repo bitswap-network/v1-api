@@ -24,3 +24,4 @@ export const EXCHANGE_API =
     : "https://bitswap-exchange-api-staging.herokuapp.com";
 export const MinFeeRateNanosPerKB = 1000;
 export const MNEMONIC = process.env.MNEMONIC ? process.env.MNEMONIC.replace(/-/g, " ") : "";
+export const PERSONA_APIKEY = process.env.PERSONA_APIKEY ? process.env.PERSONA_APIKEY : "";

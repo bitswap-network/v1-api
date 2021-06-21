@@ -117,5 +117,5 @@ export const orderBalanceValidate = async (user: UserDoc, type: string, side: st
 };
 
 export const userVerifyCheck = (user: UserDoc) => {
-  return user.verification.status === "verified" && user.verification.email;
+  return user.verification.email;
 };

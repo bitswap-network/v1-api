@@ -5,21 +5,21 @@ export interface UserDoc extends Document {
   balance: {
     bitclout: number;
     ether: number;
-    in_transaction: boolean | undefined;
+    in_transaction: boolean;
   };
   transactions: Schema.Types.ObjectId[];
   verification: {
     email: boolean;
     emailString: string;
-    status: string;
-    bitcloutString: string;
+    personaAccountId: string | null;
+    inquiryId: string | null;
+    personaVerified: boolean;
   };
   bitclout: {
     publicKey: string;
     bio: string | undefined;
     verified: boolean;
-    profilePicture: string | undefined;
-    username: string;
+    username: string | undefined;
   };
   created: Date;
   admin: boolean;
@@ -37,18 +37,14 @@ const userSchema = new Schema<UserDoc>({
   verification: {
     email: { type: Boolean, default: false },
     emailString: { type: String },
-    status: {
-      type: String,
-      default: "unverified",
-      enum: ["unverified", "verified"],
-    },
-    bitcloutString: { type: String },
+    personaAccountId: { type: String, default: null },
+    inquiryId: { type: String, default: null },
+    personaVerified: { type: Boolean, default: false },
   },
   bitclout: {
     publicKey: { type: String, unique: true, required: true },
     bio: { type: String },
     verified: { type: Boolean, default: false },
-    profilePicture: { type: String },
     username: {
       type: String,
       unique: true,

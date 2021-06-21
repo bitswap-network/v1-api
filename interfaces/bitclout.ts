@@ -53,7 +53,7 @@ export interface ExchangeRateAPIInterface extends AxiosResponse {
 }
 export interface ProfileAPIInterface extends AxiosResponse {
   data: {
-    Profile: bitcloutProfileType | undefined;
+    Profile: bitcloutProfileType;
     error: string | undefined;
   };
 }

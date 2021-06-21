@@ -1,7 +1,6 @@
 import User from "../models/user";
 import Order from "../models/order";
 import Transaction from "../models/transaction";
-import { getProfilePosts } from "../helpers/bitclout";
 import { tokenAuthenticator, updateProfileSchema } from "../utils/middleware";
 import { emailverified, servererror } from "../utils/mailBody";
 import { emailVerify } from "../utils/mailBody";
@@ -53,7 +52,7 @@ userRouter.put("/update-email", tokenAuthenticator, async (req, res, next) => {
           sendMail(email, mailBody.header, mailBody.body);
           res.sendStatus(201);
         } catch (err) {
-          res.status(500).send({ error: err.message });
+          next(err);
         }
       }
     });
@@ -104,9 +103,7 @@ userRouter.get("/verify-email/:code", async (req, res, next) => {
   const code = req.params.code;
   const user = await User.findOne({ "verification.emailString": code }).exec();
   if (user) {
-    user.verification.status = "verified";
     user.verification.email = true;
-    user.verification.emailString = "";
     user
       .save()
       .then(() => {
