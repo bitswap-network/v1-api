@@ -18,10 +18,10 @@ export const verifyPersonaSignature = (request: any) => {
     const [key, value] = pair.split("=");
     sigParams[key] = value;
   });
-
+  console.log("SIG PARAMS: ", sigParams)
   if (sigParams.t && sigParams.v1) {
     const hmac = crypto.createHmac("sha256", token).update(`${sigParams.t}.${request.body}`).digest("hex");
-
+    console.log(hmac)
     return crypto.timingSafeEqual(Buffer.from(hmac), Buffer.from(sigParams.v1));
   } else {
     return false;
