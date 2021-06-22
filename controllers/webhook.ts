@@ -1,8 +1,25 @@
 import Pool from "../models/pool";
-import { verifyAlchemySignature } from "../utils/functions";
+import User from "../models/user";
+import { verifyAlchemySignature, verifyPersonaSignature } from "../utils/functions";
 import { processDeposit, syncWalletBalance } from "../helpers/pool";
 import { AddressActivity } from "../interfaces/alchemy";
 const webhookRouter = require("express").Router();
+
+webhookRouter.post("/inquiry", async (req, res, next) => {
+  console.log(req.body.data);
+  if (verifyPersonaSignature(req)) {
+    const inquiryState = req.body.data.attributes.payload.data.attributes.status;
+    const accountId = req.body.data.relationships.account.data.id;
+    const user = await User.findOne({ "verification.personaAccountId": accountId }).exec();
+    if (user && inquiryState == "completed") {
+      user.verification.personaVerified = true;
+      await user.save();
+    }
+    res.sendStatus(200);
+  } else {
+    res.sendStatus(401);
+  }
+});
 
 webhookRouter.post("/pool", async (req, res, next) => {
   if (verifyAlchemySignature(req)) {
@@ -26,9 +43,9 @@ webhookRouter.post("/pool", async (req, res, next) => {
             pool.save();
             if (pool.active) {
               processDeposit(pool, value, asset, hash);
-              res.sendStatus(204);
+              res.sendStatus(200);
             } else {
-              res.sendStatus(400);
+              res.sendStatus(200);
             }
           } else {
             res.sendStatus(400);

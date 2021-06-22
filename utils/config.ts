@@ -25,3 +25,4 @@ export const EXCHANGE_API =
 export const MinFeeRateNanosPerKB = 1000;
 export const MNEMONIC = process.env.MNEMONIC ? process.env.MNEMONIC.replace(/-/g, " ") : "";
 export const PERSONA_APIKEY = process.env.PERSONA_APIKEY ? process.env.PERSONA_APIKEY : "";
+export const PERSONA_WH_SECRET = process.env.PERSONA_WH_SECRET ? process.env.PERSONA_WH_SECRET : "";

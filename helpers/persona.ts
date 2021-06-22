@@ -19,7 +19,15 @@ export const createPersonaAccount = (publicKey: string) => {
   );
 };
 export const getPersonaAccount = (publicKey: string) => {
-  return axios.get(`https://withpersona.com/api/v1/accounts?filter=${publicKey}`, {
+  return axios.get(`https://withpersona.com/api/v1/accounts?filter\[reference-id\]=${publicKey}`, {
+    headers: {
+      Authorization: `Bearer ${config.PERSONA_APIKEY}`,
+    },
+  });
+};
+
+export const getInquiry = (inquiryId: string) => {
+  return axios.get(`https://withpersona.com/api/v1/inquiries/${inquiryId}`, {
     headers: {
       Authorization: `Bearer ${config.PERSONA_APIKEY}`,
     },

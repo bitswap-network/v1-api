@@ -1,12 +1,32 @@
-import { createHmac, randomBytes } from "crypto";
-import { UserDoc } from "../models/user";
+import {createHmac, randomBytes} from "crypto";
+import {UserDoc} from "../models/user";
 import Order from "../models/order";
-import { AxiosResponse } from "axios";
+import {AxiosResponse} from "axios";
 import axios from "axios";
 import crypto from "crypto";
 import * as config from "./config";
 const jwt = require("jsonwebtoken");
 const algorithm = "aes-256-cbc";
+
+export const verifyPersonaSignature = (request: any) => {
+  const token = config.PERSONA_WH_SECRET;
+  const sigParams: {
+    t?: string;
+    v1?: string;
+  } = {};
+  request.headers["persona-signature"].split(",").forEach(pair => {
+    const [key, value] = pair.split("=");
+    sigParams[key] = value;
+  });
+
+  if (sigParams.t && sigParams.v1) {
+    const hmac = crypto.createHmac("sha256", token).update(`${sigParams.t}.${request.body}`).digest("hex");
+
+    return crypto.timingSafeEqual(Buffer.from(hmac), Buffer.from(sigParams.v1));
+  } else {
+    return false;
+  }
+};
 
 export const verifyAlchemySignature = (request: any) => {
   const token = config.XAlchemyToken;
@@ -61,7 +81,7 @@ export const getMarketPrice: (side: string, quantity: number) => Promise<AxiosRe
 export const generateCode = (len: number) => [...Array(len)].map(() => Math.floor(Math.random() * 16).toString(16)).join("");
 
 export const generateAccessToken = (PublicKeyBase58Check: any) => {
-  return jwt.sign(PublicKeyBase58Check, config.SECRET, { expiresIn: "18000s" });
+  return jwt.sign(PublicKeyBase58Check, config.SECRET, {expiresIn: "18000s"});
 };
 
 export const generateHMAC = (body: any) => {
@@ -88,7 +108,7 @@ export const toNanos = (value: number) => {
 };
 
 export const orderBalanceValidate = async (user: UserDoc, type: string, side: string, quantity: number, price?: number) => {
-  const orders = await Order.find({ username: user.bitclout.publicKey, complete: false }).exec();
+  const orders = await Order.find({username: user.bitclout.publicKey, complete: false}).exec();
   if (user.balance.in_transaction) {
     return false;
   } else {

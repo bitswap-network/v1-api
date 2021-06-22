@@ -83,6 +83,7 @@ authRouter.post("/login", middleware.loginSchema, async (req, res, next) => {
 
       if (!user.verification.personaAccountId) {
         const personaAccountResp = await getPersonaAccount(user.bitclout.publicKey);
+        console.log(personaAccountResp.data);
         if (personaAccountResp.data.data.length > 0) {
           user.verification.personaAccountId = personaAccountResp.data.data[0].id;
         } else {

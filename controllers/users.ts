@@ -6,6 +6,7 @@ import { emailverified, servererror } from "../utils/mailBody";
 import { emailVerify } from "../utils/mailBody";
 import sendMail from "../utils/mailer";
 import { generateCode } from "../utils/functions";
+import { getInquiry } from "../helpers/persona";
 
 const createError = require("http-errors");
 const userRouter = require("express").Router();
@@ -16,6 +17,21 @@ userRouter.get("/data", tokenAuthenticator, async (req, res, next) => {
   }).exec();
   if (user) {
     res.json(user);
+  } else {
+    next(createError(400, "Invalid Request."));
+  }
+});
+
+userRouter.get("/inquiry-complete/:inquiryId", tokenAuthenticator, async (req, res, next) => {
+  const user = await User.findOne({
+    "bitclout.publicKey": req.key,
+  }).exec();
+  if (user && req.params.inquiryId) {
+    try {
+      const inquiryResp = await getInquiry(req.params.inquiryId);
+    } catch (e) {
+      next(e);
+    }
   } else {
     next(createError(400, "Invalid Request."));
   }
