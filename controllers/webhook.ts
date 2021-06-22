@@ -6,12 +6,13 @@ import {AddressActivity} from "../interfaces/alchemy";
 const webhookRouter = require("express").Router();
 
 webhookRouter.post("/inquiry", async (req, res, next) => {
-  console.log(req.body.data);
+  console.log(req.body.data.attributes.payload);
   if (verifyPersonaSignature(req)) {
     try {
       const inquiryState = req.body.data.attributes.payload.data.attributes.status;
-      const accountId = req.body.data.relationships?.account.data.id;
+      const accountId = req.body.data.attributes.payload.data.relationships?.account?.data.id;
       if (accountId) {
+        console.log(accountId)
         const user = await User.findOne({"verification.personaAccountId": accountId}).exec();
         if (user && inquiryState == "completed") {
           user.verification.personaVerified = true;
