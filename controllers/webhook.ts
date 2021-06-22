@@ -8,16 +8,21 @@ const webhookRouter = require("express").Router();
 webhookRouter.post("/inquiry", async (req, res, next) => {
   console.log(req.body.data);
   if (verifyPersonaSignature(req)) {
-    const inquiryState = req.body.data.attributes.payload.data.attributes.status;
-    const accountId = req.body.data.relationships?.account.data.id;
-    if (accountId) {
-      const user = await User.findOne({"verification.personaAccountId": accountId}).exec();
-      if (user && inquiryState == "completed") {
-        user.verification.personaVerified = true;
-        await user.save();
+    try {
+      const inquiryState = req.body.data.attributes.payload.data.attributes.status;
+      const accountId = req.body.data.relationships?.account.data.id;
+      if (accountId) {
+        const user = await User.findOne({"verification.personaAccountId": accountId}).exec();
+        if (user && inquiryState == "completed") {
+          user.verification.personaVerified = true;
+          await user.save();
+        }
       }
+      res.sendStatus(200);
+    } catch (e) {
+      console.error(e)
+      res.sendStatus(200);
     }
-    res.sendStatus(200);
   } else {
     res.sendStatus(401);
   }
