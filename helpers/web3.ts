@@ -3,8 +3,6 @@ import axios, { AxiosResponse } from "axios";
 const EthereumTx = require("ethereumjs-tx").Transaction;
 import { createAlchemyWeb3 } from "@alch/alchemy-web3";
 const web3 = createAlchemyWeb3(config.WSProvider ? config.WSProvider : "");
-// const Web3 = require("web3");
-// const web3 = new Web3(new Web3.providers.HttpProvider(config.HttpProvider));
 
 export const getBalance = async (address: string) => {
   return web3.utils.fromWei(await web3.eth.getBalance(address), "ether");

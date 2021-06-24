@@ -1,6 +1,5 @@
 const nodemailer = require("nodemailer");
-const config = require("./config");
-
+import * as config from "./config";
 const mail = nodemailer.createTransport({
   service: "gmail",
   auth: {
