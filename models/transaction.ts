@@ -1,5 +1,5 @@
-import {model, Schema, Document} from "mongoose";
-import {UserDoc} from "./user";
+import { model, Schema, Document } from "mongoose";
+import { UserDoc } from "./user";
 export interface transactionDoc extends Document {
   user: UserDoc;
   transactionType: string;
@@ -17,28 +17,28 @@ export interface transactionDoc extends Document {
 }
 
 const transactionSchema = new Schema<transactionDoc>({
-  user: {type: Schema.Types.ObjectId, ref: "User", required: true},
+  user: { type: Schema.Types.ObjectId, ref: "User", required: true },
   transactionType: {
     type: String,
     required: true,
     enum: ["withdraw", "deposit"],
   },
-  assetType: {type: String, required: true, enum: ["ETH", "BCLT"]},
-  value: {type: Number, required: true, default: 0},
-  usdValueAtTime: {type: Number, default: 0},
-  created: {type: Date},
-  completed: {type: Boolean, required: true, default: false},
-  completionDate: {type: Date},
+  assetType: { type: String, required: true, enum: ["ETH", "BCLT"] },
+  value: { type: Number, required: true, default: 0 },
+  usdValueAtTime: { type: Number, default: 0 },
+  created: { type: Date },
+  completed: { type: Boolean, required: true, default: false },
+  completionDate: { type: Date },
   state: {
     type: String,
     required: true,
     default: "pending",
     enum: ["pending", "done", "failed"],
   },
-  error: {type: String, default: null},
-  poolAddress: {type: String},
-  gasPrice: {type: Number},
-  txnHash: {type: String},
+  error: { type: String, default: null },
+  poolAddress: { type: String },
+  gasPrice: { type: Number },
+  txnHash: { type: String },
 });
 
 const Transaction = model<transactionDoc>("Transaction", transactionSchema);
