@@ -1,5 +1,4 @@
 import axios from "axios";
-import { AxiosResponse } from "axios";
 import * as config from "../utils/config";
 import {
   ProfileAPIInterface,
@@ -8,7 +7,6 @@ import {
   TransactionAPIInterface,
   submitTransactionInterface,
   SubmitTransactionAPIInterface,
-  ExchangeRateAPIInterface,
 } from "../interfaces/bitclout";
 
 const cfIngressCookie = {
@@ -31,10 +29,6 @@ export const submitTransaction: (transaction: submitTransactionInterface) => Pro
   transaction: submitTransactionInterface
 ): Promise<SubmitTransactionAPIInterface> {
   return await axios.post("https://bitclout.com/api/v0/submit-transaction", JSON.stringify(transaction), bitcloutCfHeader);
-};
-
-export const getExchangeRate: () => Promise<ExchangeRateAPIInterface> = async function (): Promise<ExchangeRateAPIInterface> {
-  return await axios.get("https://bitclout.com/api/v0/get-exchange-rate", bitcloutCfHeader);
 };
 
 export const getSingleProfile: (PublicKeyBase58Check: string, Username?: string) => Promise<ProfileAPIInterface> = async function (

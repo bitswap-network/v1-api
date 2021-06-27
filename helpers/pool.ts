@@ -1,8 +1,9 @@
 import crypto from "crypto";
 import * as config from "../utils/config";
-import Pool, { poolDoc } from "../models/pool";
-import User, { UserDoc } from "../models/user";
-import { getBalance, genWallet, addAddressWebhook } from "../helpers/web3";
+import Pool, {poolDoc} from "../models/pool";
+import User, {UserDoc} from "../models/user";
+import {getBalance, genWallet, addAddressWebhook} from "../helpers/web3";
+import {getEthUsd} from "../utils/functions";
 import Transaction from "../models/transaction";
 const algorithm = "aes-256-cbc";
 
@@ -34,6 +35,12 @@ export const processDeposit: (pool: poolDoc, value: number, asset: string, hash:
       completed: false,
     }).exec();
     if (transaction) {
+      try {
+        const ethUsdResp = await getEthUsd()
+        transaction.usdValueAtTime = ethUsdResp.data.result * value
+      } catch (e) {
+        console.error(e)
+      }
       transaction.value = value;
       transaction.completed = true;
       transaction.completionDate = new Date();
@@ -53,7 +60,7 @@ export const processDeposit: (pool: poolDoc, value: number, asset: string, hash:
 };
 
 export const getAndAssignPool: (user: UserDoc) => Promise<string> = async function (user: UserDoc): Promise<string> {
-  const pool = await Pool.findOne({ active: false }).exec();
+  const pool = await Pool.findOne({active: false}).exec();
   if (pool) {
     pool.active = true;
     pool.activeStart = Date.now();
