@@ -101,7 +101,7 @@ gatewayRouter.post("/withdraw/bitclout-preflight", fireEyeWall, tokenAuthenticat
 gatewayRouter.post("/deposit/bitclout", fireEyeWall, tokenAuthenticator, depositBitcloutSchema, async (req, res, next) => {
   const {transactionHex, transactionIDBase58Check, value} = req.body;
   const user = await User.findOne({"bitclout.publicKey": req.key, "balance.in_transaction": false});
-  if (user && user.bitclout.publicKey && process.env.ENVIRONMENT === "production") {
+  if (user && user.bitclout.publicKey) {
     if (!userVerifyCheck(user)) {
       next(createError(401, "User not verified."));
     } else {
@@ -313,7 +313,7 @@ gatewayRouter.post("/withdraw/eth", fireEyeWall, tokenAuthenticator, withdrawEth
             gasPrice: parseInt(gas.data.result.FastGasPrice.toString()),
             state: "done",
             value: value,
-            usdValueAtTime: value * ethUsdResp.data.result,
+            usdValueAtTime: value * ethUsdResp,
             completionDate: new Date(),
           }); //create withdraw txn object
           await User.updateOne(

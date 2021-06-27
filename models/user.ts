@@ -21,6 +21,7 @@ export interface UserDoc extends Document {
     verified: boolean;
     username: string | undefined;
   };
+  tier: number;
   created: Date;
   admin: boolean;
 }

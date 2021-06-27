@@ -135,7 +135,7 @@ export const orderBalanceValidate = async (user: UserDoc, type: string, side: st
     if (type === "market" && side === "buy") {
       const ethPriceResp = await getEthUsd();
       const totalPriceResp = await getMarketPrice(side, quantity);
-      const totalEth = totalPriceResp.data.price / ethPriceResp.data.result;
+      const totalEth = totalPriceResp.data.price / ethPriceResp;
       return totalEth <= user.balance.ether;
     } else if (type === "limit" && price) {
       if (orders.length >= 10) {
@@ -144,7 +144,7 @@ export const orderBalanceValidate = async (user: UserDoc, type: string, side: st
         if (side === "buy") {
           const ethPriceResp = await getEthUsd();
           const totalPrice = quantity * price;
-          const totalEth = totalPrice / ethPriceResp.data.result;
+          const totalEth = totalPrice / ethPriceResp;
           return totalEth <= user.balance.ether;
         } else {
           return quantity <= user.balance.bitclout;

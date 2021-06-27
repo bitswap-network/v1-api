@@ -37,7 +37,7 @@ export const processDeposit: (pool: poolDoc, value: number, asset: string, hash:
     if (transaction) {
       try {
         const ethUsdResp = await getEthUsd()
-        transaction.usdValueAtTime = ethUsdResp.data.result * value
+        transaction.usdValueAtTime = ethUsdResp * value
       } catch (e) {
         console.error(e)
       }
