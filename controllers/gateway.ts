@@ -2,7 +2,15 @@ import User from "../models/user";
 import { tokenAuthenticator, depositBitcloutSchema, valueSchema, withdrawEthSchema, fireEyeWall } from "../utils/middleware";
 import Transaction from "../models/transaction";
 import Pool from "../models/pool";
-import { getGasEtherscan, toNanos, userVerifyCheck, generateHMAC, getEthUsd, getBitcloutUsd } from "../utils/functions";
+import {
+  getGasEtherscan,
+  toNanos,
+  userVerifyCheck,
+  generateHMAC,
+  getEthUsd,
+  getBitcloutUsd,
+  enforceWithdrawLimit,
+} from "../utils/functions";
 import { getAndAssignPool, decryptAddressGCM, syncWalletBalance } from "../helpers/pool";
 import { getNonce, checkEthAddr, sendEth } from "../helpers/web3";
 import * as config from "../config";
@@ -12,6 +20,12 @@ import { handleSign } from "../helpers/identity";
 import axios from "axios";
 const createError = require("http-errors");
 const gatewayRouter = require("express").Router();
+
+/*
+  tier0: $2000 aggregate withdraw lim
+  tier1: no limits
+
+*/
 
 gatewayRouter.get("/deposit/cancel/:id", fireEyeWall, tokenAuthenticator, async (req, res, next) => {
   const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
@@ -228,29 +242,33 @@ gatewayRouter.post("/withdraw/bitclout", fireEyeWall, tokenAuthenticator, valueS
           gasPrice: preflight.data.FeeNanos / 1e9,
         });
         if (user.balance.bitclout >= valueTruncated) {
-          await User.updateOne(
-            { "bitclout.publicKey": req.key },
-            { $inc: { "balance.bitclout": -valueTruncated }, $set: { "balance.in_transaction": true } }
-          );
-          const body = {
-            publicKey: user.bitclout.publicKey,
-          };
-          await axios.post(`${config.EXCHANGE_API}/exchange/sanitize`, body, {
-            headers: { "Server-Signature": generateHMAC(body) },
-          });
-          await submitTransaction({
-            TransactionHex: handleSign(preflight.data.TransactionHex),
-          });
-          txn.state = "done";
-          txn.completed = true;
-          txn.completionDate = new Date();
+          if (await enforceWithdrawLimit(user, bitcloutUsd * valueTruncated)) {
+            await User.updateOne(
+              { "bitclout.publicKey": req.key },
+              { $inc: { "balance.bitclout": -valueTruncated }, $set: { "balance.in_transaction": true } }
+            );
+            const body = {
+              publicKey: user.bitclout.publicKey,
+            };
+            await axios.post(`${config.EXCHANGE_API}/exchange/sanitize`, body, {
+              headers: { "Server-Signature": generateHMAC(body) },
+            });
+            await submitTransaction({
+              TransactionHex: handleSign(preflight.data.TransactionHex),
+            });
+            txn.state = "done";
+            txn.completed = true;
+            txn.completionDate = new Date();
 
-          await User.updateOne(
-            { "bitclout.publicKey": req.key },
-            { $set: { "balance.in_transaction": false }, $push: { transactions: txn._id } }
-          );
-          await txn.save();
-          res.send({ data: txn });
+            await User.updateOne(
+              { "bitclout.publicKey": req.key },
+              { $set: { "balance.in_transaction": false }, $push: { transactions: txn._id } }
+            );
+            await txn.save();
+            res.send({ data: txn });
+          } else {
+            next(createError(403, "Overflowing withdraw limit."));
+          }
         } else {
           next(createError(409, "Insufficient funds."));
         }
@@ -281,47 +299,51 @@ gatewayRouter.post("/withdraw/eth", fireEyeWall, tokenAuthenticator, withdrawEth
           const key = decryptAddressGCM(pool.hashedKey); // decrypt pool key
           const nonce = await getNonce(pool.address); // get nonce
           const ethUsdResp = await getEthUsd();
-          await User.updateOne(
-            { "bitclout.publicKey": req.key },
-            { $inc: { "balance.ether": -value }, $set: { "balance.in_transaction": true } }
-          );
-          const body = {
-            publicKey: user.bitclout.publicKey,
-          };
-          await axios.post(`${config.EXCHANGE_API}/exchange/sanitize`, body, {
-            headers: { "Server-Signature": generateHMAC(body) },
-          });
-          // push to new mongodb collection, with a send time generated based on transaction risk. More valuable txns = higher time.
-          // we can have a gocron job searching for jobs and taking them out of the db queue
-          // this allows us to manually verify high risk transactions, and let lower risked transactions go through with better ux
-          const receipt = await sendEth(
-            key,
-            pool.address,
-            withdrawAddress,
-            value,
-            nonce,
-            parseInt(gas.data.result.FastGasPrice.toString())
-          ); // receipt object: https://web3js.readthedocs.io/en/v1.3.4/web3-eth.html#eth-gettransactionreceipt-return
-          const txn = new Transaction({
-            user: user._id,
-            created: new Date(),
-            transactionType: "withdraw",
-            assetType: "ETH",
-            completed: true, //set completed to true after transaction goes through?
-            txnHash: receipt.transactionHash,
-            gasPrice: parseInt(gas.data.result.FastGasPrice.toString()),
-            state: "done",
-            value: value,
-            usdValueAtTime: value * ethUsdResp,
-            completionDate: new Date(),
-          }); //create withdraw txn object
-          await User.updateOne(
-            { "bitclout.publicKey": req.key },
-            { $set: { "balance.in_transaction": false }, $push: { transactions: txn._id } }
-          );
-          txn.save();
-          syncWalletBalance();
-          res.status(200).send({ data: txn });
+          if (await enforceWithdrawLimit(user, ethUsdResp * value)) {
+            await User.updateOne(
+              { "bitclout.publicKey": req.key },
+              { $inc: { "balance.ether": -value }, $set: { "balance.in_transaction": true } }
+            );
+            const body = {
+              publicKey: user.bitclout.publicKey,
+            };
+            await axios.post(`${config.EXCHANGE_API}/exchange/sanitize`, body, {
+              headers: { "Server-Signature": generateHMAC(body) },
+            });
+            // push to new mongodb collection, with a send time generated based on transaction risk. More valuable txns = higher time.
+            // we can have a gocron job searching for jobs and taking them out of the db queue
+            // this allows us to manually verify high risk transactions, and let lower risked transactions go through with better ux
+            const receipt = await sendEth(
+              key,
+              pool.address,
+              withdrawAddress,
+              value,
+              nonce,
+              parseInt(gas.data.result.FastGasPrice.toString())
+            ); // receipt object: https://web3js.readthedocs.io/en/v1.3.4/web3-eth.html#eth-gettransactionreceipt-return
+            const txn = new Transaction({
+              user: user._id,
+              created: new Date(),
+              transactionType: "withdraw",
+              assetType: "ETH",
+              completed: true, //set completed to true after transaction goes through?
+              txnHash: receipt.transactionHash,
+              gasPrice: parseInt(gas.data.result.FastGasPrice.toString()),
+              state: "done",
+              value: value,
+              usdValueAtTime: value * ethUsdResp,
+              completionDate: new Date(),
+            }); //create withdraw txn object
+            await User.updateOne(
+              { "bitclout.publicKey": req.key },
+              { $set: { "balance.in_transaction": false }, $push: { transactions: txn._id } }
+            );
+            txn.save();
+            syncWalletBalance();
+            res.status(200).send({ data: txn });
+          } else {
+            next(createError(403, "Overflowing withdraw limit."));
+          }
         } catch (e) {
           next(e);
         }

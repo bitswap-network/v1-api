@@ -1,6 +1,7 @@
 import { createHmac, randomBytes } from "crypto";
 import { UserDoc } from "../models/user";
 import Order from "../models/order";
+import Transaction from "../models/transaction";
 import { bitcloutCfHeader } from "../helpers/bitclout";
 import { AxiosResponse } from "axios";
 import axios from "axios";
@@ -8,6 +9,28 @@ import crypto from "crypto";
 import * as config from "../config";
 const jwt = require("jsonwebtoken");
 const algorithm = "aes-256-cbc";
+
+const tier0WithdrawLim = 2000;
+
+export const enforceWithdrawLimit = async (user: UserDoc, newTxnValue: number) => {
+  try {
+    if (user.tier == 0) {
+      const withdrawSum: Array<{ _id: any; amount: number }> = await Transaction.aggregate([
+        { $match: { user: user._id, transactionType: "withdraw" } },
+        { $group: { _id: null, amount: { $sum: "$usdValueAtTime" } } },
+      ]).exec();
+      console.log(withdrawSum);
+      if (withdrawSum.length == 0) {
+        return newTxnValue <= tier0WithdrawLim;
+      }
+      return newTxnValue + withdrawSum[0].amount <= tier0WithdrawLim;
+    } else {
+      return true;
+    }
+  } catch (e) {
+    throw e;
+  }
+};
 
 export const verifyPersonaSignature = (request: any) => {
   const token = config.PERSONA_WH_SECRET;
