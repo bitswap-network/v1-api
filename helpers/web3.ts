@@ -1,4 +1,4 @@
-import * as config from "../utils/config";
+import * as config from "../config";
 import axios, { AxiosResponse } from "axios";
 const EthereumTx = require("ethereumjs-tx").Transaction;
 import { createAlchemyWeb3 } from "@alch/alchemy-web3";

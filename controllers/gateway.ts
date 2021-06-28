@@ -5,7 +5,7 @@ import Pool from "../models/pool";
 import { getGasEtherscan, toNanos, userVerifyCheck, generateHMAC, getEthUsd, getBitcloutUsd } from "../utils/functions";
 import { getAndAssignPool, decryptAddressGCM, syncWalletBalance } from "../helpers/pool";
 import { getNonce, checkEthAddr, sendEth } from "../helpers/web3";
-import * as config from "../utils/config";
+import * as config from "../config";
 import { preflightTransaction, submitTransaction } from "../helpers/bitclout";
 import { handleSign } from "../helpers/identity";
 

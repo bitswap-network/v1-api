@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import * as config from "../utils/config";
+import * as config from "../config";
 import Pool, { poolDoc } from "../models/pool";
 import User, { UserDoc } from "../models/user";
 import { getBalance, genWallet, addAddressWebhook } from "../helpers/web3";

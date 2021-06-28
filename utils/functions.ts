@@ -5,7 +5,7 @@ import { bitcloutCfHeader } from "../helpers/bitclout";
 import { AxiosResponse } from "axios";
 import axios from "axios";
 import crypto from "crypto";
-import * as config from "./config";
+import * as config from "../config";
 const jwt = require("jsonwebtoken");
 const algorithm = "aes-256-cbc";
 
@@ -46,7 +46,7 @@ export const verifyAlchemySignature = (request: any) => {
 };
 
 export const verifySignature = (request: any) => {
-  const token = config.ServerAuth ? config.ServerAuth : "";
+  const token = config.FIREEYE_KEY ? config.FIREEYE_KEY : "";
   if (token) {
     const headers = request.headers;
     const signature = headers["server-signature"]; // Lowercase for NodeJS
@@ -106,11 +106,12 @@ export const getMarketPrice: (side: string, quantity: number) => Promise<AxiosRe
 export const generateCode = (len: number) => [...Array(len)].map(() => Math.floor(Math.random() * 16).toString(16)).join("");
 
 export const generateAccessToken = (PublicKeyBase58Check: any) => {
-  return jwt.sign(PublicKeyBase58Check, config.SECRET, { expiresIn: "18000s" });
+  return jwt.sign(PublicKeyBase58Check, config.JWT_KEY, { expiresIn: "18000s" });
+
 };
 
 export const generateHMAC = (body: any) => {
-  const token = config.ServerAuth ? config.ServerAuth : "";
+  const token = config.FIREEYE_KEY ? config.FIREEYE_KEY : "";
   const hmac = createHmac("sha256", token); // Create a HMAC SHA256 hash using the auth token
   hmac.update(JSON.stringify(body), "utf8");
   return hmac.digest("hex"); // If signature equals your computed hash, return true
@@ -118,7 +119,7 @@ export const generateHMAC = (body: any) => {
 
 export const generateHandshake = (timestamp: number) => {
   const iv = crypto.randomBytes(16);
-  const cipher = crypto.createCipheriv(algorithm, Buffer.from(config.ServerAuth), iv);
+  const cipher = crypto.createCipheriv(algorithm, Buffer.from(config.FIREEYE_KEY), iv);
   let encrypted = cipher.update(timestamp.toString());
   encrypted = Buffer.concat([encrypted, cipher.final()]);
   return iv.toString("hex") + "-" + encrypted.toString("hex");
