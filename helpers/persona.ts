@@ -1,5 +1,5 @@
 import axios from "axios";
-import * as config from "../utils/config";
+import * as config from "../config";
 export const createPersonaAccount = (publicKey: string) => {
   return axios.post(
     "https://withpersona.com/api/v1/accounts",

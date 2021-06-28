@@ -1,6 +1,6 @@
 import axios from "axios";
 import Joi from "joi";
-import * as config from "./config";
+import * as config from "../config";
 const jwt = require("jsonwebtoken");
 const createError = require("http-errors");
 
@@ -141,7 +141,7 @@ export const tokenAuthenticator = (req, res, next) => {
 
     if (token == null) return res.status(400).send("Missing token");
 
-    jwt.verify(token, config.SECRET, (err, key) => {
+    jwt.verify(token, config.JWT_KEY, (err, key) => {
       if (err) return res.status(403).send("Invalid token");
 
       req.key = key.PublicKeyBase58Check;

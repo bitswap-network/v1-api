@@ -1,4 +1,4 @@
-import * as config from "../utils/config";
+import * as config from "../config";
 
 export const emailVerify = (email_code: string) => {
   return {

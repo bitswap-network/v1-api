@@ -16,7 +16,7 @@ import webhookRouter from "./controllers/webhook";
 // Middleware
 import * as middleware from "./utils/middleware";
 import * as logger from "./utils/logger";
-import * as config from "./utils/config";
+import * as config from "./config";
 
 //Setups
 import { syncWalletBalance } from "./helpers/pool";
@@ -48,7 +48,6 @@ app.use(morgan("dev"));
 morganBody(app, {
   skip: (req, res) => res.statusCode < 400,
 });
-// app.use(rollbar.errorHandler())
 
 app.get("/", (req: express.Request, res: express.Response) => {
   res.status(200).send(`BitSwap API`);

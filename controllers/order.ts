@@ -2,7 +2,7 @@ import User from "../models/user";
 import { tokenAuthenticator, limitOrderSchema, marketOrderSchema } from "../utils/middleware";
 import Order from "../models/order";
 import { generateHMAC, orderBalanceValidate, userVerifyCheck } from "../utils/functions";
-import * as config from "../utils/config";
+import * as config from "../config";
 import axios from "axios";
 
 const createError = require("http-errors");
