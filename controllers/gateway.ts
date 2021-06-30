@@ -1,5 +1,5 @@
 import User from "../models/user";
-import { tokenAuthenticator, depositBitcloutSchema, valueSchema, withdrawEthSchema, fireEyeWall } from "../utils/middleware";
+import {tokenAuthenticator, depositBitcloutSchema, valueSchema, withdrawEthSchema, fireEyeWall} from "../utils/middleware";
 import Transaction from "../models/transaction";
 import Pool from "../models/pool";
 import {
@@ -11,11 +11,11 @@ import {
   getBitcloutUsd,
   enforceWithdrawLimit,
 } from "../utils/functions";
-import { getAndAssignPool, decryptAddressGCM, syncWalletBalance } from "../helpers/pool";
-import { getNonce, checkEthAddr, sendEth } from "../helpers/web3";
+import {getAndAssignPool, decryptAddressGCM, syncWalletBalance} from "../helpers/pool";
+import {getNonce, checkEthAddr, sendEth} from "../helpers/web3";
 import * as config from "../config";
-import { preflightTransaction, submitTransaction } from "../helpers/bitclout";
-import { handleSign } from "../helpers/identity";
+import {preflightTransaction, submitTransaction} from "../helpers/bitclout";
+import {handleSign} from "../helpers/identity";
 
 import axios from "axios";
 const createError = require("http-errors");
@@ -28,10 +28,10 @@ const gatewayRouter = require("express").Router();
 */
 
 gatewayRouter.get("/deposit/cancel/:id", fireEyeWall, tokenAuthenticator, async (req, res, next) => {
-  const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
+  const user = await User.findOne({"bitclout.publicKey": req.key}).exec();
   if (user && req.params.id) {
     const transaction = await Transaction.findById(req.params.id).exec();
-    const pool = await Pool.findOne({ user: user._id }).exec();
+    const pool = await Pool.findOne({user: user._id}).exec();
     if (pool && transaction) {
       try {
         pool.active = false;
@@ -56,8 +56,8 @@ gatewayRouter.get("/deposit/cancel/:id", fireEyeWall, tokenAuthenticator, async 
 });
 
 gatewayRouter.post("/deposit/bitclout-preflight", fireEyeWall, tokenAuthenticator, valueSchema, async (req, res, next) => {
-  const { value } = req.body;
-  const user = await User.findOne({ "bitclout.publicKey": req.key, "balance.in_transaction": false }).exec();
+  const {value} = req.body;
+  const user = await User.findOne({"bitclout.publicKey": req.key, "balance.in_transaction": false}).exec();
   if (user) {
     if (!userVerifyCheck(user)) {
       next(createError(401, "User not verified."));
@@ -69,7 +69,7 @@ gatewayRouter.post("/deposit/bitclout-preflight", fireEyeWall, tokenAuthenticato
           RecipientPublicKeyOrUsername: config.PUBLIC_KEY_BITCLOUT,
           SenderPublicKeyBase58Check: user.bitclout.publicKey,
         });
-        res.send({ data: preflight.data });
+        res.send({data: preflight.data});
       } catch (e) {
         if (e.response.data.error) {
           next(createError(e.response.status, e.response.data.error));
@@ -84,8 +84,8 @@ gatewayRouter.post("/deposit/bitclout-preflight", fireEyeWall, tokenAuthenticato
 });
 
 gatewayRouter.post("/withdraw/bitclout-preflight", fireEyeWall, tokenAuthenticator, valueSchema, async (req, res, next) => {
-  const { value } = req.body;
-  const user = await User.findOne({ "bitclout.publicKey": req.key, "balance.in_transaction": false }).exec();
+  const {value} = req.body;
+  const user = await User.findOne({"bitclout.publicKey": req.key, "balance.in_transaction": false}).exec();
   if (user) {
     if (!userVerifyCheck(user)) {
       next(createError(401, "User not verified."));
@@ -98,7 +98,7 @@ gatewayRouter.post("/withdraw/bitclout-preflight", fireEyeWall, tokenAuthenticat
           SenderPublicKeyBase58Check: config.PUBLIC_KEY_BITCLOUT,
         });
 
-        res.send({ data: preflight.data });
+        res.send({data: preflight.data});
       } catch (e) {
         if (e.response.data.error) {
           next(createError(e.response.status, e.response.data.error));
@@ -113,8 +113,8 @@ gatewayRouter.post("/withdraw/bitclout-preflight", fireEyeWall, tokenAuthenticat
 });
 
 gatewayRouter.post("/deposit/bitclout", fireEyeWall, tokenAuthenticator, depositBitcloutSchema, async (req, res, next) => {
-  const { transactionHex, transactionIDBase58Check, value } = req.body;
-  const user = await User.findOne({ "bitclout.publicKey": req.key, "balance.in_transaction": false });
+  const {transactionHex, transactionIDBase58Check, value} = req.body;
+  const user = await User.findOne({"bitclout.publicKey": req.key, "balance.in_transaction": false});
   if (user && user.bitclout.publicKey) {
     if (!userVerifyCheck(user)) {
       next(createError(401, "User not verified."));
@@ -145,9 +145,9 @@ gatewayRouter.post("/deposit/bitclout", fireEyeWall, tokenAuthenticator, deposit
           publicKey: user.bitclout.publicKey,
         };
         axios.post(`${config.EXCHANGE_API}/exchange/sanitize`, body, {
-          headers: { "Server-Signature": generateHMAC(body) },
+          headers: {"Server-Signature": generateHMAC(body)},
         });
-        res.send({ data: txn });
+        res.send({data: txn});
       } catch (e) {
         if (e.response.data.error) {
           next(createError(e.response.status, e.response.data.error));
@@ -162,7 +162,7 @@ gatewayRouter.post("/deposit/bitclout", fireEyeWall, tokenAuthenticator, deposit
 });
 
 gatewayRouter.get("/deposit/eth", fireEyeWall, tokenAuthenticator, async (req, res, next) => {
-  const user = await User.findOne({ "bitclout.publicKey": req.key, "balance.in_transaction": false }).exec();
+  const user = await User.findOne({"bitclout.publicKey": req.key, "balance.in_transaction": false}).exec();
   if (user && user.bitclout.publicKey) {
     if (!userVerifyCheck(user)) {
       next(createError(401, "User not verified."));
@@ -176,7 +176,7 @@ gatewayRouter.get("/deposit/eth", fireEyeWall, tokenAuthenticator, async (req, r
       if (!depositCheck) {
         try {
           const pool_address = await getAndAssignPool(user);
-          const pool = await Pool.findOne({ address: pool_address }).exec();
+          const pool = await Pool.findOne({address: pool_address}).exec();
           if (pool) {
             const txn = new Transaction({
               user: user._id,
@@ -188,7 +188,7 @@ gatewayRouter.get("/deposit/eth", fireEyeWall, tokenAuthenticator, async (req, r
             user.transactions.push(txn._id);
             user.save();
             txn.save();
-            res.status(200).send({ data: { address: pool.address, transaction: txn } });
+            res.status(200).send({data: {address: pool.address, transaction: txn}});
           } else {
             res.sendStatus(500);
           }
@@ -196,9 +196,9 @@ gatewayRouter.get("/deposit/eth", fireEyeWall, tokenAuthenticator, async (req, r
           next(e);
         }
       } else {
-        const pool = await Pool.findOne({ user: user._id, active: true }).exec();
+        const pool = await Pool.findOne({user: user._id, active: true}).exec();
         if (pool) {
-          res.status(200).send({ data: { address: pool.address, transaction: depositCheck } });
+          res.status(200).send({data: {address: pool.address, transaction: depositCheck}});
         } else {
           depositCheck.completed = true;
           depositCheck.completionDate = new Date();
@@ -215,8 +215,8 @@ gatewayRouter.get("/deposit/eth", fireEyeWall, tokenAuthenticator, async (req, r
 });
 
 gatewayRouter.post("/withdraw/bitclout", fireEyeWall, tokenAuthenticator, valueSchema, async (req, res, next) => {
-  const { value } = req.body;
-  const user = await User.findOne({ "bitclout.publicKey": req.key, "balance.in_transaction": false }).exec();
+  const {value} = req.body;
+  const user = await User.findOne({"bitclout.publicKey": req.key, "balance.in_transaction": false}).exec();
   if (user && user.bitclout.publicKey) {
     if (!userVerifyCheck(user)) {
       next(createError(401, "User not verified."));
@@ -244,14 +244,14 @@ gatewayRouter.post("/withdraw/bitclout", fireEyeWall, tokenAuthenticator, valueS
         if (user.balance.bitclout >= valueTruncated) {
           if (await enforceWithdrawLimit(user, bitcloutUsd * valueTruncated)) {
             await User.updateOne(
-              { "bitclout.publicKey": req.key },
-              { $inc: { "balance.bitclout": -valueTruncated }, $set: { "balance.in_transaction": true } }
+              {"bitclout.publicKey": req.key},
+              {$inc: {"balance.bitclout": -valueTruncated}, $set: {"balance.in_transaction": true}}
             );
             const body = {
               publicKey: user.bitclout.publicKey,
             };
             await axios.post(`${config.EXCHANGE_API}/exchange/sanitize`, body, {
-              headers: { "Server-Signature": generateHMAC(body) },
+              headers: {"Server-Signature": generateHMAC(body)},
             });
             await submitTransaction({
               TransactionHex: handleSign(preflight.data.TransactionHex),
@@ -261,11 +261,11 @@ gatewayRouter.post("/withdraw/bitclout", fireEyeWall, tokenAuthenticator, valueS
             txn.completionDate = new Date();
 
             await User.updateOne(
-              { "bitclout.publicKey": req.key },
-              { $set: { "balance.in_transaction": false }, $push: { transactions: txn._id } }
+              {"bitclout.publicKey": req.key},
+              {$set: {"balance.in_transaction": false}, $push: {transactions: txn._id}}
             );
             await txn.save();
-            res.send({ data: txn });
+            res.send({data: txn});
           } else {
             next(createError(403, "Overflowing withdraw limit."));
           }
@@ -286,10 +286,10 @@ gatewayRouter.post("/withdraw/bitclout", fireEyeWall, tokenAuthenticator, valueS
 });
 
 gatewayRouter.post("/withdraw/eth", fireEyeWall, tokenAuthenticator, withdrawEthSchema, async (req, res, next) => {
-  const { value, withdrawAddress } = req.body;
-  const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
-  const pool = await Pool.findOne({ balance: { $gt: value } }).exec();
-  if (user && pool && user.bitclout.publicKey) {
+  const {value, withdrawAddress} = req.body;
+  const user = await User.findOne({"bitclout.publicKey": req.key}).exec();
+  const pool = await Pool.findOne({balance: {$gt: value}}).exec();
+  if (user && pool && user.bitclout.publicKey && !config.BLACKLISTED_ETH_ADDR.includes(withdrawAddress.toLowerCase())) {
     if (!userVerifyCheck(user)) {
       next(createError(401, "User not verified."));
     } else {
@@ -301,14 +301,14 @@ gatewayRouter.post("/withdraw/eth", fireEyeWall, tokenAuthenticator, withdrawEth
           const ethUsdResp = await getEthUsd();
           if (await enforceWithdrawLimit(user, ethUsdResp * value)) {
             await User.updateOne(
-              { "bitclout.publicKey": req.key },
-              { $inc: { "balance.ether": -value }, $set: { "balance.in_transaction": true } }
+              {"bitclout.publicKey": req.key},
+              {$inc: {"balance.ether": -value}, $set: {"balance.in_transaction": true}}
             );
             const body = {
               publicKey: user.bitclout.publicKey,
             };
             await axios.post(`${config.EXCHANGE_API}/exchange/sanitize`, body, {
-              headers: { "Server-Signature": generateHMAC(body) },
+              headers: {"Server-Signature": generateHMAC(body)},
             });
             // push to new mongodb collection, with a send time generated based on transaction risk. More valuable txns = higher time.
             // we can have a gocron job searching for jobs and taking them out of the db queue
@@ -335,12 +335,12 @@ gatewayRouter.post("/withdraw/eth", fireEyeWall, tokenAuthenticator, withdrawEth
               completionDate: new Date(),
             }); //create withdraw txn object
             await User.updateOne(
-              { "bitclout.publicKey": req.key },
-              { $set: { "balance.in_transaction": false }, $push: { transactions: txn._id } }
+              {"bitclout.publicKey": req.key},
+              {$set: {"balance.in_transaction": false}, $push: {transactions: txn._id}}
             );
             txn.save();
             syncWalletBalance();
-            res.status(200).send({ data: txn });
+            res.status(200).send({data: txn});
           } else {
             next(createError(403, "Overflowing withdraw limit."));
           }
