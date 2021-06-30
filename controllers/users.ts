@@ -154,7 +154,7 @@ userRouter.get("/orders", tokenAuthenticator, async (req, res, next) => {
 userRouter.get("/notifications", tokenAuthenticator, async (req, res, next) => {
   const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
   if (user) {
-    const orders = await Order.find({ username: user.bitclout.publicKey }).sort({ completeTime: "desc" }).limit(10).exec();
+    const orders = await Order.find({ username: user.bitclout.publicKey }).sort({ completeTime: "desc" }).limit(5).exec();
     res.json({ data: orders });
   } else {
     next(createError(400, "Invalid Request."));
