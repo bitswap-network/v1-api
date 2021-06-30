@@ -1,5 +1,5 @@
-import { getGasEtherscan, getEthUsd, getOrderbookState, getBitcloutUsd } from "../utils/functions";
-import Depth, { depthDoc } from "../models/depth";
+import {getGasEtherscan, getEthUsd, getOrderbookState, getBitcloutUsd} from "../utils/functions";
+import Depth, {depthDoc} from "../models/depth";
 import Order from "../models/order";
 //TODO CLEANUP
 const utilRouter = require("express").Router();
@@ -7,7 +7,7 @@ const utilRouter = require("express").Router();
 utilRouter.get("/eth-gasprice", async (req, res, next) => {
   try {
     const response = await getGasEtherscan();
-    res.json({ data: response.data.result });
+    res.json({data: response.data.result});
   } catch (e) {
     next(e);
   }
@@ -16,7 +16,7 @@ utilRouter.get("/eth-gasprice", async (req, res, next) => {
 utilRouter.get("/eth-usd", async (req, res, next) => {
   try {
     const response = await getEthUsd();
-    res.json({ data: response });
+    res.json({data: response});
   } catch (e) {
     next(e);
   }
@@ -25,90 +25,7 @@ utilRouter.get("/eth-usd", async (req, res, next) => {
 utilRouter.get("/bitclout-usd", async (req, res, next) => {
   try {
     const bitcloutUsd = await getBitcloutUsd();
-    res.json({ data: +bitcloutUsd.toFixed(2) });
-  } catch (e) {
-    next(e);
-  }
-});
-
-utilRouter.get("/depth", async (req, res, next) => {
-  const dateRange = req.query.dateRange;
-
-  switch (dateRange) {
-    case "max": {
-      const depths = await Depth.find().sort({ timestamp: "asc" }).exec();
-      const step = Math.round(depths.length / 300);
-      const depthArr: depthDoc[] = [];
-      for (let i = depths.length - 1; i >= 0; i -= step) {
-        depthArr.push(depths[i]);
-      }
-      res.json({ data: depthArr });
-      break;
-    }
-
-    case "1m": {
-      const now = new Date();
-      now.setDate(now.getDate() - 30);
-      const depths = await Depth.find({
-        timestamp: {
-          $gte: now,
-        },
-      })
-        .sort({ timestamp: "asc" })
-        .exec();
-      const step = Math.round(depths.length / 300);
-      const depthArr: depthDoc[] = [];
-      for (let i = depths.length - 1; i >= 0; i -= step) {
-        depthArr.push(depths[i]);
-      }
-      res.json({ data: depthArr });
-      break;
-    }
-
-    case "1w": {
-      const now = new Date();
-      now.setDate(now.getDate() - 7);
-      const depths = await Depth.find({
-        timestamp: {
-          $gte: now,
-        },
-      })
-        .sort({ timestamp: "asc" })
-        .exec();
-      const step = Math.round(depths.length / 300);
-      const depthArr: depthDoc[] = [];
-      for (let i = depths.length - 1; i >= 0; i -= step) {
-        depthArr.push(depths[i]);
-      }
-      res.json({ data: depthArr });
-      break;
-    }
-
-    case "1d": {
-      const now = new Date();
-      now.setDate(now.getDate() - 1);
-      const depths = await Depth.find({
-        timestamp: {
-          $gte: now,
-        },
-      })
-        .sort({ timestamp: "asc" })
-        .exec();
-      res.json({ data: depths });
-      break;
-    }
-
-    default: {
-      res.status(400).send({ error: "Incorrect query" });
-      break;
-    }
-  }
-});
-
-utilRouter.get("/depth-current", async (req, res, next) => {
-  try {
-    const depth = await Depth.findOne({}).sort({ timestamp: "desc" }).exec();
-    res.json({ data: depth });
+    res.json({data: +bitcloutUsd.toFixed(2)});
   } catch (e) {
     next(e);
   }
@@ -128,13 +45,13 @@ utilRouter.get("/order-history", async (req, res, next) => {
     const orders = await Order.find({
       complete: true,
       error: "",
-      orderPrice: { $gt: 100 },
-      orderQuantityProcessed: { $gt: 0 },
+      orderPrice: {$gt: 100},
+      orderQuantityProcessed: {$gt: 0},
     })
-      .sort({ completeTime: "desc" })
+      .sort({completeTime: "desc"})
       .exec();
     if (orders.length > 0) {
-      const finalArr: { timestamp: Date; price: number }[] = [];
+      const finalArr: {timestamp: Date; price: number}[] = [];
       let dateString1 = orders[0].completeTime
         ? `${orders[0].completeTime.getUTCFullYear()}-${orders[0].completeTime.getUTCMonth() + 1}-${orders[0].completeTime.getUTCDate()}`
         : `${orders[0].created.getUTCFullYear()}-${orders[0].created.getUTCMonth() + 1}-${orders[0].created.getUTCDate()}`;
@@ -150,8 +67,8 @@ utilRouter.get("/order-history", async (req, res, next) => {
 
           dateString2 = orders[i].completeTime
             ? `${orders[i].completeTime!.getUTCFullYear()}-${orders[i].completeTime!.getUTCMonth() + 1}-${orders[
-                i
-              ].completeTime!.getUTCDate()}`
+              i
+            ].completeTime!.getUTCDate()}`
             : `${orders[i].created.getUTCFullYear()}-${orders[i].created.getUTCMonth() + 1}-${orders[i].created.getUTCDate()}`;
           if (dateString1 === dateString2 && orderQuantity && orderPriceQuantity && priceQuantitySum && quantSum) {
             priceQuantitySum += orderPriceQuantity;
@@ -168,7 +85,7 @@ utilRouter.get("/order-history", async (req, res, next) => {
           dateString1 = dateString2;
         }
       }
-      finalArr.push({ timestamp: new Date(dateString1), price: Math.round((priceQuantitySum / quantSum + Number.EPSILON) * 100) / 100 });
+      finalArr.push({timestamp: new Date(dateString1), price: Math.round((priceQuantitySum / quantSum + Number.EPSILON) * 100) / 100});
       res.json(finalArr);
     } else {
       res.json([]);
@@ -178,21 +95,5 @@ utilRouter.get("/order-history", async (req, res, next) => {
   }
 });
 
-// utilRouter.get("/total-balances", async (req, res, next) => {
-//   try {
-//     const users = await User.find().exec();
-//     const balances = {
-//       ether: 0,
-//       bitclout: 0,
-//     };
-//     users.forEach(user => {
-//       balances.ether += user.balance.ether;
-//       balances.bitclout += user.balance.bitclout;
-//     });
-//     res.json(balances);
-//   } catch (e) {
-//     next(e);
-//   }
-// });
 
 export default utilRouter;
