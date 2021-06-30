@@ -130,7 +130,6 @@ export const generateCode = (len: number) => [...Array(len)].map(() => Math.floo
 
 export const generateAccessToken = (PublicKeyBase58Check: any) => {
   return jwt.sign(PublicKeyBase58Check, config.JWT_KEY, { expiresIn: "18000s" });
-
 };
 
 export const generateHMAC = (body: any) => {
