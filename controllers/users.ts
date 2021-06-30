@@ -1,11 +1,11 @@
 import User from "../models/user";
 import Order from "../models/order";
 import Transaction from "../models/transaction";
-import { tokenAuthenticator, updateProfileSchema } from "../utils/middleware";
-import { emailverified, servererror } from "../utils/mailBody";
-import { emailVerify } from "../utils/mailBody";
+import {tokenAuthenticator, updateProfileSchema} from "../utils/middleware";
+import {emailverified, servererror} from "../utils/mailBody";
+import {emailVerify} from "../utils/mailBody";
 import sendMail from "../utils/mailer";
-import { generateCode } from "../utils/functions";
+import {generateCode} from "../utils/functions";
 
 const createError = require("http-errors");
 const userRouter = require("express").Router();
@@ -22,7 +22,7 @@ userRouter.get("/data", tokenAuthenticator, async (req, res, next) => {
 });
 
 userRouter.get("/resend-verification", tokenAuthenticator, async (req, res, next) => {
-  const user = await User.findOne({ "bitclout.publicKey": req.key });
+  const user = await User.findOne({"bitclout.publicKey": req.key});
   if (user) {
     const mailBody = emailVerify(user.verification.emailString);
     sendMail(user.email, mailBody.header, mailBody.body);
@@ -33,11 +33,11 @@ userRouter.get("/resend-verification", tokenAuthenticator, async (req, res, next
 });
 
 userRouter.put("/update-email", tokenAuthenticator, async (req, res, next) => {
-  const { email } = req.body;
+  const {email} = req.body;
   const emailCheck = await User.findOne({
     email: email,
   }).exec();
-  const user = await User.findOne({ "bitclout.publicKey": req.key });
+  const user = await User.findOne({"bitclout.publicKey": req.key});
   if (user && !emailCheck) {
     user.email = email.toLowerCase();
     user.verification.email = false;
@@ -62,8 +62,8 @@ userRouter.put("/update-email", tokenAuthenticator, async (req, res, next) => {
 });
 
 userRouter.put("/update-name", tokenAuthenticator, async (req, res, next) => {
-  const { name } = req.body;
-  const user = await User.findOne({ "bitclout.publicKey": req.key });
+  const {name} = req.body;
+  const user = await User.findOne({"bitclout.publicKey": req.key});
   if (user && name !== "") {
     user.name = name;
     user.save((err: any) => {
@@ -79,11 +79,11 @@ userRouter.put("/update-name", tokenAuthenticator, async (req, res, next) => {
 });
 
 userRouter.put("/update-profile", tokenAuthenticator, updateProfileSchema, async (req, res, next) => {
-  const { email, name } = req.body;
+  const {email, name} = req.body;
   const emailCheck = await User.findOne({
     email: email,
   }).exec();
-  const user = await User.findOne({ "bitclout.publicKey": req.key });
+  const user = await User.findOne({"bitclout.publicKey": req.key});
   if (user && !emailCheck) {
     user.email = email.toLowerCase();
     user.name = name !== "" ? name : user.name;
@@ -101,7 +101,7 @@ userRouter.put("/update-profile", tokenAuthenticator, updateProfileSchema, async
 
 userRouter.get("/verify-email/:code", async (req, res, next) => {
   const code = req.params.code;
-  const user = await User.findOne({ "verification.emailString": code }).exec();
+  const user = await User.findOne({"verification.emailString": code}).exec();
   if (user) {
     user.verification.email = true;
     user
@@ -118,11 +118,11 @@ userRouter.get("/verify-email/:code", async (req, res, next) => {
 });
 
 userRouter.get("/transactions", tokenAuthenticator, async (req, res, next) => {
-  const user = await User.findOne({ "bitclout.publicKey": req.key })
-    .populate({ path: "transactions", options: { sort: { created: -1 } } })
+  const user = await User.findOne({"bitclout.publicKey": req.key})
+    .populate({path: "transactions", options: {sort: {created: -1}}})
     .exec();
   if (user) {
-    res.json({ data: user.transactions });
+    res.json({data: user.transactions});
   } else {
     next(createError(400, "Invalid Request."));
   }
@@ -134,7 +134,7 @@ userRouter.get("/transaction/:id", tokenAuthenticator, async (req, res, next) =>
   } else {
     const transaction = await Transaction.findById(req.params.id).exec();
     if (transaction) {
-      res.json({ data: transaction });
+      res.json({data: transaction});
     } else {
       next(createError(400, "Unable to find transaction."));
     }
@@ -142,10 +142,20 @@ userRouter.get("/transaction/:id", tokenAuthenticator, async (req, res, next) =>
 });
 
 userRouter.get("/orders", tokenAuthenticator, async (req, res, next) => {
-  const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
+  const user = await User.findOne({"bitclout.publicKey": req.key}).exec();
   if (user) {
-    const orders = await Order.find({ username: user.bitclout.publicKey }).sort({ completed: "desc", created: "desc" }).exec();
-    res.json({ data: orders });
+    const orders = await Order.find({username: user.bitclout.publicKey}).sort({completeTime: "desc", created: "desc"}).exec();
+    res.json({data: orders});
+  } else {
+    next(createError(400, "Invalid Request."));
+  }
+});
+
+userRouter.get("/notifications", tokenAuthenticator, async (req, res, next) => {
+  const user = await User.findOne({"bitclout.publicKey": req.key}).exec();
+  if (user) {
+    const orders = await Order.find({username: user.bitclout.publicKey}).sort({completeTime: "desc"}).limit(10).exec();
+    res.json({data: orders});
   } else {
     next(createError(400, "Invalid Request."));
   }
