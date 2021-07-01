@@ -14,6 +14,9 @@ webhookRouter.post("/inquiry", async (req, res, next) => {
         const user = await User.findOne({ "verification.personaAccountId": accountId }).exec();
         if (user && inquiryState == "completed") {
           user.verification.personaVerified = true;
+          if (user.tier === 0) {
+            user.tier = 1;
+          }
           await user.save();
         }
       }
