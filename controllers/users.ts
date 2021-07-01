@@ -118,11 +118,14 @@ userRouter.get("/verify-email/:code", async (req, res, next) => {
 });
 
 userRouter.get("/transactions", tokenAuthenticator, async (req, res, next) => {
-  const user = await User.findOne({ "bitclout.publicKey": req.key })
-    .populate({ path: "transactions", options: { sort: { created: -1 } } })
-    .exec();
+  const user = await User.findOne({ "bitclout.publicKey": req.key });
   if (user) {
-    res.json({ data: user.transactions });
+    try {
+      const txns = await Transaction.find({ user: user._id }).sort({ created: -1 }).exec();
+      res.json({ data: txns });
+    } catch (e) {
+      next(e);
+    }
   } else {
     next(createError(400, "Invalid Request."));
   }

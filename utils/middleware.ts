@@ -133,30 +133,18 @@ export const errorHandler = (error, req, res, next) => {
   });
 };
 
-const allowedIds = [
-  "2adc3c27-061d-4d58-a7f4-0b25a84947cb", //hugh
-];
-
 export const tokenAuthenticator = (req, res, next) => {
-  if (req.headers["x-api-token"]) {
-    if (allowedIds.includes(req.headers["x-api-token"])) {
-      next();
-    } else {
-      return res.status(403).send("Invalid token");
-    }
-  } else {
-    const token = req.headers["x-access-token"];
+  const token = req.headers["x-access-token"];
 
-    if (token == null) return res.status(400).send("Missing token");
+  if (token == null) return res.status(400).send("Missing token");
 
-    jwt.verify(token, config.JWT_KEY, (err, key) => {
-      if (err) return res.status(403).send("Invalid token");
+  jwt.verify(token, config.JWT_KEY, (err, key) => {
+    if (err) return res.status(403).send("Invalid token");
 
-      req.key = key.PublicKeyBase58Check;
+    req.key = key.PublicKeyBase58Check;
 
-      next();
-    });
-  }
+    next();
+  });
 };
 
 export const fireEyeWall = (req, res, next) => {
