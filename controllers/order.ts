@@ -1,5 +1,5 @@
 import User from "../models/user";
-import { tokenAuthenticator, limitOrderSchema, marketOrderSchema, marketQuantitySchema } from "../utils/middleware";
+import { tokenAuthenticator, limitOrderSchema, marketOrderSchema, marketQuantitySchema, marketPriceSchema } from "../utils/middleware";
 import Order from "../models/order";
 import { generateHMAC, orderBalanceValidate, userVerifyCheck } from "../utils/functions";
 import * as config from "../config";
@@ -102,7 +102,7 @@ orderRouter.get("/cancel/:id", tokenAuthenticator, async (req, res, next) => {
   }
 });
 
-orderRouter.post("/market-price", marketOrderSchema, async (req, res, next) => {
+orderRouter.post("/market-price", marketPriceSchema, async (req, res, next) => {
   const { orderQuantity, orderSide } = req.body;
   try {
     const response = await axios.get(`${config.EXCHANGE_API}/market-price/${orderSide}/${+orderQuantity.toFixed(2)}`);

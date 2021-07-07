@@ -26,6 +26,14 @@ export const marketQuantitySchema = (req, res, next) => {
   validateRequest(req, next, schema);
 };
 
+export const marketPriceSchema = (req, res, next) => {
+  const schema = Joi.object({
+    orderQuantity: Joi.number().min(0).max(10000000).required(),
+    orderSide: Joi.string().valid("buy", "sell").required(),
+  });
+  validateRequest(req, next, schema);
+};
+
 export const marketOrderSchema = (req, res, next) => {
   const schema = Joi.object({
     orderQuantity: Joi.number().min(0.01).max(500).required(),
