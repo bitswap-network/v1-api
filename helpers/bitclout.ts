@@ -7,7 +7,7 @@ import {
   SubmitTransactionInterface,
   SubmitTransactionAPIInterface,
   GetKeyPairInterface,
-  GetKeyPairAPIInterface
+  GetKeyPairAPIInterface,
 } from "../interfaces/bitclout";
 
 export const bitcloutHeader = {
@@ -16,9 +16,11 @@ export const bitcloutHeader = {
   },
 };
 
-export const getKeyPair: (keyPairAttributes: GetKeyPairInterface) => Promise<GetKeyPairAPIInterface> = async function (keyPairAttributes: GetKeyPairInterface): Promise<GetKeyPairAPIInterface> {
-  return await axios.post(`${config.BITCLOUT_API_URL}api/v1/key-pair`, JSON.stringify(keyPairAttributes), bitcloutHeader)
-}
+export const getKeyPair: (keyPairAttributes: GetKeyPairInterface) => Promise<GetKeyPairAPIInterface> = async function (
+  keyPairAttributes: GetKeyPairInterface
+): Promise<GetKeyPairAPIInterface> {
+  return await axios.post(`${config.BITCLOUT_API_URL}api/v1/key-pair`, JSON.stringify(keyPairAttributes), bitcloutHeader);
+};
 
 export const preflightTransaction: (transaction: TxnPreflightInterface) => Promise<TransactionAPIInterface> = async function (
   transaction: TxnPreflightInterface

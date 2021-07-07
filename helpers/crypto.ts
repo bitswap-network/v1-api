@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import * as config from "../config";
-import {ec as EC} from "elliptic";
+import { ec as EC } from "elliptic";
 import * as sha256 from "sha256";
 import HDNode from "hdkey";
 import * as bip39 from "bip39";

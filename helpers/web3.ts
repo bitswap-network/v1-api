@@ -1,7 +1,7 @@
 import * as config from "../config";
-import axios, {AxiosResponse} from "axios";
+import axios, { AxiosResponse } from "axios";
 const EthereumTx = require("ethereumjs-tx").Transaction;
-import {createAlchemyWeb3} from "@alch/alchemy-web3";
+import { createAlchemyWeb3 } from "@alch/alchemy-web3";
 const web3 = createAlchemyWeb3(config.WSProvider ? config.WSProvider : "");
 
 export const getEthBalance = async (address: string) => {
@@ -10,20 +10,19 @@ export const getEthBalance = async (address: string) => {
 
 export const getUSDCBalance = async (address: string) => {
   return new Promise<number>((resolve, reject) => {
-
     axios
       .post(config.HTTPProvider, {
-        "jsonrpc": "2.0",
-        "method": "alchemy_getTokenBalances",
-        "params": [address, ["0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"]],
-        "id": 42
+        jsonrpc: "2.0",
+        method: "alchemy_getTokenBalances",
+        params: [address, ["0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"]],
+        id: 42,
       })
       .then(response => {
-        const balance = response.data.result.tokenBalances[0].tokenBalance
+        const balance = response.data.result.tokenBalances[0].tokenBalance;
         if (balance === "0x") {
-          resolve(0)
+          resolve(0);
         } else {
-          resolve(parseInt(balance) / 1e6)
+          resolve(parseInt(balance) / 1e6);
         }
       })
       .catch(error => {
@@ -51,7 +50,7 @@ export const addAddressWebhook: (address: string[]) => Promise<AxiosResponse> = 
       addresses_to_remove: [],
     },
     {
-      headers: {"X-Alchemy-Token": config.XAlchemyToken},
+      headers: { "X-Alchemy-Token": config.XAlchemyToken },
     }
   );
 };

@@ -1,4 +1,4 @@
-import {AxiosResponse} from "axios";
+import { AxiosResponse } from "axios";
 
 export interface GetKeyPairInterface {
   Mnemonic: string;
@@ -44,16 +44,16 @@ export interface TransactionAPIInterface extends AxiosResponse {
     FeeNanos: number;
     TransactionIDBase58Check: string;
     Transaction:
-    | {
-      TxInputs: TxnInputs;
-      TxOutputs: TxnOutput[];
-      TxnMeta: any;
-      PublicKey: string;
-      ExtraData: any;
-      Signature: any;
-      TxnTypeJSON: any;
-    }
-    | undefined;
+      | {
+          TxInputs: TxnInputs;
+          TxOutputs: TxnOutput[];
+          TxnMeta: any;
+          PublicKey: string;
+          ExtraData: any;
+          Signature: any;
+          TxnTypeJSON: any;
+        }
+      | undefined;
     TransactionHex: string;
     TxnHashHex: string | undefined;
     error: string | undefined;
