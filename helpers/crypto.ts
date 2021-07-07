@@ -1,5 +1,6 @@
+import crypto from "crypto";
 import * as config from "../config";
-import { ec as EC } from "elliptic";
+import {ec as EC} from "elliptic";
 import * as sha256 from "sha256";
 import HDNode from "hdkey";
 import * as bip39 from "bip39";
@@ -7,6 +8,7 @@ import HDKey from "hdkey";
 const jwt = require("jsonwebtoken");
 const KeyEncoder = require("key-encoder").default;
 const bs58check = require("bs58check");
+const encryptAlgorithm = "aes-256-gcm";
 
 export const validateJwt = (bitCloutPublicKey: string, jwtToken: string) => {
   const ec = new EC("secp256k1");
@@ -71,4 +73,24 @@ const uintToBuf = (uint: number) => {
   result.push(uint | 0);
 
   return Buffer.from(result);
+};
+
+export const encryptGCM = (text: string, key: string) => {
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv(encryptAlgorithm, Buffer.from(key), iv);
+  // todo: Larger inputs (it's GCM, after all!) should use the stream API
+  let enc = cipher.update(text, "utf8", "base64");
+  enc += cipher.final("base64");
+  return enc + ":" + iv.toString("base64") + ":" + cipher.getAuthTag().toString("base64");
+};
+
+export const decryptGCM = (text: string, key: string) => {
+  const textSplit = text.split(":");
+  const iv = Buffer.from(textSplit[1], "base64");
+  const authTag = Buffer.from(textSplit[2], "base64");
+  const decipher = crypto.createDecipheriv(encryptAlgorithm, Buffer.from(key), iv);
+  decipher.setAuthTag(authTag);
+  let str = decipher.update(textSplit[0], "base64", "utf8");
+  str += decipher.final("utf8");
+  return str;
 };

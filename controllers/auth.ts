@@ -1,17 +1,17 @@
-import { generateAccessToken, generateCode } from "../utils/functions";
+import {generateAccessToken, generateCode} from "../utils/functions";
 import User from "../models/user";
 import sendMail from "../utils/mailer";
 import * as middleware from "../utils/middleware";
-import { getSingleProfile } from "../helpers/bitclout";
-import { createPersonaAccount, getPersonaAccount } from "../helpers/persona";
-import { validateJwt } from "../helpers/identity";
-import { emailVerify } from "../utils/mailBody";
+import {getSingleProfile} from "../helpers/bitclout";
+import {createPersonaAccount, getPersonaAccount} from "../helpers/persona";
+import {validateJwt} from "../helpers/crypto";
+import {emailVerify} from "../utils/mailBody";
 const createError = require("http-errors");
 
 const authRouter = require("express").Router();
 
 authRouter.put("/register", middleware.registerSchema, async (req, res, next) => {
-  const { publicKey, email, name } = req.body;
+  const {publicKey, email, name} = req.body;
 
   const emailCheck = await User.findOne({
     email: name,
@@ -27,7 +27,7 @@ authRouter.put("/register", middleware.registerSchema, async (req, res, next) =>
     const newUser = new User({
       name: name,
       email: email,
-      bitclout: { publicKey: publicKey },
+      bitclout: {publicKey: publicKey},
     });
     const email_code = generateCode(8);
     // const bitclout_code = generateCode(16);
@@ -51,7 +51,7 @@ authRouter.put("/register", middleware.registerSchema, async (req, res, next) =>
 });
 
 authRouter.post("/login", middleware.loginSchema, async (req, res, next) => {
-  const { publicKey, identityJWT } = req.body;
+  const {publicKey, identityJWT} = req.body;
   let adminOnly = false;
   // if (process.env.ENVIRONMENT !== "production") {
   //   adminOnly = true;
@@ -114,7 +114,7 @@ authRouter.post("/login", middleware.loginSchema, async (req, res, next) => {
 });
 
 authRouter.post("/fetch-profile", middleware.fetchProfileSchema, async (req, res, next) => {
-  const { publicKey, username } = req.body;
+  const {publicKey, username} = req.body;
   try {
     const userProfile = await getSingleProfile(publicKey, username);
     if (userProfile.data.Profile) {
