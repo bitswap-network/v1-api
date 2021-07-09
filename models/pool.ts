@@ -1,4 +1,4 @@
-import {model, Schema, Document} from "mongoose";
+import { model, Schema, Document } from "mongoose";
 
 export interface poolDoc extends Document {
   address: string;
@@ -16,18 +16,18 @@ export interface poolDoc extends Document {
 }
 
 const poolSchema = new Schema<poolDoc>({
-  address: {type: String, required: true, unique: true},
-  hashedKey: {type: String, required: true, unique: true},
-  active: {type: Boolean, default: false},
-  activeStart: {type: Number, default: null},
-  user: {type: Schema.Types.ObjectId, ref: "User", default: null},
-  super: {type: Number, default: 1},
+  address: { type: String, required: true, unique: true },
+  hashedKey: { type: String, required: true, unique: true },
+  active: { type: Boolean, default: false },
+  activeStart: { type: Number, default: null },
+  user: { type: Schema.Types.ObjectId, ref: "User", default: null },
+  super: { type: Number, default: 1 },
   balance: {
-    ETH: {type: Number, default: 0},
-    USDC: {type: Number, default: 0},
-    updatedToInt: {type: Boolean}
+    ETH: { type: Number, default: 0 },
+    USDC: { type: Number, default: 0 },
+    updatedToInt: { type: Boolean },
   },
-  txnHashList: [{type: String}],
+  txnHashList: [{ type: String }],
 });
 const Pool = model<poolDoc>("Pool", poolSchema);
 

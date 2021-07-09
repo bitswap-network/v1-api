@@ -5,13 +5,17 @@ import { getEthBalance, getUSDCBalance, genWallet, addAddressWebhook } from "../
 import { getEthUsd } from "../utils/functions";
 import Transaction from "../models/transaction";
 import { encryptGCM } from "./crypto";
+import { toWei, toUSDC } from "../utils/functions";
 export const syncWalletBalance = async () => {
   const pools = await Pool.find({}).exec();
   pools.forEach(async pool => {
     try {
       const balance_eth = await getEthBalance(pool.address);
       const balance_usdc = await getUSDCBalance(pool.address);
-      await Pool.findByIdAndUpdate(pool._id, { $set: { balance: { ETH: parseFloat(balance_eth), USDC: balance_usdc } } });
+      pool.balance.ETH = balance_eth;
+      pool.balance.USDC = balance_usdc;
+      pool.balance.updatedToInt = true;
+      await pool.save();
     } catch (e) {
       console.error(e);
     }
@@ -49,14 +53,14 @@ export const processDeposit: (pool: poolDoc, value: number, asset: string, hash:
           transaction.txnHash = hash;
           await transaction.save();
         }
-
-        user.balance.ether += value;
+        user.balance.ether += toWei(value);
         pool.active = false;
         pool.activeStart = null;
         pool.user = null;
         await pool.save();
         await user.save();
         break;
+
       case "USDC":
         transaction = await Transaction.findOne({
           user: user._id,
@@ -65,11 +69,7 @@ export const processDeposit: (pool: poolDoc, value: number, asset: string, hash:
           completed: false,
         }).exec();
         if (transaction) {
-          try {
-            transaction.usdValueAtTime = value;
-          } catch (e) {
-            console.error(e);
-          }
+          transaction.usdValueAtTime = value;
           transaction.value = value;
           transaction.completed = true;
           transaction.completionDate = new Date();
@@ -77,8 +77,7 @@ export const processDeposit: (pool: poolDoc, value: number, asset: string, hash:
           transaction.txnHash = hash;
           await transaction.save();
         }
-
-        user.balance.usdc += value;
+        user.balance.usdc += toUSDC(value);
         pool.active = false;
         pool.activeStart = null;
         pool.user = null;

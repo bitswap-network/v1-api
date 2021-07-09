@@ -1,11 +1,11 @@
 import * as config from "../config";
-import axios, {AxiosResponse} from "axios";
+import axios, { AxiosResponse } from "axios";
 const EthereumTx = require("ethereumjs-tx").Transaction;
-import {createAlchemyWeb3} from "@alch/alchemy-web3";
+import { createAlchemyWeb3 } from "@alch/alchemy-web3";
 export const web3 = createAlchemyWeb3(config.WSProvider ? config.WSProvider : "");
 
 export const getEthBalance = async (address: string) => {
-  return web3.utils.fromWei(await web3.eth.getBalance(address), "ether");
+  return parseInt(await web3.eth.getBalance(address));
 };
 
 export const getUSDCBalance = async (address: string) => {
@@ -22,7 +22,7 @@ export const getUSDCBalance = async (address: string) => {
         if (balance === "0x") {
           resolve(0);
         } else {
-          resolve(parseInt(balance) / 1e6);
+          resolve(parseInt(balance));
         }
       })
       .catch(error => {
@@ -50,7 +50,7 @@ export const addAddressWebhook: (address: string[]) => Promise<AxiosResponse> = 
       addresses_to_remove: [],
     },
     {
-      headers: {"X-Alchemy-Token": config.XAlchemyToken},
+      headers: { "X-Alchemy-Token": config.XAlchemyToken },
     }
   );
 };
@@ -59,14 +59,7 @@ export const getNonce = async (address: string) => {
   return web3.eth.getTransactionCount(address, "pending");
 };
 
-export const sendEth = async (
-  priv_key: string,
-  from_address: string,
-  to_address: string,
-  value: number,
-  nonce: number,
-  gasprice: number
-) => {
+export const sendEth = (priv_key: string, from_address: string, to_address: string, value: number, nonce: number, gasprice: number) => {
   const rawTx = {
     to: to_address,
     from: from_address,

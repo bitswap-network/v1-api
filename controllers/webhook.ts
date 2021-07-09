@@ -45,7 +45,6 @@ webhookRouter.post("/pool", async (req, res, next) => {
           }).exec();
 
           if (pool) {
-            // pool.balance += value;
             let txnHashList = pool.txnHashList ? pool.txnHashList : [];
             txnHashList.push(hash);
             pool.txnHashList = txnHashList;
