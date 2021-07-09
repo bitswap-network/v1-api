@@ -32,8 +32,8 @@ mongoose
   })
   .then(() => {
     logger.info("Connected to MongoDB");
-    syncWalletBalance().then(() => {
-      logger.info("syncing wallet balances!");
+    syncWalletBalance(true).then(() => {
+      logger.info("synced wallet balances + updated webhooks!");
     });
   })
   .catch(error => {

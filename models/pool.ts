@@ -25,7 +25,7 @@ const poolSchema = new Schema<poolDoc>({
   balance: {
     ETH: { type: Number, default: 0 },
     USDC: { type: Number, default: 0 },
-    updatedToInt: { type: Boolean },
+    updatedToInt: { type: Boolean, default: true },
   },
   txnHashList: [{ type: String }],
 });

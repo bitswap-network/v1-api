@@ -6,9 +6,11 @@ import { getEthUsd } from "../utils/functions";
 import Transaction from "../models/transaction";
 import { encryptGCM } from "./crypto";
 import { toWei, toUSDC } from "../utils/functions";
-export const syncWalletBalance = async () => {
+export const syncWalletBalance = async (syncWebHook?: boolean) => {
+  const pool_addr: string[] = [];
   const pools = await Pool.find({}).exec();
   pools.forEach(async pool => {
+    pool_addr.push(pool.address);
     try {
       const balance_eth = await getEthBalance(pool.address);
       const balance_usdc = await getUSDCBalance(pool.address);
@@ -18,6 +20,9 @@ export const syncWalletBalance = async () => {
       await pool.save();
     } catch (e) {
       console.error(e);
+    }
+    if (pool_addr.length === pools.length && syncWebHook) {
+      await addAddressWebhook(pool_addr);
     }
   });
 };
