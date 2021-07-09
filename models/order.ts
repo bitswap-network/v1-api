@@ -10,7 +10,7 @@ export interface orderDoc extends Document {
   orderQuantity: number;
   orderPrice: number;
   fees: number | undefined;
-  execPrice: number | undefined;
+  execPrice: number;
   orderQuantityProcessed: number;
   complete: boolean;
   error: string | undefined;

@@ -1,14 +1,73 @@
 import { AxiosResponse } from "axios";
 
-export interface submitTransactionInterface {
+export interface TransferBitcloutBalanceInterface {
+  SenderPrivateKeyBase58Check: string;
+  RecipientPublicKeyBase58Check: string;
+  AmountNanos: number;
+  MinFeeRateNanosPerKB: number;
+  DryRun: boolean;
+}
+
+export interface TransferBitcloutBalanceAPIInterface extends AxiosResponse {
+  data: {
+    TransactionInfo: {
+      TotalInputNanos: number;
+      SpendAmoutnNanos: number;
+      ChangeAmountNanos: number;
+      FeeNanos: number;
+      FeeRateNanosPerKB: number;
+      SenderPublicKeyBase58Check: string;
+      RecipientPublicKeyBase58Check: string;
+    };
+    Transaction: {
+      TransactionIDBase58Check: string;
+      RawTransactionHex: string;
+      Inputs: TBInputs[];
+      Outputs: TBOutputs[];
+      SignatureHex: string;
+      TransactionType: number; //always 0 for basic transfer
+      TransactionMeta: any; //always {} empty for basic transfer
+      BlockHashHex: string;
+    };
+    Error: string;
+  };
+}
+
+export interface TBOutputs {
+  PublicKeyBase58Check: string;
+  AmountNanos: number;
+}
+
+export interface TBInputs {
+  TransactionIDBase58Check: string;
+  Index: number;
+}
+
+export interface GetKeyPairInterface {
+  Mnemonic: string;
+  ExtraText: string;
+  Index: number;
+}
+
+export interface SubmitTransactionInterface {
   TransactionHex: string;
 }
 
-export interface txnPreflightInterface {
+export interface TxnPreflightInterface {
   AmountNanos: number;
   MinFeeRateNanosPerKB: number;
   RecipientPublicKeyOrUsername: string | any;
   SenderPublicKeyBase58Check: string | any;
+}
+
+export interface GetKeyPairAPIInterface extends AxiosResponse {
+  data: {
+    PublicKeyBase58Check: string;
+    PublicKeyHex: string;
+    PrivateKeyBase58Check: string;
+    PrivateKeyHex: string;
+    Error: string;
+  };
 }
 
 export interface SubmitTransactionAPIInterface extends AxiosResponse {
@@ -53,16 +112,8 @@ export interface ExchangeRateAPIInterface extends AxiosResponse {
 }
 export interface ProfileAPIInterface extends AxiosResponse {
   data: {
-    Profile: bitcloutProfileType;
+    Profile: BitcloutProfileType;
     error: string | undefined;
-  };
-}
-
-export interface PostsAPIInterface extends AxiosResponse {
-  data: {
-    Posts: bitcloutPostType[] | undefined;
-    error: string | undefined;
-    LastPostHashHex: string | undefined;
   };
 }
 
@@ -75,7 +126,7 @@ export interface TxnOutput {
   PublicKey: string;
   AmountNanos: number;
 }
-export interface bitcloutProfileType {
+export interface BitcloutProfileType {
   PublicKeyBase58Check: string;
   Username: string;
   Description: string;
@@ -96,46 +147,4 @@ export interface bitcloutProfileType {
     TotalPostStakeNanos: number;
   };
   UsersThatHODL: any;
-}
-
-export interface bitcloutPostType {
-  PostHashHex: string;
-  PosterPublicKeyBase58Check: string;
-  ParentStakeID: string;
-  Body: string;
-  ImageURLs: any | null;
-  RecloutedPostEntryResponse: bitcloutPostType;
-  CreatorBasisPoints: number;
-  StakeMultipleBasisPoints: number;
-  TimestampNanos: number;
-  IsHidden: boolean;
-  ConfirmationBlockHeight: number | null;
-  InMempool: boolean;
-  StakeEntry: {
-    TotalPostStake: number;
-    StakeList: any[];
-  };
-  StakeEntryStats: {
-    TotalStakeNanos: number;
-    TotalStakeOwedNanos: number;
-    TotalCreatorEarningsNanos: number;
-    TotalFeesBurnedNanos: number;
-    TotalPostStakeNanos: number;
-  };
-  ProfileEntryResponse: any;
-  Comments: any;
-  LikeCount: number;
-  DiamondCount: number;
-  PostEntryReaderState: {
-    LikedByReader: boolean;
-    DiamondLevelBestowed: number;
-    RecloutedByReader: boolean;
-    RecloutPostHashHex: string;
-  };
-  InGlobalFeed: boolean;
-  IsPinned: boolean;
-  PostExtraData: any;
-  CommentCount: number;
-  RecloutCount: number;
-  ParentPosts: any;
 }

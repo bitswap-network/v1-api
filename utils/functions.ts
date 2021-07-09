@@ -2,7 +2,7 @@ import { createHmac, randomBytes } from "crypto";
 import { UserDoc } from "../models/user";
 import Order from "../models/order";
 import Transaction from "../models/transaction";
-import { bitcloutCfHeader } from "../helpers/bitclout";
+import { bitcloutHeader } from "../helpers/bitclout";
 import { AxiosResponse } from "axios";
 import axios from "axios";
 import crypto from "crypto";
@@ -19,7 +19,6 @@ export const enforceWithdrawLimit = async (user: UserDoc, newTxnValue: number) =
         { $match: { user: user._id, transactionType: "withdraw" } },
         { $group: { _id: null, amount: { $sum: "$usdValueAtTime" } } },
       ]).exec();
-      console.log(withdrawSum);
       if (withdrawSum.length == 0) {
         return newTxnValue <= tier0WithdrawLim;
       }
@@ -102,7 +101,7 @@ export const getEthUsd = async (): Promise<number> => {
 export const getBitcloutUsd = async (): Promise<number> => {
   return new Promise<number>((resolve, reject) => {
     axios
-      .get("https://bitclout.com/api/v0/get-exchange-rate", bitcloutCfHeader)
+      .get("https://bitclout.com/api/v0/get-exchange-rate", bitcloutHeader)
       .then(response => {
         const bitcloutPerUSD =
           1e9 / ((1e9 / response.data.SatoshisPerBitCloutExchangeRate / (response.data.USDCentsPerBitcoinExchangeRate / 100)) * 1e8);
@@ -152,7 +151,15 @@ export const genString = (size: number) => {
 };
 
 export const toNanos = (value: number) => {
-  return parseInt((value * 1e9).toString());
+  return +value.toFixed(9) * 1e9;
+};
+
+export const toWei = (value: number) => {
+  return +value.toFixed(18) * 1e18;
+};
+
+export const toUSDC = (value: number) => {
+  return +value.toFixed(6) * 1e6;
 };
 
 export const orderBalanceValidate = async (user: UserDoc, type: string, side: string, quantity: number, price?: number) => {

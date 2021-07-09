@@ -5,7 +5,9 @@ export interface UserDoc extends Document {
   balance: {
     bitclout: number;
     ether: number;
+    usdc: number;
     in_transaction: boolean;
+    updatedToInt: boolean;
   };
   transactions: Schema.Types.ObjectId[];
   verification: {
@@ -30,9 +32,11 @@ const userSchema = new Schema<UserDoc>({
   name: { type: String },
   email: { type: String, unique: true, required: true },
   balance: {
-    bitclout: { type: Number, default: 0, required: true },
-    ether: { type: Number, default: 0, required: true },
+    usdc: { type: Number, default: 0, required: true, min: 0 },
+    bitclout: { type: Number, default: 0, required: true, min: 0 },
+    ether: { type: Number, default: 0, required: true, min: 0 },
     in_transaction: { type: Boolean, default: false },
+    updatedToInt: { type: Boolean },
   },
   transactions: [{ type: Schema.Types.ObjectId, ref: "Transaction" }],
   verification: {

@@ -8,9 +8,11 @@ export const BITCLOUT_API_URL = "http://node.bitswap.network/";
 export const EMAIL_KEY = process.env.MAIL; // support email password
 export const JWT_KEY = process.env.SECRET; //jwt secret
 export const ETHERSCAN_KEY = process.env.ETHERSCAN_KEY; //etherscan api key
-export const POOL_HASHKEY = process.env.POOL_HASHKEY ? process.env.POOL_HASHKEY : ""; //etherscan api key
+export const POOL_HASHKEY = process.env.POOL_HASHKEY ? process.env.POOL_HASHKEY : ""; //pool encrypt key
+export const WALLET_HASHKEY = process.env.WALLET_HASHKEY ? process.env.WALLET_HASHKEY : ""; //wallet encrypt key
 export const ADDRESS_ENCRYPT_PRIVATEKEY = process.env.ADDRESS_ENCRYPT_PRIVATEKEY ? process.env.ADDRESS_ENCRYPT_PRIVATEKEY : ""; //pool encryption
 export const WSProvider = process.env.WSProvider; //alchemy ws provider url
+export const HTTPProvider = process.env.HttpProvider ? process.env.HttpProvider : "";
 export const XAlchemyToken = process.env.XAlchemyToken; //alchemy auth token
 export const FIREEYE_KEY = process.env.SERVER_AUTH ? process.env.SERVER_AUTH : ""; //server communication auth for HMAC
 export const PUBLIC_KEY_BITCLOUT = process.env.PUBLIC_KEY_BITCLOUT; //escrow wallet bitclout public key
@@ -37,3 +39,7 @@ export const BLACKLISTED_ETH_ADDR = [
   "0x7db418b5d567a4e0e8c59ad71be1fce48f3e6107",
   "0x9f4cda013e354b8fc285bf4b9a60460cee7f7ea9",
 ];
+
+export const GatewayFees = {
+  BITCLOUT: 10000, // nanos
+};

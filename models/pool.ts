@@ -7,7 +7,11 @@ export interface poolDoc extends Document {
   activeStart: number | null;
   user: Schema.Types.ObjectId | null;
   super: number;
-  balance: number;
+  balance: {
+    ETH: number;
+    USDC: number;
+    updatedToInt: boolean;
+  };
   txnHashList: string[];
 }
 
@@ -18,7 +22,11 @@ const poolSchema = new Schema<poolDoc>({
   activeStart: { type: Number, default: null },
   user: { type: Schema.Types.ObjectId, ref: "User", default: null },
   super: { type: Number, default: 1 },
-  balance: { type: Number, default: 0 },
+  balance: {
+    ETH: { type: Number, default: 0 },
+    USDC: { type: Number, default: 0 },
+    updatedToInt: { type: Boolean },
+  },
   txnHashList: [{ type: String }],
 });
 const Pool = model<poolDoc>("Pool", poolSchema);

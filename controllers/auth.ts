@@ -4,7 +4,7 @@ import sendMail from "../utils/mailer";
 import * as middleware from "../utils/middleware";
 import { getSingleProfile } from "../helpers/bitclout";
 import { createPersonaAccount, getPersonaAccount } from "../helpers/persona";
-import { validateJwt } from "../helpers/identity";
+import { validateJwt } from "../helpers/crypto";
 import { emailVerify } from "../utils/mailBody";
 import { formatUserBalances } from "../helpers/wallet";
 const createError = require("http-errors");
