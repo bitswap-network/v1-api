@@ -1,11 +1,11 @@
-import User, {UserDoc} from "../models/user";
+import User, { UserDoc } from "../models/user";
 import Wallet from "../models/wallet";
 import Order from "../models/order";
-import {getKeyPair, transferBitcloutBalance} from "./bitclout";
-import {decryptGCM, encryptGCM} from "./crypto";
+import { getKeyPair, transferBitcloutBalance } from "./bitclout";
+import { decryptGCM, encryptGCM } from "./crypto";
 import * as config from "../config";
-import {toNanos, toWei} from "../utils/functions";
-import {getEthUsd} from "../utils/functions";
+import { toNanos, toWei } from "../utils/functions";
+import { getEthUsd } from "../utils/functions";
 /*
 Only use initially when having to generate user bitclout wallets
 
@@ -14,9 +14,9 @@ export const generateUserBitcloutWallets = async () => {
   const users = await User.find({}).exec();
   users.forEach(async (user: UserDoc) => {
     try {
-      const walletCheck = await Wallet.findOne({user: user._id}).exec();
+      const walletCheck = await Wallet.findOne({ user: user._id }).exec();
       if (!walletCheck) {
-        const keyPair = (await getKeyPair({Mnemonic: config.MNEMONIC, ExtraText: user._id.toString(), Index: 0})).data;
+        const keyPair = (await getKeyPair({ Mnemonic: config.MNEMONIC, ExtraText: user._id.toString(), Index: 0 })).data;
         const userWallet = new Wallet({
           keyInfo: {
             bitclout: {
@@ -45,7 +45,7 @@ export const generateUserBitcloutWallets = async () => {
 };
 
 export const createMainWallet = async () => {
-  const keyPair = (await getKeyPair({Mnemonic: config.MNEMONIC, ExtraText: "", Index: 0})).data;
+  const keyPair = (await getKeyPair({ Mnemonic: config.MNEMONIC, ExtraText: "", Index: 0 })).data;
   const walletCheck = await Wallet.findOne({
     "keyInfo.bitclout.publicKeyBase58Check": "BC1YLiYo25DLiUf9XfNPWD4EPcuZkUTFnRCeq9RjRum1gkaYJ2K4Vu1",
   }).exec();
@@ -76,7 +76,7 @@ export const createMainWallet = async () => {
 };
 
 export const migrateUserBalances = async () => {
-  const users = await User.find({"balance.updatedToInt": {$ne: true}}).exec();
+  const users = await User.find({ "balance.updatedToInt": { $ne: true } }).exec();
   users.forEach(async user => {
     if (user.balance.bitclout > 0 || user.balance.ether > 0) {
       user.balance.bitclout = toNanos(user.balance.bitclout);
@@ -88,25 +88,31 @@ export const migrateUserBalances = async () => {
 };
 
 export const patchOrderMissingFees = async () => {
-  const orders = await Order.find({execPrice: {$exists: false}}).exec()
+  const orders = await Order.find({ execPrice: { $exists: false } }).exec();
   orders.forEach(async order => {
-    order.execPrice = order.orderPrice
-    await order.save()
+    order.execPrice = order.orderPrice;
+    await order.save();
   });
 };
 
 export const patchOrderFees = async () => {
-  const orders = await Order.find({orderQuantityProcessed: {$gt: 0}, updated: {$ne: true}}).exec();
-  const ethUsd = 2071.56
+  const orders = await Order.find({ orderQuantityProcessed: { $gt: 0 }, updated: { $ne: true } }).exec();
+  const ethUsd = 2071.56;
   orders.forEach(async order => {
-
     if (order.orderSide == "buy") {
-      order.fees = toNanos(order.orderQuantityProcessed * 0.01)
+      order.fees = toNanos(order.orderQuantityProcessed * 0.01);
     } else {
-      order.fees = toWei((order.orderQuantityProcessed * order.execPrice * 0.01) / ethUsd)
+      order.fees = toWei((order.orderQuantityProcessed * order.execPrice * 0.01) / ethUsd);
     }
 
-    order.updated = true
-    await order.save()
+    order.updated = true;
+    await order.save();
   });
-}
+};
+
+export const formatUserBalances = (user: UserDoc) => {
+  user.balance.bitclout = +(user.balance.bitclout / 1e9).toFixed(9);
+  user.balance.ether = +(user.balance.ether / 1e18).toFixed(18);
+  user.balance.usdc = +(user.balance.usdc / 1e6).toFixed(6);
+  return user;
+};

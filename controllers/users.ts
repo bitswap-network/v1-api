@@ -6,6 +6,7 @@ import { emailverified, servererror } from "../utils/mailBody";
 import { emailVerify } from "../utils/mailBody";
 import sendMail from "../utils/mailer";
 import { generateCode } from "../utils/functions";
+import { formatUserBalances } from "../helpers/wallet";
 
 const createError = require("http-errors");
 const userRouter = require("express").Router();
@@ -15,7 +16,7 @@ userRouter.get("/data", tokenAuthenticator, async (req, res, next) => {
     "bitclout.publicKey": req.key,
   }).exec();
   if (user) {
-    res.json(user);
+    res.json(formatUserBalances(user));
   } else {
     next(createError(400, "Invalid Request."));
   }
