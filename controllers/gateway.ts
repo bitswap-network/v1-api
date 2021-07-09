@@ -14,7 +14,7 @@ import {
 import { getAndAssignPool, syncWalletBalance } from "../helpers/pool";
 import { getNonce, checkEthAddr, sendEth } from "../helpers/web3";
 import * as config from "../config";
-import { preflightTransaction, submitTransaction } from "../helpers/bitclout";
+import { preflightTransaction, submitTransaction, transferBitcloutBalance } from "../helpers/bitclout";
 import { handleSign, decryptGCM } from "../helpers/crypto";
 
 import axios from "axios";
@@ -64,7 +64,7 @@ gatewayRouter.post("/deposit/bitclout-preflight", fireEyeWall, tokenAuthenticato
       next(createError(401, "User not verified."));
     } else {
       try {
-        const wallet = await Wallet.findOne({ user: user._id });
+        const wallet = await Wallet.findOne({ user: user._id }).exec();
         if (wallet) {
           const preflight = await preflightTransaction({
             AmountNanos: toNanos(value),
@@ -98,7 +98,7 @@ gatewayRouter.post("/withdraw/bitclout-preflight", fireEyeWall, tokenAuthenticat
       next(createError(401, "User not verified."));
     } else {
       try {
-        const wallet = await Wallet.findOne({ user: user._id });
+        const wallet = await Wallet.findOne({ user: user._id }).exec();
         if (wallet) {
           const preflight = await preflightTransaction({
             AmountNanos: toNanos(value),
