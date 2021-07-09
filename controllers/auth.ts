@@ -102,6 +102,11 @@ authRouter.post("/login", middleware.loginSchema, async (req, res, next) => {
       res.json({
         user: formatUserBalances(user),
         token: token,
+        wallet: {
+          bitclout: {
+            publicKey: wallet?.keyInfo.bitclout.publicKeyBase58Check,
+          },
+        },
       });
     } catch (e) {
       user.save();
