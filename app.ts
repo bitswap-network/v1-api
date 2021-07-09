@@ -19,8 +19,7 @@ import * as logger from "./utils/logger";
 import * as config from "./config";
 
 //Setups
-import { syncWalletBalance } from "./helpers/pool";
-import { generateUserBitcloutWallets } from "./helpers/wallet";
+import {syncWalletBalance} from "./helpers/pool";
 
 const app: express.Application = express();
 
@@ -63,5 +62,5 @@ app.use("/webhook", webhookRouter);
 
 app.use(middleware.unknownEndpoint);
 app.use(middleware.errorHandler);
-generateUserBitcloutWallets();
+
 export default app;

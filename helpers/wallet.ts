@@ -1,8 +1,11 @@
-import User, { UserDoc } from "../models/user";
+import User, {UserDoc} from "../models/user";
 import Wallet from "../models/wallet";
-import { getKeyPair } from "./bitclout";
+import Pool from "../models/pool";
+import {getKeyPair, transferBitcloutBalance} from "./bitclout";
+import {decryptGCM, encryptGCM} from "./crypto";
 import * as config from "../config";
-import { encryptGCM } from "./crypto";
+import {toNanos, toWei} from "../utils/functions";
+import {web3} from "./web3";
 /*
 Only use initially when having to generate user bitclout wallets
 
@@ -11,28 +14,85 @@ export const generateUserBitcloutWallets = async () => {
   const users = await User.find({}).exec();
   users.forEach(async (user: UserDoc) => {
     try {
-      const encryptedUserPublicKey = encryptGCM(user._id.toString(), config.WALLET_HASHKEY);
-      const keyPair = (await getKeyPair({ Mnemonic: config.MNEMONIC, ExtraText: encryptedUserPublicKey, Index: 0 })).data;
-      const userWallet = new Wallet({
-        keyInfo: {
-          bitclout: {
-            publicKeyBase58Check: keyPair.PrivateKeyBase58Check,
-            publicKeyHex: keyPair.PublicKeyHex,
-            privateKeyBase58Check: encryptGCM(keyPair.PrivateKeyBase58Check, config.WALLET_HASHKEY),
-            privateKeyHex: encryptGCM(keyPair.PrivateKeyHex, config.WALLET_HASHKEY),
-            extraText: encryptedUserPublicKey,
-            index: 0,
+      const walletCheck = await Wallet.findOne({user: user._id}).exec();
+      if (!walletCheck) {
+        const keyPair = (await getKeyPair({Mnemonic: config.MNEMONIC, ExtraText: user._id.toString(), Index: 0})).data;
+        const userWallet = new Wallet({
+          keyInfo: {
+            bitclout: {
+              publicKeyBase58Check: keyPair.PublicKeyBase58Check,
+              publicKeyHex: keyPair.PublicKeyHex,
+              privateKeyBase58Check: encryptGCM(keyPair.PrivateKeyBase58Check, config.WALLET_HASHKEY),
+              privateKeyHex: encryptGCM(keyPair.PrivateKeyHex, config.WALLET_HASHKEY),
+              extraText: encryptGCM(user._id.toString(), config.WALLET_HASHKEY),
+              index: 0,
+            },
           },
-        },
-        user: user._id,
-        balance: {
-          bitclout: 0,
-        },
-      });
-      await userWallet.save();
-      // console.log(user.bitclout.username, keyPair.PublicKeyBase58Check)
+          user: user._id,
+          balance: {
+            bitclout: 0,
+          },
+          super: 1,
+          status: 0,
+        });
+        await userWallet.save();
+        console.log(user.bitclout.username, userWallet.keyInfo.bitclout.publicKeyBase58Check);
+      }
     } catch (e) {
       console.error(e);
     }
   });
 };
+
+export const createMainWallet = async () => {
+  const keyPair = (await getKeyPair({Mnemonic: config.MNEMONIC, ExtraText: "", Index: 0})).data;
+  const walletCheck = await Wallet.findOne({"keyInfo.bitclout.publicKeyBase58Check": "BC1YLiYo25DLiUf9XfNPWD4EPcuZkUTFnRCeq9RjRum1gkaYJ2K4Vu1"}).exec()
+  if (!walletCheck) {
+    const mainWallet = new Wallet({
+      keyInfo: {
+        bitclout: {
+          publicKeyBase58Check: keyPair.PublicKeyBase58Check,
+          publicKeyHex: keyPair.PublicKeyHex,
+          privateKeyBase58Check: encryptGCM(keyPair.PrivateKeyBase58Check, config.WALLET_HASHKEY),
+          privateKeyHex: encryptGCM(keyPair.PrivateKeyHex, config.WALLET_HASHKEY),
+          extraText: "",
+          index: 0,
+        },
+      },
+      user: null,
+      balance: {
+        bitclout: 0,
+      },
+      super: 0,
+      status: 0,
+    });
+    console.log("Wallet created: ", mainWallet)
+    await mainWallet.save();
+  } else {
+    console.log("Wallet exists: ", walletCheck)
+  }
+
+};
+
+export const migrateUserBalances = async () => {
+  const users = await User.find({"balance.updatedToInt": {$ne: true}}).exec()
+  users.forEach(async (user) => {
+    if (user.balance.bitclout > 0 || user.balance.ether > 0) {
+      user.balance.bitclout = toNanos(user.balance.bitclout)
+      user.balance.ether = toWei(user.balance.ether)
+      user.balance.updatedToInt = true;
+      await user.save()
+    }
+  })
+};
+
+export const migratePoolBalances = async () => {
+  const pools = await Pool.find({"balance.updatedToInt": {$ne: true}}).exec()
+  pools.forEach(async (pool) => {
+    if (pool.balance.ETH > 0) {
+      pool.balance.ETH = toWei(pool.balance.ETH)
+      pool.balance.updatedToInt = true;
+      await pool.save()
+    }
+  })
+}

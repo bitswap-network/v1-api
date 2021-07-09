@@ -1,5 +1,48 @@
 import { AxiosResponse } from "axios";
 
+export interface TransferBitcloutBalanceInterface {
+  SenderPrivateKeyBase58Check: string;
+  RecipientPublicKeyBase58Check: string;
+  AmountNanos: number;
+  MinFeeRateNanosPerKB: number;
+  DryRun: boolean;
+}
+
+export interface TransferBitcloutBalanceAPIInterface extends AxiosResponse {
+  data: {
+    TransactionInfo: {
+      TotalInputNanos: number;
+      SpendAmoutnNanos: number;
+      ChangeAmountNanos: number;
+      FeeNanos: number;
+      FeeRateNanosPerKB: number;
+      SenderPublicKeyBase58Check: string;
+      RecipientPublicKeyBase58Check: string;
+    };
+    Transaction: {
+      TransactionIDBase58Check: string;
+      RawTransactionHex: string;
+      Inputs: TBInputs[];
+      Outputs: TBOutputs[];
+      SignatureHex: string;
+      TransactionType: number; //always 0 for basic transfer
+      TransactionMeta: any; //always {} empty for basic transfer
+      BlockHashHex: string;
+    };
+    Error: string;
+  };
+}
+
+export interface TBOutputs {
+  PublicKeyBase58Check: string;
+  AmountNanos: number;
+}
+
+export interface TBInputs {
+  TransactionIDBase58Check: string;
+  Index: number;
+}
+
 export interface GetKeyPairInterface {
   Mnemonic: string;
   ExtraText: string;

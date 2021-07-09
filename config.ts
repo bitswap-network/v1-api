@@ -39,3 +39,7 @@ export const BLACKLISTED_ETH_ADDR = [
   "0x7db418b5d567a4e0e8c59ad71be1fce48f3e6107",
   "0x9f4cda013e354b8fc285bf4b9a60460cee7f7ea9",
 ];
+
+export const GatewayFees = {
+  BITCLOUT: 10000 // nanos
+}

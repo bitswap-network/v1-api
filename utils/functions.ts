@@ -1,9 +1,9 @@
-import { createHmac, randomBytes } from "crypto";
-import { UserDoc } from "../models/user";
+import {createHmac, randomBytes} from "crypto";
+import {UserDoc} from "../models/user";
 import Order from "../models/order";
 import Transaction from "../models/transaction";
-import { bitcloutHeader } from "../helpers/bitclout";
-import { AxiosResponse } from "axios";
+import {bitcloutHeader} from "../helpers/bitclout";
+import {AxiosResponse} from "axios";
 import axios from "axios";
 import crypto from "crypto";
 import * as config from "../config";
@@ -15,11 +15,10 @@ const tier0WithdrawLim = 2000;
 export const enforceWithdrawLimit = async (user: UserDoc, newTxnValue: number) => {
   try {
     if (user.tier == 0) {
-      const withdrawSum: Array<{ _id: any; amount: number }> = await Transaction.aggregate([
-        { $match: { user: user._id, transactionType: "withdraw" } },
-        { $group: { _id: null, amount: { $sum: "$usdValueAtTime" } } },
+      const withdrawSum: Array<{_id: any; amount: number}> = await Transaction.aggregate([
+        {$match: {user: user._id, transactionType: "withdraw"}},
+        {$group: {_id: null, amount: {$sum: "$usdValueAtTime"}}},
       ]).exec();
-      console.log(withdrawSum);
       if (withdrawSum.length == 0) {
         return newTxnValue <= tier0WithdrawLim;
       }
@@ -129,7 +128,7 @@ export const getMarketPrice: (side: string, quantity: number) => Promise<AxiosRe
 export const generateCode = (len: number) => [...Array(len)].map(() => Math.floor(Math.random() * 16).toString(16)).join("");
 
 export const generateAccessToken = (PublicKeyBase58Check: any) => {
-  return jwt.sign(PublicKeyBase58Check, config.JWT_KEY, { expiresIn: "18000s" });
+  return jwt.sign(PublicKeyBase58Check, config.JWT_KEY, {expiresIn: "18000s"});
 };
 
 export const generateHMAC = (body: any) => {
@@ -152,11 +151,15 @@ export const genString = (size: number) => {
 };
 
 export const toNanos = (value: number) => {
-  return parseInt((value * 1e9).toString());
+  return +value.toFixed(9) * 1e9;
+};
+
+export const toWei = (value: number) => {
+  return +value.toFixed(18) * 1e18;
 };
 
 export const orderBalanceValidate = async (user: UserDoc, type: string, side: string, quantity: number, price?: number) => {
-  const orders = await Order.find({ username: user.bitclout.publicKey, complete: false }).exec();
+  const orders = await Order.find({username: user.bitclout.publicKey, complete: false}).exec();
   if (user.balance.in_transaction) {
     return false;
   } else {

@@ -8,12 +8,22 @@ import {
   SubmitTransactionAPIInterface,
   GetKeyPairInterface,
   GetKeyPairAPIInterface,
+  TransferBitcloutBalanceInterface,
+  TransferBitcloutBalanceAPIInterface,
 } from "../interfaces/bitclout";
 
 export const bitcloutHeader = {
   headers: {
     "Content-Type": "application/json",
   },
+};
+
+export const transferBitcloutBalance: (
+  transferBitcloutAttributes: TransferBitcloutBalanceInterface
+) => Promise<TransferBitcloutBalanceAPIInterface> = async function (
+  transferBitcloutAttributes: TransferBitcloutBalanceInterface
+): Promise<TransferBitcloutBalanceAPIInterface> {
+  return await axios.post(`${config.BITCLOUT_API_URL}api/v1/transfer-bitclout`, JSON.stringify(transferBitcloutAttributes), bitcloutHeader);
 };
 
 export const getKeyPair: (keyPairAttributes: GetKeyPairInterface) => Promise<GetKeyPairAPIInterface> = async function (

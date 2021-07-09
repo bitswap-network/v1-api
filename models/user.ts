@@ -1,4 +1,4 @@
-import { model, Schema, Document } from "mongoose";
+import {model, Schema, Document} from "mongoose";
 export interface UserDoc extends Document {
   name: string;
   email: string;
@@ -7,6 +7,7 @@ export interface UserDoc extends Document {
     ether: number;
     usdc: number;
     in_transaction: boolean;
+    updatedToInt: boolean;
   };
   transactions: Schema.Types.ObjectId[];
   verification: {
@@ -28,37 +29,38 @@ export interface UserDoc extends Document {
 }
 
 const userSchema = new Schema<UserDoc>({
-  name: { type: String },
-  email: { type: String, unique: true, required: true },
+  name: {type: String},
+  email: {type: String, unique: true, required: true},
   balance: {
-    usdc: { type: Number, default: 0, required: true },
-    bitclout: { type: Number, default: 0, required: true },
-    ether: { type: Number, default: 0, required: true },
-    in_transaction: { type: Boolean, default: false },
+    usdc: {type: Number, default: 0, required: true, min: 0},
+    bitclout: {type: Number, default: 0, required: true, min: 0},
+    ether: {type: Number, default: 0, required: true, min: 0},
+    in_transaction: {type: Boolean, default: false},
+    updatedToInt: {type: Boolean}
   },
-  transactions: [{ type: Schema.Types.ObjectId, ref: "Transaction" }],
+  transactions: [{type: Schema.Types.ObjectId, ref: "Transaction"}],
   verification: {
-    email: { type: Boolean, default: false },
-    emailString: { type: String },
-    personaAccountId: { type: String, default: null },
-    inquiryId: { type: String, default: null },
-    personaVerified: { type: Boolean, default: false },
+    email: {type: Boolean, default: false},
+    emailString: {type: String},
+    personaAccountId: {type: String, default: null},
+    inquiryId: {type: String, default: null},
+    personaVerified: {type: Boolean, default: false},
   },
   bitclout: {
-    publicKey: { type: String, unique: true, required: true },
-    bio: { type: String },
-    verified: { type: Boolean, default: false },
+    publicKey: {type: String, unique: true, required: true},
+    bio: {type: String},
+    verified: {type: Boolean, default: false},
     username: {
       type: String,
       unique: true,
     },
   },
-  tier: { type: Number, required: true, default: 0 },
+  tier: {type: Number, required: true, default: 0},
   created: {
     type: Date,
     default: Date.now,
   },
-  admin: { type: Boolean, default: false },
+  admin: {type: Boolean, default: false},
 });
 
 const User = model<UserDoc>("User", userSchema);
