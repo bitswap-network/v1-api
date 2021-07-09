@@ -6,6 +6,7 @@ import { getSingleProfile } from "../helpers/bitclout";
 import { createPersonaAccount, getPersonaAccount } from "../helpers/persona";
 import { validateJwt } from "../helpers/identity";
 import { emailVerify } from "../utils/mailBody";
+import { formatUserBalances } from "../helpers/wallet";
 const createError = require("http-errors");
 
 const authRouter = require("express").Router();
@@ -97,14 +98,14 @@ authRouter.post("/login", middleware.loginSchema, async (req, res, next) => {
       }
       await user.save();
       res.json({
-        user: user,
+        user: formatUserBalances(user),
         token: token,
       });
     } catch (e) {
       user.save();
       console.error(e);
       res.json({
-        user: user,
+        user: formatUserBalances(user),
         token: token,
       });
     }
