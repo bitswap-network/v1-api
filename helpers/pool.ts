@@ -1,11 +1,11 @@
 import * as config from "../config";
-import Pool, {poolDoc} from "../models/pool";
-import User, {UserDoc} from "../models/user";
-import {getEthBalance, getUSDCBalance, genWallet, addAddressWebhook} from "../helpers/web3";
-import {getEthUsd} from "../utils/functions";
+import Pool, { poolDoc } from "../models/pool";
+import User, { UserDoc } from "../models/user";
+import { getEthBalance, getUSDCBalance, genWallet, addAddressWebhook } from "../helpers/web3";
+import { getEthUsd } from "../utils/functions";
 import Transaction from "../models/transaction";
-import {encryptGCM} from "./crypto";
-import {toWei, toUSDC} from "../utils/functions";
+import { encryptGCM } from "./crypto";
+import { toWei, toUSDC } from "../utils/functions";
 export const syncWalletBalance = async () => {
   const pools = await Pool.find({}).exec();
   pools.forEach(async pool => {
@@ -89,7 +89,7 @@ export const processDeposit: (pool: poolDoc, value: number, asset: string, hash:
 };
 
 export const getAndAssignPool: (user: UserDoc) => Promise<string> = async function (user: UserDoc): Promise<string> {
-  const pool = await Pool.findOne({active: false}).exec();
+  const pool = await Pool.findOne({ active: false }).exec();
   if (pool) {
     pool.active = true;
     pool.activeStart = Date.now();
