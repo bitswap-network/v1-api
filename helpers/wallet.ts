@@ -87,23 +87,26 @@ export const migrateUserBalances = async () => {
   });
 };
 
-export const patchOrderFees = async () => {
+export const patchOrderMissingFees = async () => {
   const orders = await Order.find({execPrice: {$exists: false}}).exec()
-  // const orders = await Order.find({orderQuantityProcessed: {$gt: 0}, updated: {$ne: true}}).exec();
-  // const ethUsd = await getEthUsd();
   orders.forEach(async order => {
     order.execPrice = order.orderPrice
     await order.save()
-    // if(order.fees){
-
-    // }else{
-    //   if (order.orderSide == "buy") {
-    //     order.fees = toNanos(order.orderQuantityProcessed * 0.01)
-
-    //   }else{
-    //     order.fees = (order.orderQuantityProcessed*order.execPrice)
-    //   }
-    // }
-    // await order.save()
   });
 };
+
+export const patchOrderFees = async () => {
+  const orders = await Order.find({orderQuantityProcessed: {$gt: 0}, updated: {$ne: true}}).exec();
+  const ethUsd = 2071.56
+  orders.forEach(async order => {
+
+    if (order.orderSide == "buy") {
+      order.fees = toNanos(order.orderQuantityProcessed * 0.01)
+    } else {
+      order.fees = toWei((order.orderQuantityProcessed * order.execPrice * 0.01) / ethUsd)
+    }
+
+    order.updated = true
+    await order.save()
+  });
+}
