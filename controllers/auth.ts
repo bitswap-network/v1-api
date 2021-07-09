@@ -7,6 +7,7 @@ import { createPersonaAccount, getPersonaAccount } from "../helpers/persona";
 import { validateJwt } from "../helpers/crypto";
 import { emailVerify } from "../utils/mailBody";
 import { formatUserBalances } from "../helpers/wallet";
+import Wallet from "../models/wallet";
 const createError = require("http-errors");
 
 const authRouter = require("express").Router();
@@ -77,6 +78,7 @@ authRouter.post("/login", middleware.loginSchema, async (req, res, next) => {
     const token = generateAccessToken({
       PublicKeyBase58Check: user.bitclout.publicKey,
     });
+    const wallet = await Wallet.findOne({ user: user._id }).exec();
     try {
       const profileResp = await getSingleProfile(user.bitclout.publicKey);
       user.bitclout.bio = profileResp.data.Profile.Description;
@@ -107,6 +109,11 @@ authRouter.post("/login", middleware.loginSchema, async (req, res, next) => {
       res.json({
         user: formatUserBalances(user),
         token: token,
+        wallet: {
+          bitclout: {
+            publicKey: wallet?.keyInfo.bitclout.publicKeyBase58Check,
+          },
+        },
       });
     }
   } else {
