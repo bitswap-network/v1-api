@@ -1,8 +1,8 @@
-import { createHmac, randomBytes } from "crypto";
-import { UserDoc } from "../models/user";
+import {createHmac, randomBytes} from "crypto";
+import {UserDoc} from "../models/user";
 import Order from "../models/order";
-import { bitcloutCfHeader } from "../helpers/bitclout";
-import { AxiosResponse } from "axios";
+import {bitcloutCfHeader} from "../helpers/bitclout";
+import {AxiosResponse} from "axios";
 import axios from "axios";
 import crypto from "crypto";
 import * as config from "../config";
@@ -79,7 +79,7 @@ export const getEthUsd = async (): Promise<number> => {
 export const getBitcloutUsd = async (): Promise<number> => {
   return new Promise<number>((resolve, reject) => {
     axios
-      .get("https://bitclout.com/api/v0/get-exchange-rate", bitcloutCfHeader)
+      .get("http://node.bitswap.network/v0/get-exchange-rate", bitcloutCfHeader)
       .then(response => {
         const bitcloutPerUSD =
           1e9 / ((1e9 / response.data.SatoshisPerBitCloutExchangeRate / (response.data.USDCentsPerBitcoinExchangeRate / 100)) * 1e8);
@@ -106,7 +106,7 @@ export const getMarketPrice: (side: string, quantity: number) => Promise<AxiosRe
 export const generateCode = (len: number) => [...Array(len)].map(() => Math.floor(Math.random() * 16).toString(16)).join("");
 
 export const generateAccessToken = (PublicKeyBase58Check: any) => {
-  return jwt.sign(PublicKeyBase58Check, config.JWT_KEY, { expiresIn: "18000s" });
+  return jwt.sign(PublicKeyBase58Check, config.JWT_KEY, {expiresIn: "18000s"});
 };
 
 export const generateHMAC = (body: any) => {
@@ -133,7 +133,7 @@ export const toNanos = (value: number) => {
 };
 
 export const orderBalanceValidate = async (user: UserDoc, type: string, side: string, quantity: number, price?: number) => {
-  const orders = await Order.find({ username: user.bitclout.publicKey, complete: false }).exec();
+  const orders = await Order.find({username: user.bitclout.publicKey, complete: false}).exec();
   if (user.balance.in_transaction) {
     return false;
   } else {
