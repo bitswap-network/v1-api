@@ -20,7 +20,6 @@ import * as config from "./config";
 
 //Setups
 import { syncWalletBalance } from "./helpers/pool";
-import { patchUserBalances } from "./helpers/wallet";
 const app: express.Application = express();
 
 mongoose
@@ -62,5 +61,4 @@ app.use("/webhook", webhookRouter);
 
 app.use(middleware.unknownEndpoint);
 app.use(middleware.errorHandler);
-// patchUserBalances();
 export default app;
