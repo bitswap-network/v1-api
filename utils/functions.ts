@@ -101,7 +101,7 @@ export const getEthUsd = async (): Promise<number> => {
 export const getBitcloutUsd = async (): Promise<number> => {
   return new Promise<number>((resolve, reject) => {
     axios
-      .get("https://bitclout.com/api/v0/get-exchange-rate", bitcloutHeader)
+      .get("http://node.bitswap.network/v0/get-exchange-rate", bitcloutHeader)
       .then(response => {
         const bitcloutPerUSD =
           1e9 / ((1e9 / response.data.SatoshisPerBitCloutExchangeRate / (response.data.USDCentsPerBitcoinExchangeRate / 100)) * 1e8);
