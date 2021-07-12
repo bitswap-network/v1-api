@@ -57,7 +57,7 @@ gatewayRouter.get("/deposit/cancel/:id", fireEyeWall, tokenAuthenticator, async 
 
 gatewayRouter.post("/deposit/bitclout-preflight", fireEyeWall, tokenAuthenticator, valueSchema, async (req, res, next) => {
   const { value } = req.body;
-  const user = await User.findOne({ "bitclout.publicKey": req.key, "balance.in_transaction": false }).exec();
+  const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
   if (user) {
     if (!userVerifyCheck(user)) {
       next(createError(401, "User not verified."));
@@ -114,7 +114,7 @@ gatewayRouter.post("/withdraw/bitclout-preflight", fireEyeWall, tokenAuthenticat
 
 gatewayRouter.post("/deposit/bitclout", fireEyeWall, tokenAuthenticator, depositBitcloutSchema, async (req, res, next) => {
   const { transactionHex, transactionIDBase58Check, value } = req.body;
-  const user = await User.findOne({ "bitclout.publicKey": req.key, "balance.in_transaction": false });
+  const user = await User.findOne({ "bitclout.publicKey": req.key });
   if (user && user.bitclout.publicKey) {
     if (!userVerifyCheck(user)) {
       next(createError(401, "User not verified."));
@@ -162,7 +162,7 @@ gatewayRouter.post("/deposit/bitclout", fireEyeWall, tokenAuthenticator, deposit
 });
 
 gatewayRouter.get("/deposit/eth", fireEyeWall, tokenAuthenticator, async (req, res, next) => {
-  const user = await User.findOne({ "bitclout.publicKey": req.key, "balance.in_transaction": false }).exec();
+  const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
   if (user && user.bitclout.publicKey) {
     if (!userVerifyCheck(user)) {
       next(createError(401, "User not verified."));
@@ -282,6 +282,7 @@ gatewayRouter.post("/withdraw/bitclout", fireEyeWall, tokenAuthenticator, valueS
           next(createError(409, "Insufficient funds."));
         }
       } catch (e) {
+        await User.updateOne({ "bitclout.publicKey": req.key }, { $set: { "balance.in_transaction": false } });
         if (e.response.data.error) {
           next(createError(e.response.status, e.response.data.error));
         } else {
@@ -354,6 +355,7 @@ gatewayRouter.post("/withdraw/eth", fireEyeWall, tokenAuthenticator, withdrawEth
             next(createError(403, "Overflowing withdraw limit."));
           }
         } catch (e) {
+          await User.updateOne({ "bitclout.publicKey": req.key }, { $set: { "balance.in_transaction": false } });
           next(e);
         }
       } else {
