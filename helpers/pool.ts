@@ -14,10 +14,19 @@ export const syncWalletBalance = async (syncWebHook?: boolean) => {
     try {
       const balance_eth = await getEthBalance(pool.address);
       const balance_usdc = await getUSDCBalance(pool.address);
-      pool.balance.ETH = balance_eth;
-      pool.balance.USDC = balance_usdc;
-      pool.balance.updatedToInt = true;
-      await pool.save();
+      if (pool.balance.ETH && pool.balance.USDC) {
+        pool.balance.ETH = balance_eth;
+        pool.balance.USDC = balance_usdc;
+        pool.balance.updatedToInt = true;
+        await pool.save();
+      } else {
+        pool.balance = {
+          ETH: balance_eth,
+          USDC: balance_usdc,
+          updatedToInt: true,
+        };
+        await pool.save();
+      }
     } catch (e) {
       console.error(e);
     }

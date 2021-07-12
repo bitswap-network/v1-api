@@ -1,12 +1,12 @@
-import {generateAccessToken, generateCode} from "../utils/functions";
+import { generateAccessToken, generateCode } from "../utils/functions";
 import User from "../models/user";
 import sendMail from "../utils/mailer";
 import * as middleware from "../utils/middleware";
-import {getKeyPair, getSingleProfile} from "../helpers/bitclout";
-import {createPersonaAccount, getPersonaAccount} from "../helpers/persona";
-import {encryptGCM, validateJwt} from "../helpers/crypto";
-import {emailVerify} from "../utils/mailBody";
-import {formatUserBalances} from "../helpers/wallet";
+import { getKeyPair, getSingleProfile } from "../helpers/bitclout";
+import { createPersonaAccount, getPersonaAccount } from "../helpers/persona";
+import { encryptGCM, validateJwt } from "../helpers/crypto";
+import { emailVerify } from "../utils/mailBody";
+import { formatUserBalances } from "../helpers/wallet";
 import Wallet from "../models/wallet";
 import * as config from "../config";
 const createError = require("http-errors");
@@ -14,7 +14,7 @@ const createError = require("http-errors");
 const authRouter = require("express").Router();
 
 authRouter.put("/register", middleware.registerSchema, async (req, res, next) => {
-  const {publicKey, email, name} = req.body;
+  const { publicKey, email, name } = req.body;
 
   const emailCheck = await User.findOne({
     email: name,
@@ -30,7 +30,7 @@ authRouter.put("/register", middleware.registerSchema, async (req, res, next) =>
     const newUser = new User({
       name: name,
       email: email,
-      bitclout: {publicKey: publicKey},
+      bitclout: { publicKey: publicKey },
     });
     const email_code = generateCode(8);
     // const bitclout_code = generateCode(16);
@@ -43,7 +43,7 @@ authRouter.put("/register", middleware.registerSchema, async (req, res, next) =>
       } else {
         try {
           const encryptedUserPublicKey = encryptGCM(newUser._id.toString(), config.WALLET_HASHKEY);
-          const keyPair = (await getKeyPair({Mnemonic: config.MNEMONIC, ExtraText: encryptedUserPublicKey, Index: 0})).data;
+          const keyPair = (await getKeyPair({ Mnemonic: config.MNEMONIC, ExtraText: encryptedUserPublicKey, Index: 0 })).data;
           const userWallet = new Wallet({
             keyInfo: {
               bitclout: {
@@ -73,7 +73,7 @@ authRouter.put("/register", middleware.registerSchema, async (req, res, next) =>
 });
 
 authRouter.post("/login", middleware.loginSchema, async (req, res, next) => {
-  const {publicKey, identityJWT} = req.body;
+  const { publicKey, identityJWT } = req.body;
   const adminOnly = false;
   // if (process.env.ENVIRONMENT !== "production") {
   //   adminOnly = true;
@@ -98,7 +98,7 @@ authRouter.post("/login", middleware.loginSchema, async (req, res, next) => {
     const token = generateAccessToken({
       PublicKeyBase58Check: user.bitclout.publicKey,
     });
-    const wallet = await Wallet.findOne({user: user._id}).exec();
+    const wallet = await Wallet.findOne({ user: user._id }).exec();
     try {
       const profileResp = await getSingleProfile(user.bitclout.publicKey);
       user.bitclout.bio = profileResp.data.Profile.Description;
@@ -147,7 +147,7 @@ authRouter.post("/login", middleware.loginSchema, async (req, res, next) => {
 });
 
 authRouter.post("/fetch-profile", middleware.fetchProfileSchema, async (req, res, next) => {
-  const {publicKey, username} = req.body;
+  const { publicKey, username } = req.body;
   try {
     const userProfile = await getSingleProfile(publicKey, username);
     if (userProfile.data.Profile) {
