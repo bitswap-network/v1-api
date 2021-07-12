@@ -116,3 +116,16 @@ export const formatUserBalances = (user: UserDoc) => {
   user.balance.usdc = +(user.balance.usdc / 1e6).toFixed(6);
   return user;
 };
+
+export const formatUserBalancesInt = async () => {
+  try {
+    const users = await User.find({}).exec();
+    users.forEach(async user => {
+      user.balance.bitclout = parseInt(user.balance.bitclout.toString());
+      user.balance.ether = parseInt(user.balance.ether.toString());
+      await user.save();
+    });
+  } catch (e) {
+    console.error(e);
+  }
+};

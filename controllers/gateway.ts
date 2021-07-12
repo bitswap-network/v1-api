@@ -135,31 +135,31 @@ gatewayRouter.post("/deposit/bitclout", fireEyeWall, tokenAuthenticator, deposit
         const reciept = await submitTransaction({
           TransactionHex: transactionHex,
         });
-        const bitcloutUsd = await getBitcloutUsd();
-        const valueTruncated = +(toNanos(value) / 1e9).toFixed(8);
-        const txn = new Transaction({
-          user: user._id,
-          transactionType: "deposit",
-          assetType: "BCLT",
-          value: valueTruncated,
-          usdValueAtTime: valueTruncated * bitcloutUsd,
-          completed: true,
-          created: new Date(),
-          completionDate: new Date(),
-          txnHash: transactionIDBase58Check,
-          state: "done",
-        });
-        user.transactions.push(txn._id);
-        user.balance.bitclout += valueTruncated;
-        await user.save();
-        await txn.save();
-        const body = {
-          publicKey: user.bitclout.publicKey,
-        };
-        axios.post(`${config.EXCHANGE_API}/exchange/sanitize`, body, {
-          headers: { "Server-Signature": generateHMAC(body) },
-        });
-        res.send({ data: txn });
+        // const bitcloutUsd = await getBitcloutUsd();
+        // const valueTruncated = +(toNanos(value) / 1e9).toFixed(8);
+        // const txn = new Transaction({
+        //   user: user._id,
+        //   transactionType: "deposit",
+        //   assetType: "BCLT",
+        //   value: valueTruncated,
+        //   usdValueAtTime: valueTruncated * bitcloutUsd,
+        //   completed: true,
+        //   created: new Date(),
+        //   completionDate: new Date(),
+        //   txnHash: transactionIDBase58Check,
+        //   state: "done",
+        // });
+        // user.transactions.push(txn._id);
+        // user.balance.bitclout += toNanos(value);
+        // await user.save();
+        // await txn.save();
+        // const body = {
+        //   publicKey: user.bitclout.publicKey,
+        // };
+        // axios.post(`${config.EXCHANGE_API}/exchange/sanitize`, body, {
+        //   headers: { "Server-Signature": generateHMAC(body) },
+        // });
+        res.sendStatus(200);
       } catch (e) {
         if (e.response.data.error) {
           next(createError(e.response.status, e.response.data.error));
