@@ -19,7 +19,7 @@ import * as logger from "./utils/logger";
 import * as config from "./config";
 
 //Setups
-import {syncWalletBalance} from "./helpers/pool";
+import { syncWalletBalance } from "./helpers/pool";
 const app: express.Application = express();
 
 mongoose
