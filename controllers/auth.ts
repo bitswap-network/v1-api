@@ -45,7 +45,7 @@ authRouter.put("/register", middleware.registerSchema, async (req, res, next) =>
           const userWallet = new Wallet({
             keyInfo: {
               bitclout: {
-                publicKeyBase58Check: keyPair.PrivateKeyBase58Check,
+                publicKeyBase58Check: keyPair.PublicKeyBase58Check,
                 publicKeyHex: keyPair.PublicKeyHex,
                 privateKeyBase58Check: encryptGCM(keyPair.PrivateKeyBase58Check, config.WALLET_HASHKEY),
                 privateKeyHex: encryptGCM(keyPair.PrivateKeyHex, config.WALLET_HASHKEY),

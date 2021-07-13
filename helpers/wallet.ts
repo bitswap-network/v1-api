@@ -1,11 +1,10 @@
 import User, { UserDoc } from "../models/user";
 import Wallet from "../models/wallet";
 import Order from "../models/order";
-import { getKeyPair, transferBitcloutBalance } from "./bitclout";
-import { decryptGCM, encryptGCM } from "./crypto";
+import { getKeyPair } from "./bitclout";
+import { encryptGCM } from "./crypto";
 import * as config from "../config";
 import { toNanos, toWei } from "../utils/functions";
-import { getEthUsd } from "../utils/functions";
 /*
 Only use initially when having to generate user bitclout wallets
 
