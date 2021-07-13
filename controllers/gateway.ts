@@ -251,7 +251,7 @@ gatewayRouter.post("/withdraw/bitclout", tokenAuthenticator, fireEyeWall, valueS
               const wallet = await Wallet.findOne({ super: 0 }).exec();
               if (wallet) {
                 const response = await transferBitcloutBalance({
-                  SenderPrivateKeyBase58Check: decryptGCM(wallet?.keyInfo.bitclout.privateKeyBase58Check, config.WALLET_HASHKEY),
+                  SenderPrivateKeyBase58Check: decryptGCM(wallet.keyInfo.bitclout.privateKeyBase58Check, config.WALLET_HASHKEY),
                   RecipientPublicKeyBase58Check: user.bitclout.publicKey,
                   AmountNanos: valueDeductedNanos,
                   MinFeeRateNanosPerKB: config.MinFeeRateNanosPerKB,
