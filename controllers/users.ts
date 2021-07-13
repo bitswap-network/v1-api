@@ -7,7 +7,8 @@ import { emailVerify } from "../utils/mailBody";
 import sendMail from "../utils/mailer";
 import { generateCode } from "../utils/functions";
 import { formatUserBalances } from "../helpers/wallet";
-
+import { getCoinHodlers } from "../helpers/bitclout";
+import * as config from "../config";
 const createError = require("http-errors");
 const userRouter = require("express").Router();
 
@@ -166,6 +167,28 @@ userRouter.get("/notifications", tokenAuthenticator, async (req, res, next) => {
       .limit(5)
       .exec();
     res.json({ data: orders });
+  } else {
+    next(createError(400, "Invalid Request."));
+  }
+});
+
+userRouter.get("/isCoinHolder", tokenAuthenticator, async (req, res, next) => {
+  const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
+  if (user) {
+    try {
+      const response = await getCoinHodlers({
+        PublicKeyBase58Check: req.key,
+        FetchHodlings: true,
+        FetchAll: true,
+      });
+      if (response.data.Hodlers.some(user => user.CreatorPublicKeyBase58Check.toLowerCase() === config.BitSwap_PubKey.toLowerCase())) {
+        res.status(200).send({ holder: true });
+      } else {
+        res.status(200).send({ holder: false });
+      }
+    } catch (e) {
+      next(e);
+    }
   } else {
     next(createError(400, "Invalid Request."));
   }
