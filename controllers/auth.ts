@@ -116,6 +116,7 @@ authRouter.post("/login", middleware.loginSchema, async (req, res, next) => {
       if (!user.tier) {
         user.tier = 0;
       }
+      user.balance.in_transaction = false;
       await user.save();
       res.json({
         user: formatUserBalances(user),

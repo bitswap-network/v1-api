@@ -41,5 +41,5 @@ export const BLACKLISTED_ETH_ADDR = [
 ];
 
 export const GatewayFees = {
-  BITCLOUT: 10000, // nanos
+  BITCLOUT: 5000, // nanos
 };
