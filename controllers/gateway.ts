@@ -296,6 +296,7 @@ gatewayRouter.post("/withdraw/bitclout", fireEyeWall, tokenAuthenticator, valueS
       } catch (e) {
         await User.updateOne({ "bitclout.publicKey": req.key }, { $set: { "balance.in_transaction": false } });
         if (e.response.data.error) {
+          await User.updateOne({ "bitclout.publicKey": req.key }, { $set: { "balance.in_transaction": false } });
           next(createError(e.response.status, e.response.data.error));
         } else {
           next(e);
