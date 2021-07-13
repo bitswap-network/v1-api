@@ -236,7 +236,7 @@ gatewayRouter.post("/withdraw/bitclout", tokenAuthenticator, fireEyeWall, valueS
       try {
         const valueDeductedNanos = toNanos(value) - config.GatewayFees.BITCLOUT;
         const bitcloutUsd = await getBitcloutUsd();
-        if (user.balance.bitclout >= valueDeductedNanos) {
+        if (user.balance.bitclout >= toNanos(value)) {
           if (await enforceWithdrawLimit(user, bitcloutUsd * +value.toFixed(9))) {
             const txn = new Transaction({
               user: user._id,
