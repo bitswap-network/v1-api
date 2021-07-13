@@ -1,7 +1,7 @@
 import { AxiosResponse } from "axios";
 
 export interface GetCoinHodlersInterface {
-  Username: string;
+  PublicKeyBase58Check: string;
   FetchHodlings: boolean;
   FetchAll: boolean;
 }

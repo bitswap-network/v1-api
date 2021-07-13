@@ -43,3 +43,4 @@ export const BLACKLISTED_ETH_ADDR = [
 export const GatewayFees = {
   BITCLOUT: 5000, // nanos
 };
+export const BitSwap_PubKey = "BC1YLjQtaLyForGFpdzmvzCCx1zbSCm58785cABn5zS8KVMeS4Z4aNK";
