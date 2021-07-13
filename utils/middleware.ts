@@ -1,8 +1,10 @@
 import axios from "axios";
 import Joi from "joi";
 import * as config from "../config";
+import { getCoinHodlers } from "../helpers/bitclout";
 const jwt = require("jsonwebtoken");
 const createError = require("http-errors");
+import User from "../models/user";
 
 export const valueSchema = (req, res, next) => {
   const schema = Joi.object({
@@ -146,7 +148,7 @@ export const tokenAuthenticator = (req, res, next) => {
 
   if (token == null) return res.status(400).send("Missing token");
 
-  jwt.verify(token, config.JWT_KEY, (err, key) => {
+  jwt.verify(token, config.JWT_KEY, async (err, key) => {
     if (err) return res.status(403).send("Invalid token");
 
     req.key = key.PublicKeyBase58Check;
@@ -156,20 +158,60 @@ export const tokenAuthenticator = (req, res, next) => {
 };
 
 export const fireEyeWall = (req, res, next) => {
-  axios
-    .get(`${config.EXCHANGE_API}/fireeye-state`)
+  getCoinHodlers({
+    PublicKeyBase58Check: req.key,
+    FetchHodlings: true,
+    FetchAll: true,
+  })
     .then(response => {
-      if (response.data.Code === 0) {
-        next();
-      } else if (response.data.Code > 0 && response.data.Code < 20) {
-        console.log("FireEye State: ", response.data);
-        next();
+      if (response.data.Hodlers.some(user => user.CreatorPublicKeyBase58Check.toLowerCase() === config.BitSwap_PubKey.toLowerCase())) {
+        axios
+          .get(`${config.EXCHANGE_API}/fireeye-state`)
+          .then(response => {
+            if (response.data.Code === 0) {
+              next();
+            } else if (response.data.Code > 0 && response.data.Code < 20) {
+              console.log("FireEye State: ", response.data);
+              next();
+            } else {
+              return res.status(503).send("FireEye Blocked.");
+            }
+          })
+          .catch(error => {
+            console.error(error);
+            return res.status(500).send("FireEye Error.");
+          });
       } else {
-        return res.status(503).send("FireEye Blocked.");
+        axios
+          .get(`${config.EXCHANGE_API}/fireeye-state`)
+          .then(response => {
+            if (response.data.Code >= 0 && response.data.Code < 20) {
+              User.findOne({ "bitclout.publicKey": req.key }, (err, user) => {
+                if (err) {
+                  console.error(err);
+                  return res.status(500).send("DB Error");
+                } else {
+                  const userCreated = new Date(user.created);
+                  const dateLimit = new Date("2021-07-13");
+                  if (userCreated < dateLimit) {
+                    next();
+                  } else {
+                    return res.status(403).send("Must be a BitSwap coin hodler");
+                  }
+                }
+              });
+            } else {
+              return res.status(503).send("FireEye Blocked.");
+            }
+          })
+          .catch(error => {
+            console.error(error);
+            return res.status(500).send("FireEye Error.");
+          });
       }
     })
     .catch(error => {
       console.error(error);
-      return res.status(500).send("FireEye Error.");
+      return res.sendStatus(500);
     });
 };

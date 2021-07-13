@@ -1,14 +1,16 @@
 import { AxiosResponse } from "axios";
 
 export interface GetCoinHodlersInterface {
-  Username: string;
+  PublicKeyBase58Check: string;
   FetchHodlings: boolean;
   FetchAll: boolean;
 }
 
 export interface GetCoinHodlersAPIInterface extends AxiosResponse {
-  Hodlers: Hodler[];
-  LastPublicKeyBase58Check: string;
+  data: {
+    Hodlers: Hodler[];
+    LastPublicKeyBase58Check: string;
+  };
 }
 
 interface Hodler {

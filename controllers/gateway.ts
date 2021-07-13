@@ -28,7 +28,7 @@ import { toWei } from "../utils/functions";
 
 */
 
-gatewayRouter.get("/deposit/cancel/:id", fireEyeWall, tokenAuthenticator, async (req, res, next) => {
+gatewayRouter.get("/deposit/cancel/:id", tokenAuthenticator, async (req, res, next) => {
   const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
   if (user && req.params.id) {
     const transaction = await Transaction.findById(req.params.id).exec();
@@ -56,7 +56,7 @@ gatewayRouter.get("/deposit/cancel/:id", fireEyeWall, tokenAuthenticator, async 
   }
 });
 
-gatewayRouter.post("/deposit/bitclout-preflight", fireEyeWall, tokenAuthenticator, valueSchema, async (req, res, next) => {
+gatewayRouter.post("/deposit/bitclout-preflight", tokenAuthenticator, fireEyeWall, valueSchema, async (req, res, next) => {
   const { value } = req.body;
   const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
   if (user) {
@@ -90,7 +90,7 @@ gatewayRouter.post("/deposit/bitclout-preflight", fireEyeWall, tokenAuthenticato
   }
 });
 
-gatewayRouter.post("/withdraw/bitclout-preflight", fireEyeWall, tokenAuthenticator, valueSchema, async (req, res, next) => {
+gatewayRouter.post("/withdraw/bitclout-preflight", tokenAuthenticator, fireEyeWall, valueSchema, async (req, res, next) => {
   const { value } = req.body;
   const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
   if (user) {
@@ -124,7 +124,7 @@ gatewayRouter.post("/withdraw/bitclout-preflight", fireEyeWall, tokenAuthenticat
   }
 });
 
-gatewayRouter.post("/deposit/bitclout", fireEyeWall, tokenAuthenticator, depositBitcloutSchema, async (req, res, next) => {
+gatewayRouter.post("/deposit/bitclout", tokenAuthenticator, fireEyeWall, depositBitcloutSchema, async (req, res, next) => {
   const { transactionHex, transactionIDBase58Check, value } = req.body;
   const user = await User.findOne({ "bitclout.publicKey": req.key });
   if (user && user.bitclout.publicKey) {
@@ -173,7 +173,7 @@ gatewayRouter.post("/deposit/bitclout", fireEyeWall, tokenAuthenticator, deposit
   }
 });
 
-gatewayRouter.get("/deposit/eth", fireEyeWall, tokenAuthenticator, async (req, res, next) => {
+gatewayRouter.get("/deposit/eth", tokenAuthenticator, fireEyeWall, async (req, res, next) => {
   const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
   if (user && user.bitclout.publicKey) {
     if (!userVerifyCheck(user)) {
@@ -226,7 +226,7 @@ gatewayRouter.get("/deposit/eth", fireEyeWall, tokenAuthenticator, async (req, r
   }
 });
 
-gatewayRouter.post("/withdraw/bitclout", fireEyeWall, tokenAuthenticator, valueSchema, async (req, res, next) => {
+gatewayRouter.post("/withdraw/bitclout", tokenAuthenticator, fireEyeWall, valueSchema, async (req, res, next) => {
   const { value } = req.body;
   const user = await User.findOne({ "bitclout.publicKey": req.key, "balance.in_transaction": false }).exec();
   if (user && user.bitclout.publicKey) {
@@ -311,7 +311,7 @@ gatewayRouter.post("/withdraw/bitclout", fireEyeWall, tokenAuthenticator, valueS
   }
 });
 
-gatewayRouter.post("/withdraw/eth", fireEyeWall, tokenAuthenticator, withdrawEthSchema, async (req, res, next) => {
+gatewayRouter.post("/withdraw/eth", tokenAuthenticator, fireEyeWall, withdrawEthSchema, async (req, res, next) => {
   const { value, withdrawAddress } = req.body;
   const user = await User.findOne({ "bitclout.publicKey": req.key, "balance.in_transaction": false }).exec();
   const pool = await Pool.findOne({ "balance.ETH": { $gt: toWei(value) } }).exec();
