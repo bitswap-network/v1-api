@@ -256,37 +256,38 @@ gatewayRouter.post("/withdraw/bitclout", fireEyeWall, tokenAuthenticator, valueS
         });
         if (user.balance.bitclout >= valueDeductedNanos) {
           if (await enforceWithdrawLimit(user, bitcloutUsd * +value.toFixed(9))) {
-            submitTransaction({
-              TransactionHex: handleSign(preflight.data.TransactionHex),
-            })
-              .then(async response => {
-                user.balance.bitclout -= valueDeductedNanos;
-                user.balance.in_transaction = false;
-                user.transactions.push(txn._id);
-                const body = {
-                  publicKey: user.bitclout.publicKey,
-                };
-                await axios.post(`${config.EXCHANGE_API}/exchange/sanitize`, body, {
-                  headers: { "Server-Signature": generateHMAC(body) },
-                });
-                txn.state = "done";
-                txn.completed = true;
-                txn.completionDate = new Date();
-                await user.save();
-                await txn.save();
-                res.send({ data: txn });
-              })
-              .catch(async error => {
-                user.balance.in_transaction = false;
-                user.transactions.push(txn._id);
-                txn.state = "failed";
-                txn.error = "Server Error";
-                txn.completed = true;
-                txn.completionDate = new Date();
-                await user.save();
-                await txn.save();
-                res.status(500).send({ data: txn });
+            try {
+              const response = await submitTransaction({
+                TransactionHex: handleSign(preflight.data.TransactionHex),
               });
+              user.balance.bitclout -= toNanos(value);
+              user.balance.in_transaction = false;
+              user.transactions.push(txn._id);
+              txn.state = "done";
+              txn.completed = true;
+              txn.completionDate = new Date();
+              await user.save();
+              await txn.save();
+              const body = {
+                publicKey: user.bitclout.publicKey,
+              };
+              await axios.post(`${config.EXCHANGE_API}/exchange/sanitize`, body, {
+                headers: { "Server-Signature": generateHMAC(body) },
+              });
+
+              res.send({ data: txn });
+            } catch (e) {
+              console.error(e);
+              user.balance.in_transaction = false;
+              user.transactions.push(txn._id);
+              txn.state = "failed";
+              txn.error = "Server Error";
+              txn.completed = true;
+              txn.completionDate = new Date();
+              await user.save();
+              await txn.save();
+              res.status(500).send({ data: txn });
+            }
           } else {
             next(createError(403, "Overflowing withdraw limit."));
           }
