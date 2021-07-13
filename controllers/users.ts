@@ -6,6 +6,7 @@ import { emailverified, servererror } from "../utils/mailBody";
 import { emailVerify } from "../utils/mailBody";
 import sendMail from "../utils/mailer";
 import { generateCode } from "../utils/functions";
+import { formatUserBalances } from "../helpers/wallet";
 
 const createError = require("http-errors");
 const userRouter = require("express").Router();
@@ -15,7 +16,7 @@ userRouter.get("/data", tokenAuthenticator, async (req, res, next) => {
     "bitclout.publicKey": req.key,
   }).exec();
   if (user) {
-    res.json(user);
+    res.json(formatUserBalances(user));
   } else {
     next(createError(400, "Invalid Request."));
   }
@@ -118,11 +119,14 @@ userRouter.get("/verify-email/:code", async (req, res, next) => {
 });
 
 userRouter.get("/transactions", tokenAuthenticator, async (req, res, next) => {
-  const user = await User.findOne({ "bitclout.publicKey": req.key })
-    .populate({ path: "transactions", options: { sort: { created: -1 } } })
-    .exec();
+  const user = await User.findOne({ "bitclout.publicKey": req.key });
   if (user) {
-    res.json({ data: user.transactions });
+    try {
+      const txns = await Transaction.find({ user: user._id }).sort({ created: -1 }).exec();
+      res.json({ data: txns });
+    } catch (e) {
+      next(e);
+    }
   } else {
     next(createError(400, "Invalid Request."));
   }
@@ -144,7 +148,23 @@ userRouter.get("/transaction/:id", tokenAuthenticator, async (req, res, next) =>
 userRouter.get("/orders", tokenAuthenticator, async (req, res, next) => {
   const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
   if (user) {
-    const orders = await Order.find({ username: user.bitclout.publicKey }).sort({ completed: "desc", created: "desc" }).exec();
+    const orders = await Order.find({ username: user.bitclout.publicKey }).sort({ completeTime: "desc", created: "desc" }).exec();
+    res.json({ data: orders });
+  } else {
+    next(createError(400, "Invalid Request."));
+  }
+});
+
+userRouter.get("/notifications", tokenAuthenticator, async (req, res, next) => {
+  const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
+  if (user) {
+    const orders = await Order.find({
+      username: user.bitclout.publicKey,
+      $or: [{ orderQuantityProcessed: { $gt: 0 } }, { complete: true }, { error: { $ne: "" } }],
+    })
+      .sort({ completeTime: "desc" })
+      .limit(5)
+      .exec();
     res.json({ data: orders });
   } else {
     next(createError(400, "Invalid Request."));

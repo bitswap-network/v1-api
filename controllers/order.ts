@@ -1,5 +1,5 @@
 import User from "../models/user";
-import { tokenAuthenticator, limitOrderSchema, marketOrderSchema } from "../utils/middleware";
+import { tokenAuthenticator, limitOrderSchema, marketOrderSchema, marketQuantitySchema, marketPriceSchema } from "../utils/middleware";
 import Order from "../models/order";
 import { generateHMAC, orderBalanceValidate, userVerifyCheck } from "../utils/functions";
 import * as config from "../config";
@@ -102,10 +102,24 @@ orderRouter.get("/cancel/:id", tokenAuthenticator, async (req, res, next) => {
   }
 });
 
-orderRouter.post("/market-price", marketOrderSchema, async (req, res, next) => {
+orderRouter.post("/market-price", marketPriceSchema, async (req, res, next) => {
   const { orderQuantity, orderSide } = req.body;
   try {
     const response = await axios.get(`${config.EXCHANGE_API}/market-price/${orderSide}/${+orderQuantity.toFixed(2)}`);
+    res.status(response.status).send(response.data);
+  } catch (e) {
+    if (e.response.data.error) {
+      next(createError(e.response.status, e.response.data.error));
+    } else {
+      next(e);
+    }
+  }
+});
+
+orderRouter.post("/market-quantity", marketQuantitySchema, async (req, res, next) => {
+  const { maxPrice, orderSide } = req.body;
+  try {
+    const response = await axios.get(`${config.EXCHANGE_API}/market-quantity/${orderSide}/${+maxPrice.toFixed(2)}`);
     res.status(response.status).send(response.data);
   } catch (e) {
     if (e.response.data.error) {

@@ -1,7 +1,6 @@
 import { model, Schema, Document } from "mongoose";
-import { UserDoc } from "./user";
 export interface transactionDoc extends Document {
-  user: UserDoc;
+  user: Schema.Types.ObjectId;
   transactionType: string;
   assetType: string;
   value: number;

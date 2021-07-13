@@ -6,14 +6,16 @@ export interface orderDoc extends Document {
   orderID: string;
   orderSide: string;
   orderType: string;
+  etherQuantity: number;
   orderQuantity: number;
   orderPrice: number;
   fees: number | undefined;
-  execPrice: number | undefined;
+  execPrice: number;
   orderQuantityProcessed: number;
   complete: boolean;
   error: string | undefined;
   completeTime: Date | undefined;
+  updated: boolean;
 }
 
 const orderSchema = new Schema<orderDoc>({
@@ -23,6 +25,7 @@ const orderSchema = new Schema<orderDoc>({
   orderSide: { type: String, required: true, enum: ["buy", "sell"] },
   orderType: { type: String, required: true, enum: ["limit", "market"] },
   orderQuantity: { type: Number, required: true },
+  etherQuantity: { type: Number },
   orderPrice: { type: Number },
   execPrice: { type: Number },
   fees: { type: Number },
@@ -30,6 +33,7 @@ const orderSchema = new Schema<orderDoc>({
   complete: { type: Boolean, default: false },
   error: { type: String, default: undefined },
   completeTime: { type: Date },
+  updated: { type: Boolean },
 });
 const Order = model<orderDoc>("Order", orderSchema);
 

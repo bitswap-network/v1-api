@@ -14,6 +14,9 @@ webhookRouter.post("/inquiry", async (req, res, next) => {
         const user = await User.findOne({ "verification.personaAccountId": accountId }).exec();
         if (user && inquiryState == "completed") {
           user.verification.personaVerified = true;
+          if (user.tier === 0) {
+            user.tier = 1;
+          }
           await user.save();
         }
       }
@@ -42,7 +45,6 @@ webhookRouter.post("/pool", async (req, res, next) => {
           }).exec();
 
           if (pool) {
-            // pool.balance += value;
             let txnHashList = pool.txnHashList ? pool.txnHashList : [];
             txnHashList.push(hash);
             pool.txnHashList = txnHashList;

@@ -31,89 +31,6 @@ utilRouter.get("/bitclout-usd", async (req, res, next) => {
   }
 });
 
-utilRouter.get("/depth", async (req, res, next) => {
-  const dateRange = req.query.dateRange;
-
-  switch (dateRange) {
-    case "max": {
-      const depths = await Depth.find().sort({ timestamp: "asc" }).exec();
-      const step = Math.round(depths.length / 300);
-      const depthArr: depthDoc[] = [];
-      for (let i = depths.length - 1; i >= 0; i -= step) {
-        depthArr.push(depths[i]);
-      }
-      res.json({ data: depthArr });
-      break;
-    }
-
-    case "1m": {
-      const now = new Date();
-      now.setDate(now.getDate() - 30);
-      const depths = await Depth.find({
-        timestamp: {
-          $gte: now,
-        },
-      })
-        .sort({ timestamp: "asc" })
-        .exec();
-      const step = Math.round(depths.length / 300);
-      const depthArr: depthDoc[] = [];
-      for (let i = depths.length - 1; i >= 0; i -= step) {
-        depthArr.push(depths[i]);
-      }
-      res.json({ data: depthArr });
-      break;
-    }
-
-    case "1w": {
-      const now = new Date();
-      now.setDate(now.getDate() - 7);
-      const depths = await Depth.find({
-        timestamp: {
-          $gte: now,
-        },
-      })
-        .sort({ timestamp: "asc" })
-        .exec();
-      const step = Math.round(depths.length / 300);
-      const depthArr: depthDoc[] = [];
-      for (let i = depths.length - 1; i >= 0; i -= step) {
-        depthArr.push(depths[i]);
-      }
-      res.json({ data: depthArr });
-      break;
-    }
-
-    case "1d": {
-      const now = new Date();
-      now.setDate(now.getDate() - 1);
-      const depths = await Depth.find({
-        timestamp: {
-          $gte: now,
-        },
-      })
-        .sort({ timestamp: "asc" })
-        .exec();
-      res.json({ data: depths });
-      break;
-    }
-
-    default: {
-      res.status(400).send({ error: "Incorrect query" });
-      break;
-    }
-  }
-});
-
-utilRouter.get("/depth-current", async (req, res, next) => {
-  try {
-    const depth = await Depth.findOne({}).sort({ timestamp: "desc" }).exec();
-    res.json({ data: depth });
-  } catch (e) {
-    next(e);
-  }
-});
-
 utilRouter.get("/orderbook", async (req, res, next) => {
   try {
     const response = await getOrderbookState();
@@ -177,22 +94,5 @@ utilRouter.get("/order-history", async (req, res, next) => {
     next(e);
   }
 });
-
-// utilRouter.get("/total-balances", async (req, res, next) => {
-//   try {
-//     const users = await User.find().exec();
-//     const balances = {
-//       ether: 0,
-//       bitclout: 0,
-//     };
-//     users.forEach(user => {
-//       balances.ether += user.balance.ether;
-//       balances.bitclout += user.balance.bitclout;
-//     });
-//     res.json(balances);
-//   } catch (e) {
-//     next(e);
-//   }
-// });
 
 export default utilRouter;

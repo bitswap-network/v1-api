@@ -2,18 +2,33 @@ import User from "../models/user";
 import { tokenAuthenticator, depositBitcloutSchema, valueSchema, withdrawEthSchema, fireEyeWall } from "../utils/middleware";
 import Transaction from "../models/transaction";
 import Pool from "../models/pool";
-import { getGasEtherscan, toNanos, userVerifyCheck, generateHMAC, getEthUsd, getBitcloutUsd } from "../utils/functions";
-import { getAndAssignPool, decryptAddressGCM, syncWalletBalance } from "../helpers/pool";
+import {
+  getGasEtherscan,
+  toNanos,
+  userVerifyCheck,
+  generateHMAC,
+  getEthUsd,
+  getBitcloutUsd,
+  enforceWithdrawLimit,
+} from "../utils/functions";
+import { getAndAssignPool, syncWalletBalance } from "../helpers/pool";
 import { getNonce, checkEthAddr, sendEth } from "../helpers/web3";
 import * as config from "../config";
-import { preflightTransaction, submitTransaction } from "../helpers/bitclout";
-import { handleSign } from "../helpers/identity";
+import { preflightTransaction, submitTransaction, transferBitcloutBalance } from "../helpers/bitclout";
+import { handleSign, decryptGCM } from "../helpers/crypto";
 
 import axios from "axios";
+import Wallet from "../models/wallet";
 const createError = require("http-errors");
 const gatewayRouter = require("express").Router();
+import { toWei } from "../utils/functions";
+/*
+  tier0: $2000 aggregate withdraw lim
+  tier1: no limits
 
-gatewayRouter.get("/deposit/cancel/:id", fireEyeWall, tokenAuthenticator, async (req, res, next) => {
+*/
+
+gatewayRouter.get("/deposit/cancel/:id", tokenAuthenticator, async (req, res, next) => {
   const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
   if (user && req.params.id) {
     const transaction = await Transaction.findById(req.params.id).exec();
@@ -41,21 +56,27 @@ gatewayRouter.get("/deposit/cancel/:id", fireEyeWall, tokenAuthenticator, async 
   }
 });
 
-gatewayRouter.post("/deposit/bitclout-preflight", fireEyeWall, tokenAuthenticator, valueSchema, async (req, res, next) => {
+gatewayRouter.post("/deposit/bitclout-preflight", tokenAuthenticator, fireEyeWall, valueSchema, async (req, res, next) => {
   const { value } = req.body;
-  const user = await User.findOne({ "bitclout.publicKey": req.key, "balance.in_transaction": false }).exec();
+  const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
   if (user) {
     if (!userVerifyCheck(user)) {
       next(createError(401, "User not verified."));
     } else {
       try {
-        const preflight = await preflightTransaction({
-          AmountNanos: toNanos(value),
-          MinFeeRateNanosPerKB: config.MinFeeRateNanosPerKB,
-          RecipientPublicKeyOrUsername: config.PUBLIC_KEY_BITCLOUT,
-          SenderPublicKeyBase58Check: user.bitclout.publicKey,
-        });
-        res.send({ data: preflight.data });
+        const wallet = await Wallet.findOne({ user: user._id }).exec();
+        if (wallet) {
+          const preflight = await preflightTransaction({
+            AmountNanos: toNanos(value),
+            MinFeeRateNanosPerKB: config.MinFeeRateNanosPerKB,
+            RecipientPublicKeyOrUsername: wallet?.keyInfo.bitclout.publicKeyBase58Check,
+            SenderPublicKeyBase58Check: user.bitclout.publicKey,
+          });
+
+          res.send({ data: preflight.data });
+        } else {
+          res.send({ error: "an error occurred" });
+        }
       } catch (e) {
         if (e.response.data.error) {
           next(createError(e.response.status, e.response.data.error));
@@ -69,22 +90,27 @@ gatewayRouter.post("/deposit/bitclout-preflight", fireEyeWall, tokenAuthenticato
   }
 });
 
-gatewayRouter.post("/withdraw/bitclout-preflight", fireEyeWall, tokenAuthenticator, valueSchema, async (req, res, next) => {
+gatewayRouter.post("/withdraw/bitclout-preflight", tokenAuthenticator, fireEyeWall, valueSchema, async (req, res, next) => {
   const { value } = req.body;
-  const user = await User.findOne({ "bitclout.publicKey": req.key, "balance.in_transaction": false }).exec();
+  const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
   if (user) {
     if (!userVerifyCheck(user)) {
       next(createError(401, "User not verified."));
     } else {
       try {
-        const preflight = await preflightTransaction({
-          AmountNanos: toNanos(value),
-          MinFeeRateNanosPerKB: config.MinFeeRateNanosPerKB,
-          RecipientPublicKeyOrUsername: user.bitclout.publicKey,
-          SenderPublicKeyBase58Check: config.PUBLIC_KEY_BITCLOUT,
-        });
+        const wallet = await Wallet.findOne({ super: 0 }).exec();
+        if (wallet) {
+          const preflight = await preflightTransaction({
+            AmountNanos: toNanos(value),
+            MinFeeRateNanosPerKB: config.MinFeeRateNanosPerKB,
+            RecipientPublicKeyOrUsername: user.bitclout.publicKey,
+            SenderPublicKeyBase58Check: wallet.keyInfo.bitclout.publicKeyBase58Check,
+          });
 
-        res.send({ data: preflight.data });
+          res.send({ data: preflight.data });
+        } else {
+          res.send({ error: "an error occurred" });
+        }
       } catch (e) {
         if (e.response.data.error) {
           next(createError(e.response.status, e.response.data.error));
@@ -98,9 +124,9 @@ gatewayRouter.post("/withdraw/bitclout-preflight", fireEyeWall, tokenAuthenticat
   }
 });
 
-gatewayRouter.post("/deposit/bitclout", fireEyeWall, tokenAuthenticator, depositBitcloutSchema, async (req, res, next) => {
+gatewayRouter.post("/deposit/bitclout", tokenAuthenticator, fireEyeWall, depositBitcloutSchema, async (req, res, next) => {
   const { transactionHex, transactionIDBase58Check, value } = req.body;
-  const user = await User.findOne({ "bitclout.publicKey": req.key, "balance.in_transaction": false });
+  const user = await User.findOne({ "bitclout.publicKey": req.key });
   if (user && user.bitclout.publicKey) {
     if (!userVerifyCheck(user)) {
       next(createError(401, "User not verified."));
@@ -109,31 +135,31 @@ gatewayRouter.post("/deposit/bitclout", fireEyeWall, tokenAuthenticator, deposit
         const reciept = await submitTransaction({
           TransactionHex: transactionHex,
         });
-        const bitcloutUsd = await getBitcloutUsd();
-        const valueTruncated = +(toNanos(value) / 1e9).toFixed(8);
-        const txn = new Transaction({
-          user: user._id,
-          transactionType: "deposit",
-          assetType: "BCLT",
-          value: valueTruncated,
-          usdValueAtTime: valueTruncated * bitcloutUsd,
-          completed: true,
-          created: new Date(),
-          completionDate: new Date(),
-          txnHash: transactionIDBase58Check,
-          state: "done",
-        });
-        user.transactions.push(txn._id);
-        user.balance.bitclout += valueTruncated;
-        await user.save();
-        await txn.save();
-        const body = {
-          publicKey: user.bitclout.publicKey,
-        };
-        axios.post(`${config.EXCHANGE_API}/exchange/sanitize`, body, {
-          headers: { "Server-Signature": generateHMAC(body) },
-        });
-        res.send({ data: txn });
+        // const bitcloutUsd = await getBitcloutUsd();
+        // const valueTruncated = +(toNanos(value) / 1e9).toFixed(8);
+        // const txn = new Transaction({
+        //   user: user._id,
+        //   transactionType: "deposit",
+        //   assetType: "BCLT",
+        //   value: valueTruncated,
+        //   usdValueAtTime: valueTruncated * bitcloutUsd,
+        //   completed: true,
+        //   created: new Date(),
+        //   completionDate: new Date(),
+        //   txnHash: transactionIDBase58Check,
+        //   state: "done",
+        // });
+        // user.transactions.push(txn._id);
+        // user.balance.bitclout += toNanos(value);
+        // await user.save();
+        // await txn.save();
+        // const body = {
+        //   publicKey: user.bitclout.publicKey,
+        // };
+        // axios.post(`${config.EXCHANGE_API}/exchange/sanitize`, body, {
+        //   headers: { "Server-Signature": generateHMAC(body) },
+        // });
+        res.sendStatus(200);
       } catch (e) {
         if (e.response.data.error) {
           next(createError(e.response.status, e.response.data.error));
@@ -147,8 +173,8 @@ gatewayRouter.post("/deposit/bitclout", fireEyeWall, tokenAuthenticator, deposit
   }
 });
 
-gatewayRouter.get("/deposit/eth", fireEyeWall, tokenAuthenticator, async (req, res, next) => {
-  const user = await User.findOne({ "bitclout.publicKey": req.key, "balance.in_transaction": false }).exec();
+gatewayRouter.get("/deposit/eth", tokenAuthenticator, fireEyeWall, async (req, res, next) => {
+  const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
   if (user && user.bitclout.publicKey) {
     if (!userVerifyCheck(user)) {
       next(createError(401, "User not verified."));
@@ -200,7 +226,7 @@ gatewayRouter.get("/deposit/eth", fireEyeWall, tokenAuthenticator, async (req, r
   }
 });
 
-gatewayRouter.post("/withdraw/bitclout", fireEyeWall, tokenAuthenticator, valueSchema, async (req, res, next) => {
+gatewayRouter.post("/withdraw/bitclout", tokenAuthenticator, fireEyeWall, valueSchema, async (req, res, next) => {
   const { value } = req.body;
   const user = await User.findOne({ "bitclout.publicKey": req.key, "balance.in_transaction": false }).exec();
   if (user && user.bitclout.publicKey) {
@@ -208,49 +234,67 @@ gatewayRouter.post("/withdraw/bitclout", fireEyeWall, tokenAuthenticator, valueS
       next(createError(401, "User not verified."));
     } else {
       try {
-        const preflight = await preflightTransaction({
-          AmountNanos: toNanos(value),
-          MinFeeRateNanosPerKB: config.MinFeeRateNanosPerKB,
-          RecipientPublicKeyOrUsername: user.bitclout.publicKey,
-          SenderPublicKeyBase58Check: config.PUBLIC_KEY_BITCLOUT,
-        });
-        const valueTruncated = +(toNanos(value + preflight.data.FeeNanos / 1e9) / 1e9).toFixed(8);
+        const valueDeductedNanos = toNanos(value) - config.GatewayFees.BITCLOUT;
         const bitcloutUsd = await getBitcloutUsd();
-        // const totalAmount = value + preflight.data.FeeNanos / 1e9;
-        const txn = new Transaction({
-          user: user._id,
-          transactionType: "withdraw",
-          assetType: "BCLT",
-          value: valueTruncated,
-          usdValueAtTime: bitcloutUsd * valueTruncated,
-          created: new Date(),
-          txnHash: preflight.data.TransactionIDBase58Check,
-          gasPrice: preflight.data.FeeNanos / 1e9,
-        });
-        if (user.balance.bitclout >= valueTruncated) {
-          await User.updateOne(
-            { "bitclout.publicKey": req.key },
-            { $inc: { "balance.bitclout": -valueTruncated }, $set: { "balance.in_transaction": true } }
-          );
-          const body = {
-            publicKey: user.bitclout.publicKey,
-          };
-          await axios.post(`${config.EXCHANGE_API}/exchange/sanitize`, body, {
-            headers: { "Server-Signature": generateHMAC(body) },
-          });
-          await submitTransaction({
-            TransactionHex: handleSign(preflight.data.TransactionHex),
-          });
-          txn.state = "done";
-          txn.completed = true;
-          txn.completionDate = new Date();
-
-          await User.updateOne(
-            { "bitclout.publicKey": req.key },
-            { $set: { "balance.in_transaction": false }, $push: { transactions: txn._id } }
-          );
-          await txn.save();
-          res.send({ data: txn });
+        if (user.balance.bitclout >= valueDeductedNanos) {
+          if (await enforceWithdrawLimit(user, bitcloutUsd * +value.toFixed(9))) {
+            const txn = new Transaction({
+              user: user._id,
+              transactionType: "withdraw",
+              assetType: "BCLT",
+              value: +value.toFixed(9),
+              usdValueAtTime: bitcloutUsd * +value.toFixed(9),
+              created: new Date(),
+            });
+            try {
+              await User.updateOne({ "bitclout.publicKey": req.key }, { $set: { "balance.in_transaction": true } });
+              const wallet = await Wallet.findOne({ super: 0 }).exec();
+              if (wallet) {
+                const response = await transferBitcloutBalance({
+                  SenderPrivateKeyBase58Check: decryptGCM(wallet.keyInfo.bitclout.privateKeyBase58Check, config.WALLET_HASHKEY),
+                  RecipientPublicKeyBase58Check: user.bitclout.publicKey,
+                  AmountNanos: valueDeductedNanos,
+                  MinFeeRateNanosPerKB: config.MinFeeRateNanosPerKB,
+                  DryRun: false,
+                });
+                user.balance.bitclout -= toNanos(value);
+                // user.balance.in_transaction = false;
+                user.transactions.push(txn._id);
+                txn.state = "done";
+                txn.completed = true;
+                txn.completionDate = new Date();
+                txn.txnHash = response.data.Transaction.TransactionIDBase58Check;
+                txn.gasPrice = response.data.TransactionInfo.FeeNanos;
+                await User.updateOne({ "bitclout.publicKey": req.key }, { $set: { "balance.in_transaction": false } });
+                await user.save();
+                await txn.save();
+                const body = {
+                  publicKey: user.bitclout.publicKey,
+                };
+                await axios.post(`${config.EXCHANGE_API}/exchange/sanitize`, body, {
+                  headers: { "Server-Signature": generateHMAC(body) },
+                });
+                res.send({ data: txn });
+              } else {
+                await User.updateOne({ "bitclout.publicKey": req.key }, { $set: { "balance.in_transaction": false } });
+                res.sendStatus(500);
+              }
+            } catch (e) {
+              console.error(e);
+              await User.updateOne({ "bitclout.publicKey": req.key }, { $set: { "balance.in_transaction": false } });
+              user.balance.in_transaction = false;
+              user.transactions.push(txn._id);
+              txn.state = "failed";
+              txn.error = "Server Error";
+              txn.completed = true;
+              txn.completionDate = new Date();
+              await user.save();
+              await txn.save();
+              res.status(500).send({ data: txn });
+            }
+          } else {
+            next(createError(403, "Overflowing withdraw limit."));
+          }
         } else {
           next(createError(409, "Insufficient funds."));
         }
@@ -267,62 +311,67 @@ gatewayRouter.post("/withdraw/bitclout", fireEyeWall, tokenAuthenticator, valueS
   }
 });
 
-gatewayRouter.post("/withdraw/eth", fireEyeWall, tokenAuthenticator, withdrawEthSchema, async (req, res, next) => {
+gatewayRouter.post("/withdraw/eth", tokenAuthenticator, fireEyeWall, withdrawEthSchema, async (req, res, next) => {
   const { value, withdrawAddress } = req.body;
-  const user = await User.findOne({ "bitclout.publicKey": req.key }).exec();
-  const pool = await Pool.findOne({ balance: { $gt: value } }).exec();
-  if (user && pool && user.bitclout.publicKey) {
+  const user = await User.findOne({ "bitclout.publicKey": req.key, "balance.in_transaction": false }).exec();
+  const pool = await Pool.findOne({ "balance.ETH": { $gt: toWei(value) } }).exec();
+  if (user && pool && !config.BLACKLISTED_ETH_ADDR.includes(withdrawAddress.toLowerCase())) {
     if (!userVerifyCheck(user)) {
       next(createError(401, "User not verified."));
     } else {
       if (user.balance.ether >= value && checkEthAddr(withdrawAddress)) {
         try {
           const gas = await getGasEtherscan(); // get gas
-          const key = decryptAddressGCM(pool.hashedKey); // decrypt pool key
+          const key = decryptGCM(pool.hashedKey, config.POOL_HASHKEY); // decrypt pool key
           const nonce = await getNonce(pool.address); // get nonce
           const ethUsdResp = await getEthUsd();
-          await User.updateOne(
-            { "bitclout.publicKey": req.key },
-            { $inc: { "balance.ether": -value }, $set: { "balance.in_transaction": true } }
-          );
-          const body = {
-            publicKey: user.bitclout.publicKey,
-          };
-          await axios.post(`${config.EXCHANGE_API}/exchange/sanitize`, body, {
-            headers: { "Server-Signature": generateHMAC(body) },
-          });
-          // push to new mongodb collection, with a send time generated based on transaction risk. More valuable txns = higher time.
-          // we can have a gocron job searching for jobs and taking them out of the db queue
-          // this allows us to manually verify high risk transactions, and let lower risked transactions go through with better ux
-          const receipt = await sendEth(
-            key,
-            pool.address,
-            withdrawAddress,
-            value,
-            nonce,
-            parseInt(gas.data.result.FastGasPrice.toString())
-          ); // receipt object: https://web3js.readthedocs.io/en/v1.3.4/web3-eth.html#eth-gettransactionreceipt-return
-          const txn = new Transaction({
-            user: user._id,
-            created: new Date(),
-            transactionType: "withdraw",
-            assetType: "ETH",
-            completed: true, //set completed to true after transaction goes through?
-            txnHash: receipt.transactionHash,
-            gasPrice: parseInt(gas.data.result.FastGasPrice.toString()),
-            state: "done",
-            value: value,
-            usdValueAtTime: value * ethUsdResp,
-            completionDate: new Date(),
-          }); //create withdraw txn object
-          await User.updateOne(
-            { "bitclout.publicKey": req.key },
-            { $set: { "balance.in_transaction": false }, $push: { transactions: txn._id } }
-          );
-          txn.save();
-          syncWalletBalance();
-          res.status(200).send({ data: txn });
+          if (await enforceWithdrawLimit(user, ethUsdResp * value)) {
+            await User.updateOne(
+              { "bitclout.publicKey": req.key },
+              { $inc: { "balance.ether": -toWei(value) }, $set: { "balance.in_transaction": true } }
+            );
+            const body = {
+              publicKey: user.bitclout.publicKey,
+            };
+            await axios.post(`${config.EXCHANGE_API}/exchange/sanitize`, body, {
+              headers: { "Server-Signature": generateHMAC(body) },
+            });
+            // push to new mongodb collection, with a send time generated based on transaction risk. More valuable txns = higher time.
+            // we can have a gocron job searching for jobs and taking them out of the db queue
+            // this allows us to manually verify high risk transactions, and let lower risked transactions go through with better ux
+            const receipt = await sendEth(
+              key,
+              pool.address,
+              withdrawAddress,
+              value,
+              nonce,
+              parseInt(gas.data.result.FastGasPrice.toString())
+            ); // receipt object: https://web3js.readthedocs.io/en/v1.3.4/web3-eth.html#eth-gettransactionreceipt-return
+            const txn = new Transaction({
+              user: user._id,
+              created: new Date(),
+              transactionType: "withdraw",
+              assetType: "ETH",
+              completed: true, //set completed to true after transaction goes through?
+              txnHash: receipt.transactionHash,
+              gasPrice: parseInt(gas.data.result.FastGasPrice.toString()),
+              state: "done",
+              value: value,
+              usdValueAtTime: value * ethUsdResp,
+              completionDate: new Date(),
+            }); //create withdraw txn object
+            await User.updateOne(
+              { "bitclout.publicKey": req.key },
+              { $set: { "balance.in_transaction": false }, $push: { transactions: txn._id } }
+            );
+            txn.save();
+            syncWalletBalance();
+            res.status(200).send({ data: txn });
+          } else {
+            next(createError(403, "Overflowing withdraw limit."));
+          }
         } catch (e) {
+          await User.updateOne({ "bitclout.publicKey": req.key }, { $set: { "balance.in_transaction": false } });
           next(e);
         }
       } else {
