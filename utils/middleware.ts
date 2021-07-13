@@ -4,7 +4,7 @@ import * as config from "../config";
 import { getCoinHodlers } from "../helpers/bitclout";
 const jwt = require("jsonwebtoken");
 const createError = require("http-errors");
-import User from "../models/user";"
+import User from "../models/user";
 
 export const valueSchema = (req, res, next) => {
   const schema = Joi.object({
@@ -164,7 +164,7 @@ export const fireEyeWall = (req, res, next) => {
     FetchAll: true,
   })
     .then(response => {
-      if (response.Hodlers.some(user => user.CreatorPublicKeyBase58Check.toLowerCase() === config.BitSwap_PubKey.toLowerCase())) {
+      if (response.data.Hodlers.some(user => user.CreatorPublicKeyBase58Check.toLowerCase() === config.BitSwap_PubKey.toLowerCase())) {
         axios
           .get(`${config.EXCHANGE_API}/fireeye-state`)
           .then(response => {
@@ -182,20 +182,32 @@ export const fireEyeWall = (req, res, next) => {
             return res.status(500).send("FireEye Error.");
           });
       } else {
-        User.findOne({"bitclout.publicKey":req.key}, (err, user) => {
-          if (err) {
-            console.error(err);
-            return res.status(500).send("DB Error")
-          } else {
-            const userCreated = new Date(user.created)
-            const dateLimit = new Date("2021-07-13")
-            if(userCreated<dateLimit){
-              next()
-            }else{
-              return res.status(403).send("Must be a BitSwap coin hodler");
+        axios
+          .get(`${config.EXCHANGE_API}/fireeye-state`)
+          .then(response => {
+            if (response.data.Code >= 0 && response.data.Code < 20) {
+              User.findOne({ "bitclout.publicKey": req.key }, (err, user) => {
+                if (err) {
+                  console.error(err);
+                  return res.status(500).send("DB Error");
+                } else {
+                  const userCreated = new Date(user.created);
+                  const dateLimit = new Date("2021-07-13");
+                  if (userCreated < dateLimit) {
+                    next();
+                  } else {
+                    return res.status(403).send("Must be a BitSwap coin hodler");
+                  }
+                }
+              });
+            } else {
+              return res.status(503).send("FireEye Blocked.");
             }
-          }
-        })
+          })
+          .catch(error => {
+            console.error(error);
+            return res.status(500).send("FireEye Error.");
+          });
       }
     })
     .catch(error => {

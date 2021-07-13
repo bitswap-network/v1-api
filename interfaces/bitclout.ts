@@ -7,8 +7,10 @@ export interface GetCoinHodlersInterface {
 }
 
 export interface GetCoinHodlersAPIInterface extends AxiosResponse {
-  Hodlers: Hodler[];
-  LastPublicKeyBase58Check: string;
+  data: {
+    Hodlers: Hodler[];
+    LastPublicKeyBase58Check: string;
+  };
 }
 
 interface Hodler {
