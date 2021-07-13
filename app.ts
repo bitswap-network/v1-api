@@ -20,7 +20,6 @@ import * as config from "./config";
 
 //Setups
 import { syncWalletBalance } from "./helpers/pool";
-import { formatUserBalancesInt } from "./helpers/wallet";
 
 const app: express.Application = express();
 
@@ -63,5 +62,4 @@ app.use("/webhook", webhookRouter);
 
 app.use(middleware.unknownEndpoint);
 app.use(middleware.errorHandler);
-// formatUserBalancesInt();
 export default app;

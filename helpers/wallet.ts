@@ -97,14 +97,14 @@ export const patchOrderMissingFees = async () => {
 
 export const patchOrderFees = async () => {
   const orders = await Order.find({ orderQuantityProcessed: { $gt: 0 }, updated: { $ne: true } }).exec();
-  const ethUsd = 2071.56;
+  const ethUsd = 2000;
   orders.forEach(async order => {
     if (order.orderSide == "buy") {
       order.fees = toNanos(order.orderQuantityProcessed * 0.01);
     } else {
       order.fees = toWei((order.orderQuantityProcessed * order.execPrice * 0.01) / ethUsd);
     }
-
+    console.log(order.fees);
     order.updated = true;
     await order.save();
   });
@@ -125,6 +125,16 @@ export const formatUserBalancesInt = async () => {
       user.balance.ether = parseInt(user.balance.ether.toString());
       await user.save();
     });
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+export const formatDB = async () => {
+  try {
+    await patchOrderMissingFees();
+    await patchOrderFees();
+    await migrateUserBalances();
   } catch (e) {
     console.error(e);
   }
