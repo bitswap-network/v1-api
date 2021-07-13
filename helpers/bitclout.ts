@@ -10,12 +10,24 @@ import {
   GetKeyPairAPIInterface,
   TransferBitcloutBalanceInterface,
   TransferBitcloutBalanceAPIInterface,
+  GetCoinHodlersAPIInterface,
+  GetCoinHodlersInterface,
 } from "../interfaces/bitclout";
 
 export const bitcloutHeader = {
   headers: {
     "Content-Type": "application/json",
   },
+};
+
+export const getCoinHodlers: (coinHodlerAttributes: GetCoinHodlersInterface) => Promise<GetCoinHodlersAPIInterface> = async function (
+  coinHodlerAttributes: GetCoinHodlersInterface
+): Promise<GetCoinHodlersAPIInterface> {
+  return await axios.post(
+    `${config.BITCLOUT_API_URL}api/v0/get-hodlers-for-public-key`,
+    JSON.stringify(coinHodlerAttributes),
+    bitcloutHeader
+  );
 };
 
 export const transferBitcloutBalance: (

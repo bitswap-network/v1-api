@@ -1,5 +1,25 @@
 import { AxiosResponse } from "axios";
 
+export interface GetCoinHodlersInterface {
+  Username: string;
+  FetchHodlings: boolean;
+  FetchAll: boolean;
+}
+
+export interface GetCoinHodlersAPIInterface extends AxiosResponse {
+  Hodlers: Hodler[];
+  LastPublicKeyBase58Check: string;
+}
+
+interface Hodler {
+  HODLerPublicKeyBase58Check: string;
+  CreatorPublicKeyBase58Check: string;
+  HasPurchased: boolean;
+  BalanceNanos: number;
+  NetBalanceInMempool: number;
+  ProfileEntryResponse: BitcloutProfileType;
+}
+
 export interface TransferBitcloutBalanceInterface {
   SenderPrivateKeyBase58Check: string;
   RecipientPublicKeyBase58Check: string;
