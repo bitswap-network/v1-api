@@ -19,8 +19,8 @@ import * as logger from "./utils/logger";
 import * as config from "./config";
 
 //Setups
-import {syncWalletBalance} from "./helpers/pool";
-import {formatUserBalancesInt} from "./helpers/wallet";
+import { syncWalletBalance } from "./helpers/pool";
+import { formatUserBalancesInt } from "./helpers/wallet";
 
 const app: express.Application = express();
 

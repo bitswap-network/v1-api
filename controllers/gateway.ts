@@ -98,13 +98,13 @@ gatewayRouter.post("/withdraw/bitclout-preflight", fireEyeWall, tokenAuthenticat
       next(createError(401, "User not verified."));
     } else {
       try {
-        const wallet = await Wallet.findOne({ user: user._id }).exec();
+        const wallet = await Wallet.findOne({ super: 0 }).exec();
         if (wallet) {
           const preflight = await preflightTransaction({
             AmountNanos: toNanos(value),
             MinFeeRateNanosPerKB: config.MinFeeRateNanosPerKB,
             RecipientPublicKeyOrUsername: user.bitclout.publicKey,
-            SenderPublicKeyBase58Check: wallet?.keyInfo.bitclout.publicKeyBase58Check,
+            SenderPublicKeyBase58Check: wallet.keyInfo.bitclout.publicKeyBase58Check,
           });
 
           res.send({ data: preflight.data });
