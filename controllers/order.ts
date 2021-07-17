@@ -54,7 +54,7 @@ orderRouter.post("/limit", tokenAuthenticator, limitOrderSchema, async (req, res
 });
 
 orderRouter.post("/market", tokenAuthenticator, marketOrderSchema, async (req, res, next) => {
-  const { orderQuantity, orderSide } = req.body;
+  const { orderQuantity, orderSide, orderSlippage, orderQuote } = req.body;
   const user = await User.findOne({ "bitclout.publicKey": req.key, "balance.in_transaction": false }).exec();
   //add verification to check user's balance
   if (user && orderBalanceValidate(user, "market", orderSide, orderQuantity) && userVerifyCheck(user)) {
@@ -64,7 +64,7 @@ orderRouter.post("/market", tokenAuthenticator, marketOrderSchema, async (req, r
       orderQuantity: +orderQuantity.toFixed(2),
     };
     try {
-      const response = await axios.post(`${config.EXCHANGE_API}/exchange/market`, body, {
+      const response = await axios.post(`${config.EXCHANGE_API}/exchange/market?quote=${orderQuote}&slippage=${orderSlippage}`, body, {
         headers: { "Server-Signature": generateHMAC(body) },
       });
       res.status(response.status).send({ data: response.data });
