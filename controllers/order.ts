@@ -64,7 +64,7 @@ orderRouter.post("/market", tokenAuthenticator, marketOrderSchema, async (req, r
       orderQuantity: +orderQuantity.toFixed(2),
     };
     try {
-      const response = await axios.post(`${config.EXCHANGE_API}/exchange/market?quote=${orderQuote}&slippage=${orderSlippage}`, body, {
+      const response = await axios.post(`${config.EXCHANGE_API}/exchange/market/${orderQuote}/${orderSlippage}`, body, {
         headers: { "Server-Signature": generateHMAC(body) },
       });
       res.status(response.status).send({ data: response.data });
