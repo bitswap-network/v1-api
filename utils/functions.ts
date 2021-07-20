@@ -151,7 +151,7 @@ export const genString = (size: number) => {
 };
 
 export const toNanos = (value: number) => {
-  return +value.toFixed(9) * 1e9;
+  return parseInt((value * 1e9).toFixed(9));
 };
 
 export const toWei = (value: number) => {
