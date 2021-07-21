@@ -10,7 +10,7 @@ import * as config from "../config";
 const jwt = require("jsonwebtoken");
 const algorithm = "aes-256-cbc";
 
-const tier0WithdrawLim = 2000;
+const tier0WithdrawLim = 10000;
 
 export const enforceWithdrawLimit = async (user: UserDoc, newTxnValue: number) => {
   try {
