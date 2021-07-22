@@ -22,7 +22,7 @@ export const withdrawEthSchema = (req, res, next) => {
 
 export const marketQuantitySchema = (req, res, next) => {
   const schema = Joi.object({
-    maxPrice: Joi.number().min(0).max(10000000).required(),
+    maxPrice: Joi.number().greater(0).max(10000000).required(),
     orderSide: Joi.string().valid("buy", "sell").required(),
   });
   validateRequest(req, next, schema);
@@ -30,7 +30,7 @@ export const marketQuantitySchema = (req, res, next) => {
 
 export const marketPriceSchema = (req, res, next) => {
   const schema = Joi.object({
-    orderQuantity: Joi.number().min(0).max(10000000).required(),
+    orderQuantity: Joi.number().greater(0).max(10000000).required(),
     orderSide: Joi.string().valid("buy", "sell").required(),
   });
   validateRequest(req, next, schema);
@@ -40,8 +40,8 @@ export const marketOrderSchema = (req, res, next) => {
   const schema = Joi.object({
     orderQuantity: Joi.number().min(0.01).max(500).required(),
     orderSide: Joi.string().valid("buy", "sell").required(),
-    orderSlippage: Joi.number().min(0).max(1).required(),
-    orderQuote: Joi.number().min(0).required(),
+    orderSlippage: Joi.number().greater(0).max(1).required(),
+    orderQuote: Joi.number().greater(0).required(),
   });
   validateRequest(req, next, schema);
 };
