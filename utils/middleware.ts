@@ -8,7 +8,7 @@ import User from "../models/user";
 
 export const valueSchema = (req, res, next) => {
   const schema = Joi.object({
-    value: Joi.number().greater(0.01).max(1000).required(),
+    value: Joi.number().greater(0).max(1000).required(),
   });
   validateRequest(req, next, schema);
 };
