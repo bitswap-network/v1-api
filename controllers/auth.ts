@@ -72,7 +72,7 @@ authRouter.put("/register", middleware.registerSchema, async (req, res, next) =>
 
 authRouter.post("/login", middleware.loginSchema, async (req, res, next) => {
   const { publicKey, identityJWT } = req.body;
-  const adminOnly = false;
+  const adminOnly = true;
   // if (process.env.ENVIRONMENT !== "production") {
   //   adminOnly = true;
   // }
@@ -80,6 +80,7 @@ authRouter.post("/login", middleware.loginSchema, async (req, res, next) => {
   // if (adminOnly) {
   const user = await User.findOne({
     "bitclout.publicKey": publicKey,
+    admin: adminOnly,
   }).exec();
   // } else {
   //   user = await User.findOne({
