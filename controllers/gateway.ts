@@ -78,7 +78,7 @@ gatewayRouter.post("/deposit/bitclout-preflight", tokenAuthenticator, fireEyeWal
           res.send({ error: "an error occurred" });
         }
       } catch (e) {
-        if (e.response.data.error) {
+        if (e.response?.data.error) {
           next(createError(e.response.status, e.response.data.error));
         } else {
           next(e);
@@ -112,7 +112,7 @@ gatewayRouter.post("/withdraw/bitclout-preflight", tokenAuthenticator, fireEyeWa
           res.send({ error: "an error occurred" });
         }
       } catch (e) {
-        if (e.response.data.error) {
+        if (e.response?.data.error) {
           next(createError(e.response.status, e.response.data.error));
         } else {
           next(e);
@@ -161,7 +161,7 @@ gatewayRouter.post("/deposit/bitclout", tokenAuthenticator, fireEyeWall, deposit
         // });
         res.sendStatus(200);
       } catch (e) {
-        if (e.response.data.error) {
+        if (e.response?.data.error) {
           next(createError(e.response.status, e.response.data.error));
         } else {
           next(e);
@@ -299,7 +299,7 @@ gatewayRouter.post("/withdraw/bitclout", tokenAuthenticator, fireEyeWall, valueS
           next(createError(409, "Insufficient funds."));
         }
       } catch (e) {
-        if (e.response.data.error) {
+        if (e.response?.data.error) {
           next(createError(e.response.status, e.response.data.error));
         } else {
           next(e);

@@ -155,7 +155,7 @@ authRouter.post("/fetch-profile", middleware.fetchProfileSchema, async (req, res
       next(createError(409, "Bitclout API Error"));
     }
   } catch (e) {
-    if (e.response.data.error) {
+    if (e.response?.data.error) {
       next(createError(e.response.status, e.response.data.error));
     } else {
       next(e);
