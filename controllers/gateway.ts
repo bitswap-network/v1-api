@@ -236,13 +236,13 @@ gatewayRouter.post("/withdraw/bitclout", tokenAuthenticator, fireEyeWall, valueS
       try {
         const valueDeductedNanos = toNanos(value) - config.GatewayFees.BITCLOUT;
         const bitcloutUsd = await getBitcloutUsd();
-        if (user.balance.bitclout >= toNanos(value)) {
+        if (user.balance.bitclout >= toNanos(value) && valueDeductedNanos > 0) {
           if (await enforceWithdrawLimit(user, bitcloutUsd * +value.toFixed(9))) {
             const txn = new Transaction({
               user: user._id,
               transactionType: "withdraw",
               assetType: "BCLT",
-              value: +value.toFixed(9),
+              value: value,
               usdValueAtTime: bitcloutUsd * +value.toFixed(9),
               created: new Date(),
             });
@@ -258,7 +258,6 @@ gatewayRouter.post("/withdraw/bitclout", tokenAuthenticator, fireEyeWall, valueS
                   DryRun: false,
                 });
                 user.balance.bitclout -= toNanos(value);
-                // user.balance.in_transaction = false;
                 user.transactions.push(txn._id);
                 txn.state = "done";
                 txn.completed = true;

@@ -8,13 +8,13 @@ import User from "../models/user";
 
 export const valueSchema = (req, res, next) => {
   const schema = Joi.object({
-    value: Joi.number().greater(0).max(500).required(),
+    value: Joi.number().greater(0.01).max(1000).required(),
   });
   validateRequest(req, next, schema);
 };
 export const withdrawEthSchema = (req, res, next) => {
   const schema = Joi.object({
-    value: Joi.number().greater(0).required(),
+    value: Joi.number().greater(0.0001).max(500).required(),
     withdrawAddress: Joi.string().required(),
   });
   validateRequest(req, next, schema);
