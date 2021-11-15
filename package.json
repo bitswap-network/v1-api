@@ -25,7 +25,7 @@
     "express": "^4.17.1",
     "hdkey": "^2.0.1",
     "helmet": "^4.4.1",
-    "http-errors": "^1.8.0",
+    "http-errors": "^1.8.1",
     "joi": "^17.4.0",
     "jsonwebtoken": "^8.5.1",
     "key-encoder": "^2.0.3",
